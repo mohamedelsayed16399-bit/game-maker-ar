@@ -108,6 +108,7 @@ textarea{width:100%;min-height:70px;direction:ltr;font-size:12px}
   <div class="row"><label>الشكل (الخلفية)</label><select id="sTheme"></select></div>
   <div class="row"><label>شكل اللاعب</label><select id="sChar"></select></div>
   <div class="row"><label>لون اللاعب</label><div class="sw" id="sCol"></div></div>
+  <div class="row"><label>إحساس الحركة</label><select id="sPhys"></select></div>
   <div class="row"><label>عدد الأرواح</label><input type="number" id="sLives" min="1" max="9" style="width:80px"></div>
   <div class="row"><label>لازم تجمع كل العملات قبل العلم</label><input type="checkbox" id="sReq"></div>
   <div class="row"><label>عرض المرحلة (خانات)</label><input type="number" id="sW" min="16" max="160" style="width:80px"></div>
@@ -147,6 +148,7 @@ const THEMES={
   candy:{hill:["#ffc8ee","#ff9fdc"],n:"حلويات",top:"#ffb3e6",bot:"#fff0fa",blk:"#e0529c",blk2:"#ffe14d",deco:"cloud"},
   space:{hill:["#2a1a5a","#1a0f3d"],n:"فضاء",top:"#000",bot:"#241046",blk:"#39407a",blk2:"#00e5ff",deco:"star"}
 };
+const PHYS={0:{n:"عادي",sp:250,jv:740,g:1850},1:{n:"سريع",sp:340,jv:780,g:2000},2:{n:"قمر (جاذبية خفيفة)",sp:240,jv:600,g:900},3:{n:"ثقيل ومريح",sp:210,jv:700,g:1700}};
 const CHARS={cat:"قطة",robot:"روبوت",frog:"ضفدع",ghost:"شبح",blob:"كتلة"};
 const COLS=["#ffb020","#ff4d6d","#38d27a","#49a6ff","#b06cff","#f5f5f5"];
 const PAL=[
@@ -624,7 +626,7 @@ function stepPlay(dt){
   // player input
   const mx=ax();
   if(plat){
-    const sp=250,acc=pl.on?2600:1700;
+    const PH=PHYS[G.ph|0]||PHYS[0];const sp=PH.sp,acc=pl.on?2600:1700;
     const tv=mx*sp;
     if(pl.vx<tv)pl.vx=Math.min(tv,pl.vx+acc*dt);else if(pl.vx>tv)pl.vx=Math.max(tv,pl.vx-acc*dt);
     if(mx===0&&pl.on)pl.vx*=0.7;
@@ -634,9 +636,9 @@ function stepPlay(dt){
     if(jk&&!pl.jh){pl.buf=.12}
     pl.jh=jk;
     if(pl.on)pl.coy=.1;
-    if(pl.buf>0&&pl.coy>0){pl.vy=-740;pl.on=false;pl.coy=0;pl.buf=0;SFX.jump()}
+    if(pl.buf>0&&pl.coy>0){pl.vy=-PH.jv;pl.on=false;pl.coy=0;pl.buf=0;SFX.jump()}
     if(!jk&&pl.vy<-250)pl.vy+=3600*dt;
-    pl.vy=Math.min(900,pl.vy+1850*dt);
+    pl.vy=Math.min(900,pl.vy+PH.g*dt);
     const r=moveBox(pl,pl.vx*dt,pl.vy*dt,true);
     pl.on=!!r.landed&&pl.vy>=0;
     if(r.landed&&!pl.on)pl.on=true;
@@ -708,8 +710,10 @@ function levelDone(){
 }
 function endGame(win){
   P.state="over";
+  let best=0;try{const k="gm_best_"+(G.title||"")+"_"+G.levels.length;best=+localStorage.getItem(k)||0;if(win&&P.score>best){best=P.score;localStorage.setItem(k,best)}}catch(e){}
+  P.best=best;
   $("overT").textContent=win?"كسبت! 🎉":"خسرت";
-  $("overS").textContent="النقاط: "+P.score+" · الوقت: "+Math.round(P.time)+" ثانية";
+  $("overS").textContent="النقاط: "+P.score+" · الوقت: "+Math.round(P.time)+" ثانية"+(P.best?" · أفضل نتيجة: "+P.best:"");
   $("overA").textContent="العب تاني";$("over").classList.add("show");
 }
 function centerCam(snapNow){
@@ -792,11 +796,11 @@ async function dec(code){
 }
 // compact: objects as arrays
 function pack(g){
-  return {v:1,n:g.title,m:g.mode,th:g.theme,c:g.char,k:g.col,l:g.lives,q:g.req?1:0,
+  return {v:1,ph:g.ph|0,n:g.title,m:g.mode,th:g.theme,c:g.char,k:g.col,l:g.lives,q:g.req?1:0,
     L:g.levels.map(l=>({w:l.w,h:l.h,o:l.o.map(o=>{const a=[o.t,o.x,o.y,o.w,o.h];if(o.t==="mover")a.push(o.r||4,o.v|0);if(o.t==="sign")a.push(o.s||"");return a})}))};
 }
 function unpack(p){
-  const g=newGame(p.n);g.mode=p.m==="top"?"top":"plat";g.theme=THEMES[p.th]?p.th:"day";g.char=CHARS[p.c]?p.c:"cat";g.col=/^#[0-9a-f]{3,8}$/i.test(p.k)?p.k:COLS[0];g.lives=Math.max(1,Math.min(9,p.l|0||3));g.req=!!p.q;
+  const g=newGame(p.n);g.mode=p.m==="top"?"top":"plat";g.theme=THEMES[p.th]?p.th:"day";g.char=CHARS[p.c]?p.c:"cat";g.col=/^#[0-9a-f]{3,8}$/i.test(p.k)?p.k:COLS[0];g.lives=Math.max(1,Math.min(9,p.l|0||3));g.req=!!p.q;g.ph=PHYS[p.ph|0]?p.ph|0:0;
   g.title=String(p.n||"لعبة").slice(0,40);
   g.levels=p.L.slice(0,12).map(l=>({w:Math.max(8,Math.min(200,l.w|0)),h:Math.max(8,Math.min(60,l.h|0)),o:l.o.slice(0,3000).filter(a=>PINFO[a[0]]).map(a=>{const o={t:a[0],x:a[1]|0,y:a[2]|0,w:Math.max(1,a[3]|0),h:Math.max(1,a[4]|0)};if(o.t==="mover"){o.r=a[5]||4;o.v=a[6]|0}if(o.t==="sign")o.s=String(a[5]||"").slice(0,60);return o})}));
   return g;
@@ -843,7 +847,7 @@ $("bGen").onclick=()=>{if(L().o.length>4&&!confirm("المرحلة هتتبدل 
 $("bClear").onclick=()=>{if(!confirm("تفضّي المرحلة؟ (تقدر تتراجع)"))return;snap();const lv=L();G.levels[cur]=blankLevel(lv.w,lv.h);sel=null;dirty();refreshAll()};
 // settings
 function openSet(){
-  $("sMode").value=G.mode;$("sLives").value=G.lives;$("sReq").checked=G.req;$("sW").value=L().w;$("sH").value=L().h;
+  $("sMode").value=G.mode;$("sPhys").innerHTML=Object.entries(PHYS).map(([k,v])=>`<option value="${k}">${v.n}</option>`).join("");$("sPhys").value=G.ph|0;$("sLives").value=G.lives;$("sReq").checked=G.req;$("sW").value=L().w;$("sH").value=L().h;
   $("sTheme").innerHTML=Object.entries(THEMES).map(([k,v])=>`<option value="${k}">${v.n}</option>`).join("");$("sTheme").value=G.theme;
   $("sChar").innerHTML=Object.entries(CHARS).map(([k,v])=>`<option value="${k}">${v}</option>`).join("");$("sChar").value=G.char;
   $("sCol").innerHTML="";COLS.forEach(c=>{const b=document.createElement("button");b.style.background=c;if(c===G.col)b.className="on";b.onclick=()=>{G.col=c;[...$("sCol").children].forEach(x=>x.classList.toggle("on",x===b))};$("sCol").appendChild(b)});
@@ -851,7 +855,7 @@ function openSet(){
 }
 $("bSet").onclick=openSet;
 $("sOk").onclick=()=>{
-  snap();G.mode=$("sMode").value;G.theme=$("sTheme").value;G.char=$("sChar").value;G.lives=Math.max(1,Math.min(9,+$("sLives").value||3));G.req=$("sReq").checked;
+  snap();G.mode=$("sMode").value;G.ph=+$("sPhys").value;G.theme=$("sTheme").value;G.char=$("sChar").value;G.lives=Math.max(1,Math.min(9,+$("sLives").value||3));G.req=$("sReq").checked;
   const w=Math.max(16,Math.min(160,+$("sW").value||60)),h=Math.max(12,Math.min(40,+$("sH").value||18)),lv=L();
   if(w!==lv.w||h!==lv.h){lv.w=w;lv.h=h;lv.o.forEach(o=>{o.x=Math.min(o.x,Math.max(0,w-o.w));o.y=Math.min(o.y,Math.max(0,h-o.h));if(o.x+o.w>w)o.w=Math.max(1,w-o.x);if(o.y+o.h>h)o.h=Math.max(1,h-o.y)})}
   $("mSet").classList.remove("show");refreshAll();
