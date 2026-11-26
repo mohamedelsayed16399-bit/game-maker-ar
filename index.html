@@ -97,6 +97,7 @@ textarea{width:100%;min-height:70px;direction:ltr;font-size:12px}
     <button class="btn" data-tool="erase">✖ مسح</button>
     <button class="btn" id="zOut">－</button>
     <button class="btn" id="zIn">＋</button>
+    <button class="btn" id="bCheck">🤖 افحص المرحلة</button>
     <button class="btn" id="bGen">🎲 مرحلة عشوائية</button>
     <button class="btn" id="bClear">🗑 فضّي المرحلة</button>
   </div>
@@ -161,6 +162,9 @@ const THEMES={
   night:{hill:["#15204d","#0e1738"],n:"ليل",top:"#050a22",bot:"#1d2b6b",blk:"#2b3558",blk2:"#6c8cff",deco:"star"},
   cave:{hill:["#2a1f1a","#1f1612"],n:"كهف",top:"#1a1210",bot:"#3a2a22",blk:"#5b4a40",blk2:"#9c8473",deco:"none"},
   candy:{hill:["#ffc8ee","#ff9fdc"],n:"حلويات",top:"#ffb3e6",bot:"#fff0fa",blk:"#e0529c",blk2:"#ffe14d",deco:"cloud"},
+  forest:{hill:["#2f7d4f","#1f5f3a"],n:"غابة",top:"#7fd6a0",bot:"#e4f7d0",blk:"#5a3e2b",blk2:"#3fa34d",deco:"cloud"},
+  ice:{hill:["#d9f1ff","#bfe3ff"],n:"ثلج",top:"#8fd0ff",bot:"#f2fbff",blk:"#7fb6d9",blk2:"#ffffff",deco:"cloud"},
+  desert:{hill:["#f2c27a","#e3a85a"],n:"صحرا",top:"#ffd89b",bot:"#fff1d0",blk:"#b7793d",blk2:"#f0cf85",deco:"cloud"},
   space:{hill:["#2a1a5a","#1a0f3d"],n:"فضاء",top:"#000",bot:"#241046",blk:"#39407a",blk2:"#00e5ff",deco:"star"}
 };
 const PHYS={0:{n:"عادي",sp:250,jv:740,g:1850},1:{n:"سريع",sp:340,jv:780,g:2000},2:{n:"قمر (جاذبية خفيفة)",sp:240,jv:600,g:900},3:{n:"ثقيل ومريح",sp:210,jv:700,g:1700}};
@@ -557,7 +561,10 @@ function thumb(lv,theme){
   return c.toDataURL()}
 /* ---------- audio ---------- */
 let AC=null;
-let muted=false;
+let muted=false,musicT=null,mstep=0;
+function musicOn(){if(musicT||muted)return;const sc=[0,3,5,7,10,12,10,7,5,3],base={space:174,night:196,cave:147,candy:262,ice:220}[G.theme]||220;musicT=setInterval(()=>{if(muted||mode!=="play"||(P&&P.paused))return;const n=sc[mstep%sc.length]+(Math.floor(mstep/20)%2?-5:0);const bass=mstep%4===0;snd(base*Math.pow(2,n/12),.22,"triangle",bass?.035:.02);if(bass)snd(base/2,.3,"sine",.04);mstep++},230)}
+function musicOff(){clearInterval(musicT);musicT=null}
+
 function snd(f,d,ty,v,sl){if(muted)return;try{if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain();o.type=ty||"square";o.frequency.setValueAtTime(f,AC.currentTime);if(sl)o.frequency.exponentialRampToValueAtTime(sl,AC.currentTime+d);g.gain.setValueAtTime(v||0.06,AC.currentTime);g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+d);o.connect(g);g.connect(AC.destination);o.start();o.stop(AC.currentTime+d)}catch(e){}}
 const SFX={jump:()=>snd(300,.18,"square",.05,700),coin:()=>{snd(880,.08,"square",.05);setTimeout(()=>snd(1320,.12,"square",.05),60)},stomp:()=>snd(200,.15,"sawtooth",.07,80),die:()=>snd(400,.5,"sawtooth",.07,60),win:()=>[523,659,784,1046].forEach((f,i)=>setTimeout(()=>snd(f,.2,"triangle",.07),i*110)),spring:()=>snd(250,.3,"sine",.08,1100)};
 
@@ -572,7 +579,7 @@ function startPlay(fromLevel,full){
   setTimeout(resize,30);
   P={lvl:fromLevel,score:0,lives:G.lives,t:0,acc:0,last:performance.now(),particles:[],msg:"",msgT:0,shake:0,total:0,time:0,state:"run",deadT:0};
   loadLevel();
-  setTouchUI();
+  setTouchUI();musicOn();
 }
 function loadLevel(){
   const lv=G.levels[P.lvl];
@@ -759,6 +766,7 @@ function levelDone(){
 }
 function endGame(win){
   P.state="over";
+  if(P.testing)return;musicOff();
   let best=0;try{const k="gm_best_"+(G.title||"")+"_"+G.levels.length;best=+localStorage.getItem(k)||0;if(win&&P.score>best){best=P.score;localStorage.setItem(k,best)}}catch(e){}
   P.best=best;
   $("overT").textContent=win?"كسبت! 🎉":"خسرت";
@@ -826,7 +834,7 @@ function frame(now){
     renderPlay();
   }else if(G){renderEdit(sim)}
 }
-window.__gm={get P(){return P},get G(){return G},keys,tc,stepPlay,startPlay,get mode(){return mode},L};
+window.__gm={autoTest,get P(){return P},get G(){return G},keys,tc,stepPlay,startPlay,get mode(){return mode},L};
 
 /* ---------- share ---------- */
 async function enc(str){
@@ -879,7 +887,7 @@ function stopPlay(){
   if(shared){// open copy in editor
     shared=false;G.id="g"+Date.now().toString(36);history.replaceState(null,"",location.pathname);
   }
-  mode="edit";P=null;document.body.classList.remove("playing");
+  mode="edit";P=null;musicOff();document.body.classList.remove("playing");
   for(const k in tc)tc[k]=false;
   ["topbar","tabs","tools","pal"].forEach(i=>$(i).style.display="");
   $("tabs").style.display="flex";$("topbar").style.display="flex";$("tools").style.display="flex";$("pal").style.display="flex";
@@ -888,7 +896,7 @@ function stopPlay(){
 }
 $("bPlay").onclick=()=>{saveCur();startPlay(0)};
 $("bStop").onclick=stopPlay;
-$("bMute").onclick=()=>{muted=!muted;$("bMute").textContent=muted?"🔇":"🔊"};
+$("bMute").onclick=()=>{muted=!muted;if(muted)musicOff();else musicOn();$("bMute").textContent=muted?"🔇":"🔊"};
 document.addEventListener("visibilitychange",()=>{if(document.hidden&&mode==="play"&&P&&P.state==="run")P.paused=true});
 $("bRestart").onclick=()=>startPlay(0);
 $("overA").onclick=()=>startPlay(0);
@@ -897,6 +905,43 @@ $("bUndo").onclick=undo;$("bRedo").onclick=redo;
 $("title").oninput=e=>{G.title=e.target.value;dirty()};
 $("zIn").onclick=()=>{cam.zoom=Math.min(2.5,cam.zoom*1.25)};
 $("zOut").onclick=()=>{cam.zoom=Math.max(0.45,cam.zoom/1.25)};
+function autoTest(li){
+  const saveP=P,saveG=G,saveM=muted;
+  const lv=JSON.parse(JSON.stringify(G.levels[li]));
+  const res={ok:false,steps:0,deaths:0,msg:""};
+  if(!lv.o.some(o=>o.t==="goal")){return{ok:false,msg:"مفيش علم في المرحلة دي. حط العلم من الشريط."}}
+  if(!lv.o.some(o=>o.t==="player")){return{ok:false,msg:"مفيش لاعب في المرحلة."}}
+  if(G.mode==="top"){
+    const W=lv.w,H=lv.h,wall=new Uint8Array(W*H);
+    lv.o.forEach(o=>{if(o.t==="block")for(let x=o.x;x<o.x+o.w;x++)for(let y=o.y;y<o.y+o.h;y++)if(x>=0&&y>=0&&x<W&&y<H)wall[y*W+x]=1});
+    const p=lv.o.find(o=>o.t==="player"),g=lv.o.find(o=>o.t==="goal"),seen=new Uint8Array(W*H),q=[[p.x,p.y]];seen[p.y*W+p.x]=1;
+    while(q.length){const[x,y]=q.shift();for(const[dx,dy]of[[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy;if(nx<0||ny<0||nx>=W||ny>=H||wall[ny*W+nx]||seen[ny*W+nx])continue;seen[ny*W+nx]=1;q.push([nx,ny])}}
+    const reach=!!seen[g.y*W+g.x];
+    let coinsOk=true;if(G.req)coinsOk=lv.o.filter(o=>o.t==="coin").every(o=>seen[o.y*W+o.x]);
+    return reach?(coinsOk?{ok:true,msg:"الطريق للعلم موجود"+(G.req?" وكل العملات ممكن توصلها.":".")}:{ok:false,msg:"في عملات مش ممكن توصلها، واللعبة بتطلب كل العملات."}):{ok:false,msg:"مفيش طريق من اللاعب للعلم. في حيطة مقفلة."};
+  }
+  muted=true;
+  try{
+    G={...G,levels:[lv],lives:999};
+    P={lvl:0,score:0,lives:999,t:0,acc:0,last:0,particles:[],msg:"",msgT:0,shake:0,total:0,time:0,state:"run",deadT:0,testing:true};
+    loadLevel();
+    let lastD=0;
+    for(let i=0;i<60*150;i++){
+      const p=P.player,S=allSolids();p.inv=Math.max(p.inv,1);
+      const hit=(x,y)=>S.some(q=>x>=q.x&&x<q.x+q.w&&y>=q.y&&y<q.y+q.h);
+      const gap=!hit(p.x+p.w+34,p.y+p.h+6),wall=hit(p.x+p.w+10,p.y+p.h-10)||hit(p.x+p.w+10,p.y+4);
+      keys.arrowright=true;keys[" "]=(p.on&&(gap||wall))||(!p.on&&p.vy<0);
+      // go collect key if doors block
+      stepPlay(1/60);res.steps=i;
+      if(P.state==="over"){res.ok=P.lives>0;break}
+      if(P.state==="dead"){res.deaths++;}
+    }
+    if(P.state==="over"&&P.goalHit)res.ok=true;
+    res.ok=P.state==="over";res.msg=res.ok?"الروبوت وصل للعلم في "+Math.round(res.steps/60)+" ثانية (وهو بيتجاهل الأعداء). المرحلة ممكن تتلعب.":"الروبوت البسيط ماوصلش للعلم. المرحلة ممكن تكون صعبة أو فيها فجوة أو باب مقفول. جرّبها بنفسك.";
+  }finally{keys.arrowright=false;keys[" "]=false;P=saveP;G=saveG;muted=saveM}
+  return res;
+}
+$("bCheck").onclick=()=>{const r=autoTest(cur);toast((r.ok?"✓ ":"⚠ ")+r.msg)};
 $("bGen").onclick=()=>{if(L().o.length>4&&!confirm("المرحلة هتتبدل بمرحلة عشوائية. متأكد؟"))return;snap();const lv=L();const g=genLevel(G.mode,lv.w,lv.h,0,1+cur*0.5);G.levels[cur]=g;sel=null;cam.x=cam.y=0;dirty();refreshAll()};
 $("bClear").onclick=()=>{if(!confirm("تفضّي المرحلة؟ (تقدر تتراجع)"))return;snap();const lv=L();G.levels[cur]=blankLevel(lv.w,lv.h);sel=null;dirty();refreshAll()};
 // settings
