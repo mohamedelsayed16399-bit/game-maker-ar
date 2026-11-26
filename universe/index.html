@@ -151,6 +151,8 @@ function buildSystem(){
  planets.forEach(p=>{const m=new THREE.Mesh(new THREE.SphereGeometry(p.rad,40,28),planetMat(p));
   if(p.ring){const rg=new THREE.Mesh(new THREE.RingGeometry(p.rad*1.4,p.rad*2.2,48),new THREE.MeshBasicMaterial({color:0xd8c8a0,side:THREE.DoubleSide,transparent:true,opacity:.55}));rg.rotation.x=1.2;m.add(rg)}
   if(S.cols[p.key]){const tr=new THREE.Mesh(new THREE.TorusGeometry(p.rad*1.35,1.6,6,64),new THREE.MeshBasicMaterial({color:0x66ffaa}));tr.rotation.x=Math.PI/2;m.add(tr);const mk=new THREE.Mesh(new THREE.SphereGeometry(p.rad*1.06,20,14),new THREE.MeshBasicMaterial({color:0x66ffaa,transparent:true,opacity:.12}));m.add(mk)}
+  if(p.type.id!=='lava'){const cc=document.createElement('canvas');cc.width=256;cc.height=128;const cx=cc.getContext('2d');const rq=mulberry(p.seed+5);for(let i=0;i<70;i++){cx.fillStyle='rgba(255,255,255,'+(.15+rq()*.35)+')';cx.beginPath();cx.ellipse(rq()*256,rq()*128,8+rq()*34,3+rq()*8,0,0,6.28);cx.fill()}
+   const cl=new THREE.Mesh(new THREE.SphereGeometry(p.rad*1.025,32,20),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cc),transparent:true,depthWrite:false,opacity:p.type.id==='gas'?.3:.8}));cl.name='clouds';m.add(cl)}
   const at=new THREE.Mesh(new THREE.SphereGeometry(p.rad*1.18,32,20),atmoMat(p.type.id==='lava'?0xff5a20:p.type.sky));m.add(at);
   m.position.set(Math.cos(p.ang)*p.orbit,0,Math.sin(p.ang)*p.orbit);sysG.add(m);p.mesh=m;pMeshes.push(m);
   const o=new THREE.Mesh(new THREE.RingGeometry(p.orbit-2,p.orbit+2,128),new THREE.MeshBasicMaterial({color:0x4466aa,side:THREE.DoubleSide,transparent:true,opacity:.13}));o.rotation.x=-Math.PI/2;sysG.add(o);
@@ -288,22 +290,23 @@ function spaceUpdate(dt,t){
  const upv=new THREE.Vector3(0,1,0).applyQuaternion(ship.quaternion);cam.up.lerp(upv,.1);cam.lookAt(ship.position.clone().addScaledVector(fwd,20));
  stars.position.copy(cam.position);nebula.position.copy(cam.position);
  // planets orbit slowly
- planets.forEach(p=>{p.ang+=p.speed*dt*.01;p.mesh.rotation.y+=dt*.05;p.mesh.position.set(Math.cos(p.ang)*p.orbit,0,Math.sin(p.ang)*p.orbit)});
+ planets.forEach(p=>{p.ang+=p.speed*dt*.01;p.mesh.rotation.y+=dt*.05;{const cl=p.mesh.getObjectByName('clouds');if(cl)cl.rotation.y+=dt*.04}p.mesh.position.set(Math.cos(p.ang)*p.orbit,0,Math.sin(p.ang)*p.orbit)});
  if(station){const sp=station_pos();station.g.position.copy(sp);station.g.rotation.z+=dt*.4;station.g.rotation.x=.6}
  const sunD=ship.position.length();if(sunD<400){vel.copy(ship.position).normalize().multiplyScalar(300);damage(dt*30)}
  // bullets
  for(const list of[bullets,ebullets]){for(let i=list.length-1;i>=0;i--){const b=list[i];b.position.addScaledVector(b.userData.v,dt);b.userData.life-=dt;let dead=b.userData.life<=0;
   if(!dead&&list===bullets){for(const a of asteroids){if(a.visible&&a.position.distanceTo(b.position)<a.userData.r+3){dead=true;a.userData.hp-=S.gun>=2?1.2:1;if(a.userData.hp<=0){a.visible=false;const n=1+(Math.random()*2|0);const gain=Math.min(n,S.cap-cargoCount());if(gain>0){S.cargo.iron=(S.cargo.iron||0)+gain;S.stats.mined+=gain;toast('⛏️ +'+AR(gain)+' حديد')}else toast('الشحنة ممتلئة');if(Math.random()<.08){S.cargo.gem=(S.cargo.gem||0)+(cargoCount()<S.cap?1:0)}questTick();setTimeout(()=>{a.visible=true;a.userData.hp=2},30000)}break}}
-   for(const p of pirates){if(!dead&&p.m.position.distanceTo(b.position)<(p.boss?24:9)){dead=true;p.hp-=12*(1+S.gun*.4);beep(300,.08,'sawtooth',.05);if(p.hp<=0)killPirate(p)}}}
-  if(!dead&&list===ebullets&&b.position.distanceTo(ship.position)<5){dead=true;damage(6+curStar.danger*6)}
+   for(const p of pirates){if(!dead&&p.m.position.distanceTo(b.position)<(p.boss?24:p.kind==='gun'?16:p.kind==='scout'?7:9)){dead=true;p.hp-=12*(1+S.gun*.4);beep(300,.08,'sawtooth',.05);if(p.hp<=0)killPirate(p)}}}
+  if(!dead&&list===ebullets&&b.position.distanceTo(ship.position)<5){dead=true;damage(b.userData.dmg||(6+curStar.danger*6))}
   if(dead){space.remove(b);list.splice(i,1)}}}
  // pirates
  pirateTimer-=dt;const maxP=curStar.danger>.66?5:curStar.danger>.33?3:1;
- if(pirateTimer<=0&&pirates.length<maxP&&mode==='space'){pirateTimer=14;const m=makeShip(0x7a1a1a,0xff4040);m.scale.setScalar(1.2);const a=Math.random()*6.28;m.position.copy(ship.position).add(new THREE.Vector3(Math.cos(a)*700,(Math.random()-.5)*200,Math.sin(a)*700));space.add(m);const boss=(S.stats.kills%5===4)&&!pirates.some(q=>q.boss);if(boss){m.scale.setScalar(3.2);toast('☠️ زعيم القراصنة ظهر!')}pirates.push({m,boss,hp:boss?260:30+curStar.danger*30,cd:1+Math.random()});if(pirates.length===1)toast('⚠️ قراصنة قريبين!')}
+ if(pirateTimer<=0&&pirates.length<maxP&&mode==='space'){pirateTimer=14;const m=makeShip(0x7a1a1a,0xff4040);m.scale.setScalar(1.2);const a=Math.random()*6.28;m.position.copy(ship.position).add(new THREE.Vector3(Math.cos(a)*700,(Math.random()-.5)*200,Math.sin(a)*700));space.add(m);const boss=(S.stats.kills%5===4)&&!pirates.some(q=>q.boss);if(boss){m.scale.setScalar(3.2);toast('☠️ زعيم القراصنة ظهر!')}let kind=null;if(!boss){const rk=Math.random();if(rk<.3){kind='scout';m.scale.setScalar(.8)}else if(rk<.5&&curStar.danger>.3){kind='gun';m.scale.setScalar(2)}}
+ pirates.push({m,boss,kind,hp:boss?260:kind==='scout'?14:kind==='gun'?90:30+curStar.danger*30,cd:1+Math.random()});if(kind==='gun'&&pirates.length===1)toast('⚠️ سفينة حربية ثقيلة!');if(pirates.length===1)toast('⚠️ قراصنة قريبين!')}
  for(const p of pirates){const to=ship.position.clone().sub(p.m.position);const d=to.length();to.normalize();
   const f=new THREE.Vector3(0,0,-1).applyQuaternion(p.m.quaternion);tmpQ.setFromUnitVectors(f,to);p.m.quaternion.premultiply(new THREE.Quaternion().slerp(tmpQ,Math.min(1,dt*1.4)));
-  const sp=d>250?220:90;p.m.position.addScaledVector(f,sp*dt);p.cd-=dt;
-  if(d<500&&f.dot(to)>.9&&p.cd<=0){p.cd=p.boss?.7:1.1;shoot(p.m.position.clone(),to.clone(),ebullets,ebMat,520,'e');if(p.boss){for(const o of[-.12,.12]){shoot(p.m.position.clone(),to.clone().add(new THREE.Vector3(o,o/2,0)).normalize(),ebullets,ebMat,480,'e')}}}}
+  const sp=p.kind==='scout'?(d>150?380:200):p.kind==='gun'?70:(d>250?220:90);p.m.position.addScaledVector(f,sp*dt);p.cd-=dt;
+  if(d<500&&f.dot(to)>.9&&p.cd<=0){p.cd=p.boss?.7:p.kind==='scout'?1.6:p.kind==='gun'?.8:1.1;{shoot(p.m.position.clone(),to.clone(),ebullets,ebMat,520,'e');if(p.kind==='gun')ebullets[ebullets.length-1].userData.dmg=14;if(p.kind==='scout')ebullets[ebullets.length-1].userData.dmg=3}if(p.boss){for(const o of[-.12,.12]){shoot(p.m.position.clone(),to.clone().add(new THREE.Vector3(o,o/2,0)).normalize(),ebullets,ebMat,480,'e')}}}}
  // proximity
  nearP=null;planets.forEach(p=>{const d=ship.position.distanceTo(p.mesh.position);if(d<p.rad+260&&(!nearP||d<nearP.d))nearP={p,d}});
  wormCd-=dt;if(worm){worm.t1.rotation.z+=dt*1.5;worm.t2.rotation.z-=dt*2.5;if(wormCd<=0&&worm.g.position.distanceTo(ship.position)<60){wormCd=8;let ns=null;const rn=Math.random;for(let k=0;k<60&&!ns;k++){const x=S.x+Math.round((rn()-.5)*16),y=S.y+Math.round((rn()-.5)*16);const c=starAt(S.g,x,y);if(c&&(x!==S.x||y!==S.y))ns=c}if(ns){S.x=ns.x;S.y=ns.y;S.stats.worms=(S.stats.worms||0)+1;warp();buildSystem();wormCd=8;toast('🌀 ثقب دودي! وصلت نظام '+curStar.name);questTick();save();return}}}
@@ -311,7 +314,7 @@ function spaceUpdate(dt,t){
  nearSt=false;if(station){nearSt=ship.position.distanceTo(station.g.position)<160}
  ctxUpdate();
 }
-function killPirate(p){space.remove(p.m);pirates.splice(pirates.indexOf(p),1);S.stats.kills++;const r=(p.boss?600:60)+Math.floor(Math.random()*60);S.credits+=r;toast(p.boss?`☠️ دمّرت الزعيم +${AR(r)} 💰`:`💥 دمّرت قرصان +${AR(r)} 💰`);beep(140,.3,'sawtooth',.08);questTick();pirateTimer=Math.max(pirateTimer,6)}
+function killPirate(p){space.remove(p.m);pirates.splice(pirates.indexOf(p),1);S.stats.kills++;const r=(p.boss?600:p.kind==='gun'?220:p.kind==='scout'?40:60)+Math.floor(Math.random()*60);S.credits+=r;toast(p.boss?`☠️ دمّرت الزعيم +${AR(r)} 💰`:`💥 دمّرت قرصان +${AR(r)} 💰`);beep(140,.3,'sawtooth',.08);questTick();pirateTimer=Math.max(pirateTimer,6)}
 function lootD(){const d=nearD;if(!d)return;S.loot[d.key]=1;d.g.visible=false;S.stats.loot=(S.stats.loot||0)+1;const v=150+Math.floor(Math.random()*350);S.credits+=v;let t='🛸 لقيت '+AR(v)+' 💰';
  if(Math.random()<.6&&cargoCount()<S.cap){const g=GOODS[2+(Math.random()*3|0)];S.cargo[g.id]=(S.cargo[g.id]||0)+1;t+=' و١ '+g.n}
  if(Math.random()<.35){pirateTimer=0;for(let i=0;i<2;i++){const m=makeShip(0x7a1a1a,0xff4040);m.scale.setScalar(1.2);const a=Math.random()*6.28;m.position.copy(ship.position).add(new THREE.Vector3(Math.cos(a)*400,0,Math.sin(a)*400));space.add(m);pirates.push({m,hp:40,cd:1,boss:false})}t+=' · ⚠️ كمين قراصنة!'}
@@ -426,7 +429,7 @@ function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.
  hudT-=dt;if(hudT<=0){hudT=.2;if(mode!=='title')hud()}}
 function start(){startMusic();mode='space';$('title').style.display='none';beep(300,.1);
  buildSystem();if(!S.visited)S.visited={};applyShips();hud();
- const tut=localStorage.getItem('uni-tut');if(!tut){toast('عصا التحكم لتوجيه السفينة · نار · دفع · اقترب من كوكب للهبوط');localStorage.setItem('uni-tut','1')}
+ const tut=localStorage.getItem('uni-tut2');if(!tut){localStorage.setItem('uni-tut2','1');openMenu(`<h2>🚀 أهلاً بيك في الكون</h2><div class="row"><span>🕹️ العصا تحت على الشمال: وجّه السفينة</span></div><div class="row"><span>🔥 نار: دمّر القراصنة والكويكبات (الكويكبات بتديك حديد)</span></div><div class="row"><span>🚀 دفع: سرعة عالية (بتصرف وقود)</span></div><div class="row"><span>🪐 قرّب من كوكب واضغط هبوط، وابنِ مستعمرة بتكسبك فلوس</span></div><div class="row"><span>🛰️ قرّب من المحطة: تجارة وترقيات وسفن وعقود</span></div><div class="row"><span>🗺️ الخريطة: اقفز لنجوم جديدة، وأسعار البضاعة معروضة</span></div><div class="row"><span>🌀 الثقوب الدودية والحطام: مكافآت مفاجئة</span></div><div style="margin-top:10px"><button class="btn g" onclick="closeMenu()">فهمت، يلا نبدأ</button></div>`)}
  const mb=document.createElement('button');mb.className='btn d';mb.textContent='🗺️ الخريطة';mb.style.cssText='position:fixed;top:84px;left:6px;z-index:7;margin-top:34px;padding:6px 10px;font-size:13px';mb.onclick=()=>{if(mode==='space')openMap()};document.body.appendChild(mb);window.__mapBtn=mb;{let hq=localStorage.getItem('uni-q')!=='lo';const q=document.createElement('button');q.className='btn d';q.textContent=hq?'⚙️ جودة عالية':'⚙️ جودة خفيفة';q.style.cssText='position:fixed;top:160px;left:6px;z-index:7;margin-top:34px;padding:6px 10px;font-size:12px';q.onclick=()=>{hq=!hq;localStorage.setItem('uni-q',hq?'hi':'lo');renderer.setPixelRatio(hq?Math.min(devicePixelRatio,2):1);resize();q.textContent=hq?'⚙️ جودة عالية':'⚙️ جودة خفيفة'};document.body.appendChild(q);if(!hq){renderer.setPixelRatio(1);resize()}}const mu=document.createElement('button');mu.className='btn d';mu.textContent='🔊';mu.style.cssText='position:fixed;top:122px;left:6px;z-index:7;margin-top:34px;padding:6px 10px;font-size:13px';mu.onclick=()=>{musicOn=!musicOn;if(window.__mg)window.__mg.gain.value=musicOn?.05:0;mu.textContent=musicOn?'🔊':'🔇'};document.body.appendChild(mu);
  const mb2=document.createElement('button');mb2.className='btn d';mb2.textContent='🔄 تجميع';mb2.style.display='none';}
 $('startBtn').onclick=start;
