@@ -174,6 +174,9 @@ const QUESTS=[
  {t:'اقفز إلى ٣ أنظمة نجمية',f:()=>S.stats.jumps>=3,r:500},
  {t:'اجمع ١٠ خامات من الكويكبات',f:()=>S.stats.mined>=10,r:600},
  {t:'دمّر ١٥ قرصان',f:()=>S.stats.kills>=15,r:1500},
+ {t:'اجمع ٥ صناديق من الكواكب',f:()=>(S.stats.crates||0)>=5,r:500},
+ {t:'اهبط على ٣ كواكب',f:()=>S.stats.lands>=3,r:400},
+ {t:'ارفع مبنى للمستوى ٣',f:()=>Object.values(S.cols).some(c=>c.b.some(b=>(b.l||1)>=3)),r:700},
  {t:'أنهِ عقد توصيل',f:()=>(S.stats.deliveries||0)>=1,r:800},
  {t:'اقفز إلى مجرّة جديدة',f:()=>S.g>0,r:3000}
 ];
@@ -311,7 +314,7 @@ function ctxUpdate(){radar();const k=(nearP&&mode==='space'?'L'+nearP.p.key:'')+
  if(nearP&&mode==='space')h+=`<button class="btn" id="landBtn">🪐 هبوط على ${nearP.p.name}</button>`;
  $('ctx').innerHTML=h;const d=$('dockBtn'),l=$('landBtn');if(d)d.onclick=openStation;if(l)l.onclick=()=>land(nearP.p)}
 /* ---------- surface ---------- */
-let weather=null,curPlanet=null,terrain=null,surfGroup=new THREE.Group(),bMeshes=[],selBuild=null,orbit={a:.8,e:.85,r:200},sunS,waterM,hemi;
+let av=null,avP={x:0,z:0},crates=[],weather=null,curPlanet=null,terrain=null,surfGroup=new THREE.Group(),bMeshes=[],selBuild=null,orbit={a:.8,e:.6,r:55},sunS,waterM,hemi;
 surf.add(surfGroup);
 function vnoise(x,y,s){const xi=Math.floor(x),yi=Math.floor(y),xf=x-xi,yf=y-yi;const h=(a,b)=>mulberry(hash(a,b,s))();const u=xf*xf*(3-2*xf),v=yf*yf*(3-2*yf);return h(xi,yi)*(1-u)*(1-v)+h(xi+1,yi)*u*(1-v)+h(xi,yi+1)*(1-u)*v+h(xi+1,yi+1)*u*v}
 function height(p,x,z){let a=1,f=.018,s=0;for(let i=0;i<5;i++){s+=vnoise(x*f+100,z*f+100,p.seed+i)*a;a*=.5;f*=2}const amp=p.type.id==='gas'?3:p.type.id==='ice'?18:p.type.id==='lava'?16:p.type.id==='desert'?20:26;return(s-.5)*amp*2.2}
@@ -334,9 +337,14 @@ function land(p){
  (S.cols[p.key]?.b||[]).forEach(b=>placeMesh(b));
  {const id=p.type.id;const N=id==='gas'||id==='rock'?0:900;if(N){const g=new THREE.BufferGeometry();const a=new Float32Array(N*3);for(let i=0;i<N;i++){a[i*3]=(Math.random()-.5)*300;a[i*3+1]=Math.random()*120;a[i*3+2]=(Math.random()-.5)*300}g.setAttribute('position',new THREE.BufferAttribute(a,3));
   const col={ocean:0x9ec8ff,ice:0xffffff,desert:0xe0c080,lava:0xff7040}[id]||0xffffff;weather=new THREE.Points(g,new THREE.PointsMaterial({color:col,size:id==='ocean'?1.2:2.2,transparent:true,opacity:.75}));weather.userData.k=id==='ocean'?90:id==='ice'?14:id==='lava'?10:5;weather.userData.wx=id==='desert'?30:0;surfGroup.add(weather)}else weather=null}
- surf.fog=new THREE.Fog(p.type.sky,120,420);orbit={a:.8,e:.85,r:200};
- $('joy').style.display='none';$('acts').style.display='none';$('ctx').innerHTML='';ctxState='';
- buildBar();surfHud();toast('🪐 هبطت على '+p.name+' ('+p.type.n+')');save();
+ surf.fog=new THREE.Fog(p.type.sky,120,420);orbit={a:.8,e:.7,r:60};
+ $('acts').style.display='none';$('joy').style.bottom='84px';$('radar').style.display='none';$('ctx').innerHTML='';ctxState='';
+ av=new THREE.Group();{const bm=new THREE.Mesh(new THREE.CapsuleGeometry(.9,1.6,4,8),new THREE.MeshStandardMaterial({color:0xffcc33,roughness:.5}));bm.position.y=1.7;av.add(bm);const vz=new THREE.Mesh(new THREE.SphereGeometry(.6,8,8),new THREE.MeshStandardMaterial({color:0x223355,metalness:.8,roughness:.2}));vz.position.set(0,2.4,.55);av.add(vz)}
+ surfGroup.add(av);avP={x:0,z:0};
+ if(p.type.w){for(let k=0;k<60&&height(p,avP.x,avP.z)<-4;k++){avP.x=(Math.random()-.5)*150;avP.z=(Math.random()-.5)*150}}
+ crates=[];S.crates=S.crates||{};{const rr=mulberry(p.seed+999);for(let i=0;i<10;i++){const x=(rr()-.5)*200,z=(rr()-.5)*200,h=height(p,x,z);if(S.crates[p.key+i]||(p.type.w&&h<-4)||(p.type.id==='lava'&&h<-10))continue;
+  const cm=new THREE.Mesh(new THREE.BoxGeometry(2.4,2.4,2.4),new THREE.MeshStandardMaterial({color:0x33ffaa,emissive:0x11aa66,emissiveIntensity:.8}));cm.position.set(x,h+2,z);cm.userData.id=p.key+i;surfGroup.add(cm);crates.push(cm)}}
+ buildBar();surfHud();toast('🪐 هبطت على '+p.name+' · حرّك الشخصية بالعصا وجمّع الصناديق');save();
 }
 function mkBuilding(t){const d=BUILD.find(b=>b.id===t);const g=new THREE.Group();const mat=new THREE.MeshStandardMaterial({color:d.col,roughness:.6,metalness:.2});
  if(t==='gen'){const m=new THREE.Mesh(new THREE.CylinderGeometry(2,3,7,8),mat);m.position.y=3.5;g.add(m);const a=new THREE.Mesh(new THREE.BoxGeometry(8,.3,5),new THREE.MeshStandardMaterial({color:0x1a2a6a,metalness:.8}));a.position.y=7.5;a.rotation.x=.3;g.add(a)}
@@ -355,7 +363,7 @@ function pending(c){const el=Math.min((Date.now()-c.last)/60000,480);return rate
 function totalPending(){return Object.values(S.cols).reduce((a,c)=>a+pending(c),0)}
 function collect(){let tot=0;for(const c of Object.values(S.cols)){tot+=pending(c);c.last=Date.now()}tot=Math.floor(tot);S.credits+=tot;toast(tot?`💰 حصّلت ${AR(tot)}`:'مفيش أرباح لسه');save();surfHud()}
 function surfHud(){hud()}
-function takeoff(){mode='space';$('build').style.display='none';$('joy').style.display='';$('acts').style.display='';selBuild=null;buildSystem0()}
+function takeoff(){mode='space';$('joy').style.bottom='';$('radar').style.display='';$('build').style.display='none';$('joy').style.display='';$('acts').style.display='';selBuild=null;buildSystem0()}
 function buildSystem0(){const p=curPlanet;ship.position.copy(p.mesh.position).add(new THREE.Vector3(p.rad*2.5,0,0));ship.lookAt(p.mesh.position.clone().add(new THREE.Vector3(p.rad*4,0,0)));ship.rotateY(Math.PI);vel.set(0,0,0);cam.position.copy(ship.position).add(new THREE.Vector3(0,5,16));ctxState='';save()}
 // surface input
 const ray=new THREE.Raycaster();let drag=null;
@@ -363,12 +371,12 @@ const cv=$('c');
 cv.addEventListener('pointerdown',e=>{if(mode!=='surface')return;drag={x:e.clientX,y:e.clientY,moved:0,id:e.pointerId};cv.setPointerCapture(e.pointerId)});
 cv.addEventListener('pointermove',e=>{if(!drag||mode!=='surface')return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.moved+=Math.abs(dx)+Math.abs(dy);drag.x=e.clientX;drag.y=e.clientY;orbit.a-=dx*.008;orbit.e=Math.max(.15,Math.min(1.4,orbit.e+dy*.006))});
 cv.addEventListener('pointerup',e=>{if(!drag||mode!=='surface')return;const was=drag;drag=null;if(was.moved<8)surfTap(e)});
-cv.addEventListener('wheel',e=>{if(mode==='surface')orbit.r=Math.max(40,Math.min(260,orbit.r+e.deltaY*.1))},{passive:true});
-let pinch={};cv.addEventListener('touchmove',e=>{if(mode!=='surface'||e.touches.length<2)return;const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);if(pinch.d)orbit.r=Math.max(40,Math.min(260,orbit.r*(pinch.d/d)));pinch.d=d},{passive:true});cv.addEventListener('touchend',()=>pinch={});
+cv.addEventListener('wheel',e=>{if(mode==='surface')orbit.r=Math.max(25,Math.min(260,orbit.r+e.deltaY*.1))},{passive:true});
+let pinch={};cv.addEventListener('touchmove',e=>{if(mode!=='surface'||e.touches.length<2)return;const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);if(pinch.d)orbit.r=Math.max(25,Math.min(260,orbit.r*(pinch.d/d)));pinch.d=d},{passive:true});cv.addEventListener('touchend',()=>pinch={});
 function surfTap(e){const r=cv.getBoundingClientRect();ray.setFromCamera(new THREE.Vector2((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1),cam);
  if(!selBuild){const hh=ray.intersectObjects(bMeshes,true)[0];if(!hh)return;let o=hh.object;while(o.parent&&!bMeshes.includes(o))o=o.parent;const i=bMeshes.indexOf(o);const c=S.cols[curPlanet.key];const b=c.b[i];if(!b)return;b.l=b.l||1;const d=BUILD.find(x=>x.id===b.t);const cost=Math.round(d.cost*b.l*1.5);
   if(b.l>=5){toast(d.n+' وصل أعلى مستوى');return}if(S.credits<cost){toast('الترقية بـ '+AR(cost)+' 💰 ورصيدك مش كفاية');return}
-  S.credits-=cost;b.l++;o.scale.setScalar(1+.18*(b.l-1));beep(660,.15,'triangle',.06);toast(`⬆️ ${d.n} مستوى ${AR(b.l)}`);save();return}
+  S.credits-=cost;b.l++;questTick();o.scale.setScalar(1+.18*(b.l-1));beep(660,.15,'triangle',.06);toast(`⬆️ ${d.n} مستوى ${AR(b.l)}`);save();return}
  const hit=ray.intersectObject(terrain)[0];if(!hit)return;const d=BUILD.find(b=>b.id===selBuild);const x=hit.point.x,z=hit.point.z;
  if(curPlanet.type.w&&height(curPlanet,x,z)<-5){toast('ما ينفعش تبني على الماية');return}
  if(curPlanet.type.id==='lava'&&height(curPlanet,x,z)<-12){toast('ما ينفعش تبني على الحمم');return}
@@ -379,8 +387,15 @@ function surfTap(e){const r=cv.getBoundingClientRect();ray.setFromCamera(new THR
  if(!c.b.length)c.last=Date.now();
  S.credits-=d.cost;const b={t:selBuild,x,z};c.b.push(b);placeMesh(b);beep(500,.1,'triangle',.06);toast('🏗️ تم بناء '+d.n);questTick();save();surfHud()}
 function surfUpdate(dt,t){
- const target=new THREE.Vector3(0,0,0);orbit.a+=dt*.03;
- cam.position.set(Math.cos(orbit.a)*Math.cos(orbit.e)*orbit.r,Math.sin(orbit.e)*orbit.r,Math.sin(orbit.a)*Math.cos(orbit.e)*orbit.r);cam.up.set(0,1,0);cam.lookAt(target);
+ const ix=joy.x+((keys.ArrowRight||keys.KeyD?1:0)-(keys.ArrowLeft||keys.KeyA?1:0)),iy=joy.y+((keys.ArrowDown||keys.KeyS?1:0)-(keys.ArrowUp||keys.KeyW?1:0));
+ if(Math.hypot(ix,iy)>.1){const fx=-Math.cos(orbit.a),fz=-Math.sin(orbit.a);const rx=-fz,rz=fx;const mx=fx*(-iy)+rx*ix,mz=fz*(-iy)+rz*ix;const l=Math.hypot(mx,mz)||1;const sp=26*Math.min(1,Math.hypot(ix,iy));
+  let nx=avP.x+mx/l*sp*dt,nz=avP.z+mz/l*sp*dt;nx=Math.max(-115,Math.min(115,nx));nz=Math.max(-115,Math.min(115,nz));const nh=height(curPlanet,nx,nz);const bad=(curPlanet.type.w&&nh<-4.5)||(curPlanet.type.id==='lava'&&nh<-11);
+  if(!bad){avP.x=nx;avP.z=nz;av.rotation.y=Math.atan2(mx,mz)}}
+ av.position.set(avP.x,height(curPlanet,avP.x,avP.z),avP.z);
+ for(let i=crates.length-1;i>=0;i--){const c=crates[i];c.rotation.y+=dt*2;c.position.y+=Math.sin(t*3+i)*dt*.8;if(Math.hypot(c.position.x-avP.x,c.position.z-avP.z)<3.5){S.crates[c.userData.id]=1;S.stats.crates=(S.stats.crates||0)+1;surfGroup.remove(c);crates.splice(i,1);
+  if(Math.random()<.6){const v=40+Math.floor(Math.random()*120);S.credits+=v;toast('📦 صندوق: +'+AR(v)+' 💰')}else{const g=GOODS[Math.random()*5|0];if(cargoCount()<S.cap){S.cargo[g.id]=(S.cargo[g.id]||0)+1;toast('📦 صندوق: +١ '+g.n)}else{S.credits+=60;toast('📦 صندوق: +٦٠ 💰 (الشحنة ممتلئة)')}}beep(880,.12,'triangle',.06);questTick();save()}}
+ const target=new THREE.Vector3(avP.x,av.position.y+2,avP.z);orbit.a+=dt*0;
+ cam.position.set(target.x+Math.cos(orbit.a)*Math.cos(orbit.e)*orbit.r,target.y+Math.sin(orbit.e)*orbit.r,target.z+Math.sin(orbit.a)*Math.cos(orbit.e)*orbit.r);cam.up.set(0,1,0);cam.lookAt(target);
  const day=t*.05;sunS.position.set(Math.cos(day)*200,Math.sin(day)*200+30,80);const lit=Math.max(.12,Math.sin(day)*.9+.2);sunS.intensity=lit*1.8;hemi.intensity=.15+lit*.7;
  const sky=new THREE.Color(curPlanet.type.sky).multiplyScalar(.08+lit*.9);surf.background=sky;surf.fog.color.copy(sky);
  if(weather){const a=weather.geometry.attributes.position;const k=weather.userData.k;for(let i=0;i<a.count;i++){let y=a.getY(i)-k*dt;let x=a.getX(i)+weather.userData.wx*dt;if(y<-10)y=120;if(x>150)x=-150;a.setY(i,y);a.setX(i,x)}a.needsUpdate=true}
@@ -397,12 +412,12 @@ function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.
 function start(){startMusic();mode='space';$('title').style.display='none';beep(300,.1);
  buildSystem();if(!S.visited)S.visited={};applyShips();hud();
  const tut=localStorage.getItem('uni-tut');if(!tut){toast('عصا التحكم لتوجيه السفينة · نار · دفع · اقترب من كوكب للهبوط');localStorage.setItem('uni-tut','1')}
- const mb=document.createElement('button');mb.className='btn d';mb.textContent='🗺️ الخريطة';mb.style.cssText='position:fixed;top:84px;left:6px;z-index:7;margin-top:34px;padding:6px 10px;font-size:13px';mb.onclick=()=>{if(mode==='space')openMap()};document.body.appendChild(mb);window.__mapBtn=mb;const mu=document.createElement('button');mu.className='btn d';mu.textContent='🔊';mu.style.cssText='position:fixed;top:122px;left:6px;z-index:7;margin-top:34px;padding:6px 10px;font-size:13px';mu.onclick=()=>{musicOn=!musicOn;if(window.__mg)window.__mg.gain.value=musicOn?.05:0;mu.textContent=musicOn?'🔊':'🔇'};document.body.appendChild(mu);
+ const mb=document.createElement('button');mb.className='btn d';mb.textContent='🗺️ الخريطة';mb.style.cssText='position:fixed;top:84px;left:6px;z-index:7;margin-top:34px;padding:6px 10px;font-size:13px';mb.onclick=()=>{if(mode==='space')openMap()};document.body.appendChild(mb);window.__mapBtn=mb;{let hq=localStorage.getItem('uni-q')!=='lo';const q=document.createElement('button');q.className='btn d';q.textContent=hq?'⚙️ جودة عالية':'⚙️ جودة خفيفة';q.style.cssText='position:fixed;top:160px;left:6px;z-index:7;margin-top:34px;padding:6px 10px;font-size:12px';q.onclick=()=>{hq=!hq;localStorage.setItem('uni-q',hq?'hi':'lo');renderer.setPixelRatio(hq?Math.min(devicePixelRatio,2):1);resize();q.textContent=hq?'⚙️ جودة عالية':'⚙️ جودة خفيفة'};document.body.appendChild(q);if(!hq){renderer.setPixelRatio(1);resize()}}const mu=document.createElement('button');mu.className='btn d';mu.textContent='🔊';mu.style.cssText='position:fixed;top:122px;left:6px;z-index:7;margin-top:34px;padding:6px 10px;font-size:13px';mu.onclick=()=>{musicOn=!musicOn;if(window.__mg)window.__mg.gain.value=musicOn?.05:0;mu.textContent=musicOn?'🔊':'🔇'};document.body.appendChild(mu);
  const mb2=document.createElement('button');mb2.className='btn d';mb2.textContent='🔄 تجميع';mb2.style.display='none';}
 $('startBtn').onclick=start;
 $('resetBtn').onclick=()=>{if(confirm('تبدأ من الأول؟ هتفقد التقدّم')){S=fresh();save();start()}};
 curStar=starAt(S.g,S.x,S.y);buildSystem();
-window.__u={get cam(){return cam},get bM(){return bMeshes},orbitSet:(a,e,r)=>{orbit.a=a;orbit.e=e;orbit.r=r},S,get mode(){return mode},land,openMap,openStation,jump,starAt,buildSystem,get planets(){return planets},get ship(){return ship},get pirates(){return pirates},get station(){return station},setSel:v=>selBuild=v,start,takeoff,QUESTS};
+window.__u={get cam(){return cam},get bM(){return bMeshes},orbitSet:(a,e,r)=>{orbit.a=a;orbit.e=e;orbit.r=r},S,get mode(){return mode},land,openMap,openStation,jump,starAt,buildSystem,get av(){return avP},get crates(){return crates},get planets(){return planets},get ship(){return ship},get pirates(){return pirates},get station(){return station},setSel:v=>selBuild=v,start,takeoff,QUESTS};
 loop();
 </script>
 </body>
