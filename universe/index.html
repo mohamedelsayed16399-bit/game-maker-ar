@@ -130,7 +130,7 @@ function makeShip(col,acc){const g=new THREE.Group();const m=new THREE.MeshStand
 const ship=makeShip(0xd8e2ff,0x3a6cff);space.add(ship);
 const vel=new THREE.Vector3();
 /* ---------- system state ---------- */
-let derelicts=[],nearD=null,curStar,planets=[],pMeshes=[],station=null,asteroids=[],pirates=[],bullets=[],ebullets=[],pirateTimer=0;
+let worm=null,wormCd=0,derelicts=[],nearD=null,curStar,planets=[],pMeshes=[],station=null,asteroids=[],pirates=[],bullets=[],ebullets=[],pirateTimer=0;
 const lasers=[];
 const bulletGeo=new THREE.CylinderGeometry(.25,.25,6,6);bulletGeo.rotateX(Math.PI/2);
 const bulMat=new THREE.MeshBasicMaterial({color:0x66ffcc}),ebMat=new THREE.MeshBasicMaterial({color:0xff5050});
@@ -161,6 +161,7 @@ function buildSystem(){
  const rb=mulberry(hash(S.g,S.x,S.y,77));const bp=planets[rb()*planets.length|0];
  for(let i=0;i<40;i++){const a=rb()*6.28,rr=bp.orbit+bp.rad*3+rb()*500;const ast=new THREE.Mesh(new THREE.IcosahedronGeometry(5+rb()*14,0),new THREE.MeshStandardMaterial({color:0x7a7066,roughness:1,flatShading:true}));
   ast.position.set(Math.cos(a)*rr*0+bp.mesh.position.x+Math.cos(a)*(bp.rad*3+rb()*500),(rb()-.5)*80,bp.mesh.position.z+Math.sin(a)*(bp.rad*3+rb()*500));ast.userData.r=ast.geometry.parameters.radius;ast.userData.hp=2;sysG.add(ast);asteroids.push(ast)}
+ worm=null;{const rw=mulberry(hash(S.g,S.x,S.y,99));if(rw()<.45){const g=new THREE.Group();const t1=new THREE.Mesh(new THREE.TorusGeometry(40,5,12,40),new THREE.MeshBasicMaterial({color:0xb04aff}));g.add(t1);const t2=new THREE.Mesh(new THREE.TorusGeometry(26,3,10,32),new THREE.MeshBasicMaterial({color:0x66e0ff}));g.add(t2);const d=new THREE.Mesh(new THREE.CircleGeometry(24,24),new THREE.MeshBasicMaterial({color:0x10002a,side:THREE.DoubleSide}));g.add(d);const a=rw()*6.28,rr=1500+rw()*3000;g.position.set(Math.cos(a)*rr,(rw()-.5)*100,Math.sin(a)*rr);g.rotation.set(rw()*3,rw()*3,0);sysG.add(g);worm={g,t1,t2}}}
  derelicts=[];S.loot=S.loot||{};{const rd=mulberry(hash(S.g,S.x,S.y,88));const n=1+(rd()*2|0);for(let i=0;i<n;i++){const key=`${S.g}:${S.x}:${S.y}:d${i}`;const a=rd()*6.28,rr=1000+rd()*3500;
   const g=new THREE.Group();const mt=new THREE.MeshStandardMaterial({color:0x6a6e78,metalness:.7,roughness:.5,flatShading:true});const b1=new THREE.Mesh(new THREE.BoxGeometry(14,5,30),mt);g.add(b1);const b2=new THREE.Mesh(new THREE.BoxGeometry(34,1.2,10),mt);b2.position.set(0,0,6);b2.rotation.z=.25;g.add(b2);
   const lt=new THREE.Mesh(new THREE.SphereGeometry(1.5,8,8),new THREE.MeshBasicMaterial({color:0xffa030}));lt.position.set(0,4,-10);g.add(lt);g.position.set(Math.cos(a)*rr,(rd()-.5)*120,Math.sin(a)*rr);g.rotation.set(rd(),rd(),rd());g.visible=!S.loot[key];sysG.add(g);derelicts.push({g,key})}}
@@ -177,6 +178,7 @@ const QUESTS=[
  {t:'اقفز إلى ٣ أنظمة نجمية',f:()=>S.stats.jumps>=3,r:500},
  {t:'اجمع ١٠ خامات من الكويكبات',f:()=>S.stats.mined>=10,r:600},
  {t:'دمّر ١٥ قرصان',f:()=>S.stats.kills>=15,r:1500},
+ {t:'ادخل ثقب دودي',f:()=>(S.stats.worms||0)>=1,r:700},
  {t:'انهب ٣ حطام سفن',f:()=>(S.stats.loot||0)>=3,r:600},
  {t:'اجمع ٥ صناديق من الكواكب',f:()=>(S.stats.crates||0)>=5,r:500},
  {t:'اهبط على ٣ كواكب',f:()=>S.stats.lands>=3,r:400},
@@ -304,6 +306,7 @@ function spaceUpdate(dt,t){
   if(d<500&&f.dot(to)>.9&&p.cd<=0){p.cd=p.boss?.7:1.1;shoot(p.m.position.clone(),to.clone(),ebullets,ebMat,520,'e');if(p.boss){for(const o of[-.12,.12]){shoot(p.m.position.clone(),to.clone().add(new THREE.Vector3(o,o/2,0)).normalize(),ebullets,ebMat,480,'e')}}}}
  // proximity
  nearP=null;planets.forEach(p=>{const d=ship.position.distanceTo(p.mesh.position);if(d<p.rad+260&&(!nearP||d<nearP.d))nearP={p,d}});
+ wormCd-=dt;if(worm){worm.t1.rotation.z+=dt*1.5;worm.t2.rotation.z-=dt*2.5;if(wormCd<=0&&worm.g.position.distanceTo(ship.position)<60){wormCd=8;let ns=null;const rn=Math.random;for(let k=0;k<60&&!ns;k++){const x=S.x+Math.round((rn()-.5)*16),y=S.y+Math.round((rn()-.5)*16);const c=starAt(S.g,x,y);if(c&&(x!==S.x||y!==S.y))ns=c}if(ns){S.x=ns.x;S.y=ns.y;S.stats.worms=(S.stats.worms||0)+1;warp();buildSystem();wormCd=8;toast('🌀 ثقب دودي! وصلت نظام '+curStar.name);questTick();save();return}}}
  nearD=null;for(const d of derelicts){if(!S.loot[d.key]&&d.g.position.distanceTo(ship.position)<110)nearD=d;d.g.rotation.y+=dt*.1}
  nearSt=false;if(station){nearSt=ship.position.distanceTo(station.g.position)<160}
  ctxUpdate();
@@ -317,7 +320,7 @@ let ctxState='';
 const rc=$('radar').getContext('2d');
 function radar(){rc.clearRect(0,0,104,104);rc.strokeStyle='rgba(120,170,255,.3)';rc.beginPath();rc.arc(52,52,26,0,6.28);rc.stroke();const inv=ship.quaternion.clone().invert();const R=2500;
  const dot=(pos,col,sz)=>{const v=pos.clone().sub(ship.position).applyQuaternion(inv);let x=v.x,y=v.z;const l=Math.hypot(x,y);const k=Math.min(1,l/R)*48/(l||1);rc.fillStyle=col;rc.beginPath();rc.arc(52+x*k,52+y*k,sz,0,6.28);rc.fill()};
- dot(new THREE.Vector3(),'#ffd24c',4);planets.forEach(p=>dot(p.mesh.position,'#6aa8ff',3));if(station)dot(station.g.position,'#4cff8a',4);pirates.forEach(p=>dot(p.m.position,'#ff4040',3));
+ dot(new THREE.Vector3(),'#ffd24c',4);planets.forEach(p=>dot(p.mesh.position,'#6aa8ff',3));if(station)dot(station.g.position,'#4cff8a',4);pirates.forEach(p=>dot(p.m.position,'#ff4040',3));if(worm)dot(worm.g.position,'#c060ff',4);
  rc.fillStyle='#fff';rc.beginPath();rc.moveTo(52,46);rc.lineTo(48,58);rc.lineTo(56,58);rc.fill()}
 function ctxUpdate(){radar();const k=(nearP&&mode==='space'?'L'+nearP.p.key:'')+(nearSt?'S':'')+(nearD?'D':'');if(k===ctxState)return;ctxState=k;let h='';
  if(nearSt)h+=`<button class="btn g" id="dockBtn">🛰️ إرساء وتجارة</button>`;
@@ -372,7 +375,8 @@ function buildBar(){const el=$('build');el.style.display='flex';let h='';BUILD.f
 function rate(c){return c.b.reduce((a,b)=>a+BUILD.find(x=>x.id===b.t).rate*(b.l||1),0)}
 function pending(c){const el=Math.min((Date.now()-c.last)/60000,480);return rate(c)*el}
 function totalPending(){return Object.values(S.cols).reduce((a,c)=>a+pending(c),0)}
-function collect(){let tot=0;for(const c of Object.values(S.cols)){tot+=pending(c);c.last=Date.now()}tot=Math.floor(tot);S.credits+=tot;toast(tot?`💰 حصّلت ${AR(tot)}`:'مفيش أرباح لسه');save();surfHud()}
+function collect(){let tot=0,gd={};for(const c of Object.values(S.cols)){const el=Math.min((Date.now()-c.last)/60000,480);for(const b of c.b){const m={mine:['iron',.25],farm:['food',.25],fac:['tech',.08]}[b.t];if(m)gd[m[0]]=(gd[m[0]]||0)+el*m[1]*(b.l||1)}tot+=pending(c);c.last=Date.now()}
+ let gt='';for(const k in gd){const n=Math.min(Math.floor(gd[k]),S.cap-cargoCount());if(n>0){S.cargo[k]=(S.cargo[k]||0)+n;gt+=' +'+AR(n)+' '+GOODS.find(g=>g.id===k).n}}tot=Math.floor(tot);S.credits+=tot;toast(tot?`💰 حصّلت ${AR(tot)}${gt}`:'مفيش أرباح لسه');save();surfHud()}
 function surfHud(){hud()}
 function takeoff(){mode='space';$('joy').style.bottom='';$('radar').style.display='';$('build').style.display='none';$('joy').style.display='';$('acts').style.display='';selBuild=null;buildSystem0()}
 function buildSystem0(){const p=curPlanet;ship.position.copy(p.mesh.position).add(new THREE.Vector3(p.rad*2.5,0,0));ship.lookAt(p.mesh.position.clone().add(new THREE.Vector3(p.rad*4,0,0)));ship.rotateY(Math.PI);vel.set(0,0,0);cam.position.copy(ship.position).add(new THREE.Vector3(0,5,16));ctxState='';save()}
@@ -428,7 +432,7 @@ function start(){startMusic();mode='space';$('title').style.display='none';beep(
 $('startBtn').onclick=start;
 $('resetBtn').onclick=()=>{if(confirm('تبدأ من الأول؟ هتفقد التقدّم')){S=fresh();save();start()}};
 curStar=starAt(S.g,S.x,S.y);buildSystem();
-window.__u={get cam(){return cam},get bM(){return bMeshes},orbitSet:(a,e,r)=>{orbit.a=a;orbit.e=e;orbit.r=r},S,get mode(){return mode},land,openMap,openStation,jump,starAt,buildSystem,get av(){return avP},get crates(){return crates},get derelicts(){return derelicts},lootD:()=>lootD(),get nearD(){return nearD},get planets(){return planets},get ship(){return ship},get pirates(){return pirates},get station(){return station},setSel:v=>selBuild=v,start,takeoff,QUESTS};
+window.__u={get cam(){return cam},get bM(){return bMeshes},orbitSet:(a,e,r)=>{orbit.a=a;orbit.e=e;orbit.r=r},S,get mode(){return mode},land,openMap,openStation,jump,starAt,buildSystem,get av(){return avP},get crates(){return crates},get derelicts(){return derelicts},lootD:()=>lootD(),get nearD(){return nearD},get worm(){return worm},get planets(){return planets},get ship(){return ship},get pirates(){return pirates},get station(){return station},setSel:v=>selBuild=v,start,takeoff,QUESTS};
 loop();
 </script>
 </body>
