@@ -352,7 +352,7 @@ function spaceUpdate(dt,t){lastDt=dt;
  // pirates
  pirateTimer-=dt;const maxP=curStar.danger>.66?5:curStar.danger>.33?3:1;
  if(pirateTimer<=0&&pirates.length<maxP&&mode==='space'){pirateTimer=14;const m=makeShip(0x7a1a1a,0xff4040);m.scale.setScalar(1.2);const a=Math.random()*6.28;m.position.copy(ship.position).add(new THREE.Vector3(Math.cos(a)*700,(Math.random()-.5)*200,Math.sin(a)*700));space.add(m);const boss=(S.stats.kills%5===4)&&!pirates.some(q=>q.boss);if(boss){m.scale.setScalar(3.2);toast('☠️ زعيم القراصنة ظهر!')}let kind=null;if(!boss){const rk=Math.random();if(rk<.3){kind='scout';m.scale.setScalar(.8)}else if(rk<.5&&curStar.danger>.3){kind='gun';m.scale.setScalar(2)}}
- pirates.push({m,boss,kind,hp:boss?260:kind==='scout'?14:kind==='gun'?90:30+curStar.danger*30,cd:1+Math.random()});if(kind==='gun'&&pirates.length===1)toast('⚠️ سفينة حربية ثقيلة!');if(pirates.length===1)toast('⚠️ قراصنة قريبين!')}
+ pirates.push({m,boss,kind,hp:boss?180:kind==='scout'?14:kind==='gun'?90:30+curStar.danger*30,cd:1+Math.random()});if(kind==='gun'&&pirates.length===1)toast('⚠️ سفينة حربية ثقيلة!');if(pirates.length===1)toast('⚠️ قراصنة قريبين!')}
  for(const p of pirates){const to=ship.position.clone().sub(p.m.position);const d=to.length();to.normalize();
   const f=new THREE.Vector3(0,0,-1).applyQuaternion(p.m.quaternion);tmpQ.setFromUnitVectors(f,to);p.m.quaternion.premultiply(new THREE.Quaternion().slerp(tmpQ,Math.min(1,dt*1.4)));
   const sp=p.kind==='scout'?(d>150?380:200):p.kind==='gun'?70:(d>250?220:90);p.m.position.addScaledVector(f,sp*dt);p.cd-=dt;
