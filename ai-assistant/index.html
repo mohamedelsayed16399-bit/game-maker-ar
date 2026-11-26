@@ -56,6 +56,15 @@ table{width:100%;border-collapse:collapse}td{padding:6px;border-bottom:1px solid
  </div><div class="out" id="tout">النتيجة هتظهر هنا.</div>
  <p class="note">التلخيص استخلاصي (بيختار أهم الجمل بوزن TF-IDF)، مش توليدي. مفيش نموذج لغوي كبير جوه الصفحة، وده مقصود عشان يشتغل أوفلاين ومجانًا.</p>
 </div></section>
+<section class="pane" id="p-docs"><div class="page">
+ <p class="note">ضيف ملفات أو نصوص (محفوظة عندك بس)، واسأل عنها. بيدور بخوارزمية BM25 ويرجعلك أقرب فقرات من مستنداتك مع ذكر المصدر.</p>
+ <input id="dname" class="s f" placeholder="اسم المستند (اختياري)">
+ <textarea class="big" id="dtext" style="min-height:90px;margin-top:6px" placeholder="الصق نص المستند هنا"></textarea>
+ <div style="margin-top:6px"><input type="file" id="dfile" class="s" multiple accept=".txt,.md,.csv,.json,.log,text/*"> <button class="p" id="dadd">حفظ المستند</button></div>
+ <div class="row" style="padding:10px 0;background:none"><input id="dq" placeholder="اسأل عن حاجة في مستنداتك..."><button class="p" id="dask">بحث</button></div>
+ <div class="out" id="dout">لسه مفيش نتيجة.</div>
+ <h3>المستندات المحفوظة</h3><div id="dlist"></div>
+</div></section>
 <section class="pane" id="p-write"><div class="page">
  <select id="wtype" class="s f"><option value="email">إيميل رسمي</option><option value="leave">طلب إجازة</option><option value="complaint">شكوى</option><option value="thanks">رسالة شكر</option><option value="cv">نبذة شخصية</option><option value="apology">اعتذار</option></select>
  <input id="wto" class="s f" placeholder="موجّه إلى (مثال: أستاذ أحمد)">
@@ -87,13 +96,13 @@ const LS={get(k,d){try{const v=localStorage.getItem('ai_'+k);return v===null?d:J
 const AD='٠١٢٣٤٥٦٧٨٩';
 const norm=s=>String(s).replace(/[٠-٩]/g,d=>AD.indexOf(d)).replace(/٫/g,'.').replace(/،/g,',').replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه').replace(/[\u064B-\u0652\u0640]/g,'');
 const toAr=n=>String(n).replace(/\d/g,d=>AD[d]);
-const TABS=[['chat','💬 محادثة'],['text','📄 تحليل نص'],['write','✍️ كتابة'],['tasks','✅ مهامي'],['me','🧠 أنا']];
+const TABS=[['chat','💬 محادثة'],['text','📄 تحليل نص'],['docs','📚 مستنداتي'],['write','✍️ كتابة'],['tasks','✅ مهامي'],['me','🧠 أنا']];
 TABS.forEach(([id,l],i)=>{const b=document.createElement('button');b.textContent=l;b.dataset.id=id;if(!i)b.className='on';b.onclick=()=>show(id);$('#tabs').appendChild(b)});
 function show(id){document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('on',p.id==='p-'+id));document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.id===id));if(id==='me')renderMe();if(id==='tasks')renderTasks()}
 let mem=LS.get('mem',{}),usage=LS.get('usage',{}),tasks=LS.get('tasks',[]),hist=LS.get('hist',[]);
 function bump(k){usage[k]=(usage[k]||0)+1;usage._h=usage._h||{};const h=new Date().getHours();usage._h[h]=(usage._h[h]||0)+1;LS.set('usage',usage)}
 function add(role,t,save=true){const d=document.createElement('div');d.className='m '+(role==='u'?'u':'b');d.textContent=t;$('#msgs').appendChild(d);$('#msgs').scrollTop=1e9;if(save){hist.push([role,t]);hist=hist.slice(-60);LS.set('hist',hist)}}
-const CHIPS=['اهلا','كام الساعة','احسب 120*3.5+7','حول 5 كيلو الى باوند','بعد 45 يوم هيبقى امتى','فكرني اشتري لبن بكرا الساعة 5','اسمي محمد','انت عارف اسمي؟','نكتة','ايه اللي تعرفه عني؟'];
+const CHIPS=['اهلا','كام الساعة','احسب 120*3.5+7','حول 5 كيلو الى باوند','بعد 45 يوم هيبقى امتى','فكرني اشتري لبن بكرا الساعة 5','اسمي محمد','انت عارف اسمي؟','نكتة','ايه اللي تعرفه عني؟','ابحث في مستنداتي عن الاجازة'];
 CHIPS.forEach(c=>{const b=document.createElement('button');b.className='s';b.textContent=c;b.onclick=()=>{$('#inp').value=c;go()};$('#chips').appendChild(b)});
 const days=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
 const months=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
@@ -131,6 +140,7 @@ function brain(raw){const q=raw.trim();const n=norm(q).toLowerCase();let m;
  if(/مهامي|المهام|ايه اللي عليا/.test(n)){const o=tasks.filter(t=>!t.done);return o.length?'مهامك المفتوحة:\n'+o.map((t,i)=>`${toAr(i+1)}. ${t.t}${t.w?' ('+fmtD(new Date(t.w))+' '+fmtT(new Date(t.w))+')':''}`).join('\n'):'مفيش مهام مفتوحة. ✨'}
  if(/شكرا|تسلم|ميرسي/.test(n))return 'العفو! أنا في الخدمة.';
  if(/انت مين|انت ايه|بتعمل ايه|تعمل ايه/.test(n))return 'أنا مساعد شغال بالكامل جوه متصفحك، من غير سيرفر. بحسب وأحوّل وأرتب مهامك وأفتكر حاجات عنك وأحلل النصوص. مش نموذج لغوي كبير، فمعرفتي العامة محدودة.';
+ if((m=n.match(/(?:ابحث|دور|فتش)(?: في)?(?: ملفاتي| مستنداتي)?(?: عن)?\s+(.+)/))&&/ملفاتي|مستنداتي|ابحث|دور/.test(n))return docAnswer(m[1]);
  if(/لخص|تلخيص/.test(n)){show('text');return 'روح لتبويب "تحليل نص" والصق النص.'}
  return 'مش متأكد إني فاهم. أنا مساعد مبني على قواعد (مش نموذج لغوي)، فمعرفتي العامة محدودة. جرب: حسابات، تحويل وحدات، تواريخ، تذكيرات، "اسمي ..."، أو تبويب تحليل النص.'}
 function go(){const v=$('#inp').value;if(!v.trim())return;add('u',v);$('#inp').value='';bump('msg');setTimeout(()=>{let r;try{r=brain(v)}catch(e){r='حصل خطأ: '+e.message}add('b',r)},200)}
@@ -142,7 +152,7 @@ function renderTasks(){const L=$('#tlist');L.innerHTML='';tasks.forEach(t=>{cons
 $('#tadd').onclick=()=>{const v=$('#tin').value.trim();if(!v)return;addTask(stripWhen(v)||v,parseWhen(v));$('#tin').value='';bump('task')};
 $('#notes').value=LS.get('notes','');$('#notes').oninput=e=>LS.set('notes',e.target.value);
 setInterval(()=>{const now=Date.now();tasks.forEach(t=>{if(t.w&&!t.done&&!t.fired&&t.w<=now){t.fired=true;LS.set('tasks',tasks);add('b','⏰ تذكير: '+t.t);try{if(window.Notification&&Notification.permission==='granted')new Notification('تذكير',{body:t.t})}catch(e){}}})},15000);
-const STOP=new Set(norm('في من على علي الى الي عن مع هذا هذه هذي ذلك التي الذي ان انه انها كان كانت هو هي هم ما لا لم لن قد كل او ثم لكن بعد قبل عند هنا هناك اللي ده دي دول ايه انا انت احنا كمان بس يعني برضو لما لو اذا حتي ايضا فقط').split(' '));
+const STOP=new Set(norm('في من على علي الى الي عن مع هذا هذه هذي ذلك التي الذي ان انه انها كان كانت هو هي هم ما لا لم لن قد كل او ثم لكن بعد قبل عند هنا هناك اللي ده دي دول ايه انا انت احنا كمان بس يعني برضو لما لو اذا حتي ايضا فقط كام').split(' '));
 const words=t=>norm(t).toLowerCase().match(/[\u0600-\u06FFa-z0-9]+/g)||[];
 const sents=t=>t.replace(/\r/g,'').split(/(?<=[.!?؟\n])\s*/).map(s=>s.trim()).filter(s=>s.length>8);
 function keywords(t,k=10){const f={};words(t).forEach(w=>{if(w.length>2&&!STOP.has(w))f[w]=(f[w]||0)+1});return Object.entries(f).sort((a,b)=>b[1]-a[1]).slice(0,k)}
@@ -166,12 +176,28 @@ function write(){const t=$('#wtype').value,to=$('#wto').value||'السيد ال�
  apology:`عزيزي ${to}،\n\nأعتذر لك بصدق عن ${sub}. أتحمل مسؤولية ما حدث، وأعدك بتجنب تكراره.\n\nمع خالص الاعتذار،\n${me}`};
  $('#wout').textContent=T[t]}
 $('#wgo').onclick=write;$('#wcopy').onclick=()=>{try{navigator.clipboard.writeText($('#wout').textContent)}catch(e){}};
-function renderMe(){const hrs=usage._h||{};const names={msg:'رسائل',calc:'حسابات',task:'مهام',text:'تحليل نصوص',write:'كتابة',mem:'حقائق محفوظة',joke:'نكت'};let h='';Object.keys(names).forEach(k=>{if(usage[k])h+=`<div>${names[k]}: ${toAr(usage[k])}</div><div class="bar"><i style="width:${Math.min(100,usage[k]*10)}%"></i></div>`});const tot=Object.values(hrs).reduce((a,b)=>a+b,0);if(tot>2){const best=Object.entries(hrs).sort((a,b)=>b[1]-a[1])[0][0];h+=`<p>أكتر وقت بتستخدمني فيه: حوالي الساعة ${toAr(best)}.</p>`}
+function renderMe(){const hrs=usage._h||{};const names={msg:'رسائل',calc:'حسابات',task:'مهام',text:'تحليل نصوص',write:'كتابة',mem:'حقائق محفوظة',joke:'نكت',docq:'أسئلة على مستنداتك'};let h='';Object.keys(names).forEach(k=>{if(usage[k])h+=`<div>${names[k]}: ${toAr(usage[k])}</div><div class="bar"><i style="width:${Math.min(100,usage[k]*10)}%"></i></div>`});const tot=Object.values(hrs).reduce((a,b)=>a+b,0);if(tot>2){const best=Object.entries(hrs).sort((a,b)=>b[1]-a[1])[0][0];h+=`<p>أكتر وقت بتستخدمني فيه: حوالي الساعة ${toAr(best)}.</p>`}
  $('#learn').innerHTML=h||'لسه بتعرّف عليك. استخدمني شوية.';
  const k=Object.keys(mem);$('#mem').innerHTML=k.length?'<table>'+k.map(()=>'<tr><td></td><td></td><td><button class="s">نسيان</button></td></tr>').join('')+'</table>':'<p class="note">الذاكرة فاضية.</p>';
  document.querySelectorAll('#mem tr').forEach((tr,i)=>{tr.children[0].textContent=k[i];tr.children[1].textContent=mem[k[i]];tr.querySelector('button').onclick=()=>{delete mem[k[i]];LS.set('mem',mem);renderMe()}})}
 $('#export').onclick=()=>{const b=new Blob([JSON.stringify({mem,usage,tasks,notes:LS.get('notes','')},null,1)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='my-assistant-data.json';a.click()};
 $('#wipe').onclick=()=>{if(confirm('تمسح كل بياناتك؟')){Object.keys(localStorage).filter(k=>k.startsWith('ai_')).forEach(k=>localStorage.removeItem(k));location.reload()}};
+
+/* docs: BM25 search */
+let docs=LS.get('docs',[]);
+function chunks(t){const parts=t.replace(/\r/g,'').split(/\n{2,}/).map(x=>x.trim()).filter(x=>x.length>15);const out=[];parts.forEach(p=>{if(p.length<400)out.push(p);else{let cur='';sents(p).forEach(x=>{if((cur+x).length>350){out.push(cur.trim());cur=''}cur+=x+' '});if(cur.trim())out.push(cur.trim())}});return out}
+function searchDocs(q,k=3){const Q=words(q).filter(w=>w.length>1&&!STOP.has(w));if(!Q.length||!docs.length)return[];const all=[];docs.forEach(d=>chunks(d.text).forEach(c=>all.push({d:d.name,c,w:words(c)})));if(!all.length)return[];const N=all.length,avg=all.reduce((a,x)=>a+x.w.length,0)/N;const df={};all.forEach(x=>new Set(x.w).forEach(w=>df[w]=(df[w]||0)+1));
+ const stem=w=>{w=w.replace(/^(وال|بال|لل|ال)/,'');if(w.length>4)w=w.replace(/(ات|ان|ين|ون|ها)$/,'');if(w.length>3)w=w.replace(/[اهيو]$/,'');return w};
+ all.forEach(x=>{const tf={};x.w.forEach(w=>{tf[stem(w)]=(tf[stem(w)]||0)+1});let sc=0;Q.map(stem).forEach(w=>{const f=tf[w]||0;if(!f)return;const dfw=Object.keys(df).filter(z=>stem(z)===w).length||1;const idf=Math.log(1+(N-dfw+.5)/(dfw+.5));sc+=idf*(f*2.2)/(f+1.2*(.25+.75*x.w.length/avg))});x.s=sc});
+ return all.filter(x=>x.s>0).sort((a,b)=>b.s-a.s).slice(0,k)}
+function docAnswer(q){bump('docq');const r=searchDocs(q);if(!r.length)return docs.length?'مالقيتش حاجة قريبة من سؤالك في مستنداتك.':'مفيش مستندات محفوظة. ضيف مستندات من تبويب "مستنداتي".';return r.map((x,i)=>`${toAr(i+1)}) من "${x.d}":\n${x.c}`).join('\n\n')}
+function renderDocs(){const L=$('#dlist');L.innerHTML='';docs.forEach((d,i)=>{const e=document.createElement('div');e.className='item';e.innerHTML='<span></span><button class="s">حذف</button>';e.querySelector('span').textContent=d.name+' ('+toAr(words(d.text).length)+' كلمة)';e.querySelector('button').onclick=()=>{docs.splice(i,1);LS.set('docs',docs);renderDocs()};L.appendChild(e)});if(!docs.length)L.innerHTML='<p class="note">مفيش مستندات.</p>'}
+function addDoc(name,text){if(!text.trim())return;docs.push({name:name||('مستند '+toAr(docs.length+1)),text:text.slice(0,200000)});try{LS.set('docs',docs)}catch(e){}renderDocs()}
+$('#dadd').onclick=()=>{addDoc($('#dname').value,$('#dtext').value);$('#dname').value='';$('#dtext').value=''};
+$('#dask').onclick=()=>{$('#dout').textContent=docAnswer($('#dq').value)};
+$('#dq').addEventListener('keydown',e=>{if(e.key==='Enter')$('#dask').click()});
+$('#dfile').onchange=e=>{[...e.target.files].forEach(f=>{const r=new FileReader();r.onload=()=>addDoc(f.name,String(r.result));r.readAsText(f)})};
+renderDocs();
 hist.forEach(([r,t])=>add(r,t,false));if(!hist.length)add('b','أهلا! أنا مساعدك الذكي. شغال كله جوه متصفحك، ومفيش بيانات بتخرج من جهازك. جرب الأزرار اللي تحت أو اكتب سؤالك.');
 </script>
 </body>
