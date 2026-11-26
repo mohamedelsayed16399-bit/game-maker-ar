@@ -76,7 +76,9 @@ const PTYPES=[
  {id:'ice',n:'جليدي',c:[0xdff2ff,0xa9cde6,0xffffff],sky:0xbfd9ee,w:0},
  {id:'ocean',n:'محيطي',c:[0x3f8f4f,0x2a6a38,0xc9b37a],sky:0x7fc1ee,w:1},
  {id:'lava',n:'بركاني',c:[0x3a2a2a,0xd23a12,0x1c1414],sky:0x4a1d12,w:0},
- {id:'gas',n:'غازي',c:[0xd8a56a,0xb87a4a,0xf0d8b0],sky:0xd8a56a,w:0}
+ {id:'gas',n:'غازي',c:[0xd8a56a,0xb87a4a,0xf0d8b0],sky:0xd8a56a,w:0},
+ {id:'toxic',n:'سام',c:[0x6a8a2a,0x3a4a18,0xb8d060],sky:0x8aa840,w:0},
+ {id:'crystal',n:'بلوري',c:[0x7a5ad8,0x3a2a88,0xd8b8ff],sky:0x6a4ab0,w:0}
 ];
 const STARC=[0xffd9a0,0xfff4d8,0xaad0ff,0xff9a70,0xffffff];
 const GALN=g=>"مجرّة "+nameOf(hash(g,777));
@@ -188,7 +190,17 @@ const QUESTS=[
  {t:'أنهِ عقد توصيل',f:()=>(S.stats.deliveries||0)>=1,r:800},
  {t:'اقفز إلى مجرّة جديدة',f:()=>S.g>0,r:3000}
 ];
-function questTick(){const q=QUESTS[S.q];if(q&&q.f()){S.credits+=q.r;toast(`✅ أنهيت المهمة: ${q.t}  +${AR(q.r)} 💰`);S.q++}}
+const ACH=[
+ ['first_kill','أول قرصان',()=>S.stats.kills>=1,100],['k10','صياد (١٠ قراصنة)',()=>S.stats.kills>=10,400],['k50','أسطورة (٥٠ قرصان)',()=>S.stats.kills>=50,2500],
+ ['land3','مستكشف (٣ هبوطات)',()=>S.stats.lands>=3,300],['land10','رحّالة (١٠ هبوطات)',()=>S.stats.lands>=10,1500],
+ ['jump5','مسافر (٥ قفزات)',()=>S.stats.jumps>=5,400],['jump25','عابر المجرّات (٢٥ قفزة)',()=>S.stats.jumps>=25,3000],
+ ['mine30','منقّب (٣٠ خام)',()=>S.stats.mined>=30,500],['crate10','جامع (١٠ صناديق)',()=>(S.stats.crates||0)>=10,600],
+ ['loot5','لصّ فضاء (٥ حطام)',()=>(S.stats.loot||0)>=5,700],['worm3','ثقوب دودية (٣)',()=>(S.stats.worms||0)>=3,900],
+ ['col3','مستعمر (٣ كواكب مستعمرة)',()=>Object.keys(S.cols).length>=3,1200],['rich','مليونير (١٠٠٠٠٠٠)',()=>S.credits>=1000000,0],['rich5','ثري (٥٠٠٠٠)',()=>S.credits>=50000,1000]];
+function achTick(){S.ach=S.ach||{};for(const a of ACH){if(!S.ach[a[0]]&&a[2]()){S.ach[a[0]]=1;S.credits+=a[3];setTimeout(()=>toast('🏆 إنجاز: '+a[1]+(a[3]?' +'+AR(a[3])+' 💰':'')),600)}}}
+function openAch(){S.ach=S.ach||{};let h='<h2>🏆 الإنجازات</h2>';const st=S.stats;h+=`<div class="row"><small>قراصنة ${AR(st.kills)} · هبوط ${AR(st.lands)} · قفزات ${AR(st.jumps)} · خام ${AR(st.mined)} · صناديق ${AR(st.crates||0)} · حطام ${AR(st.loot||0)} · ثقوب ${AR(st.worms||0)} · عقود ${AR(st.deliveries||0)}</small></div>`;
+ ACH.forEach(a=>{h+=`<div class="row"><span>${S.ach[a[0]]?'✅':'⬜'} ${a[1]}</span><small>${a[3]?AR(a[3])+' 💰':''}</small></div>`});h+=`<div style="margin-top:10px"><button class="btn d" onclick="closeMenu()">إغلاق</button></div>`;openMenu(h)}
+function questTick(){achTick();const q=QUESTS[S.q];if(q&&q.f()){S.credits+=q.r;toast(`✅ أنهيت المهمة: ${q.t}  +${AR(q.r)} 💰`);S.q++}}
 function hud(){
  $('p-loc').textContent=(mode==='surface'?'🪐 '+curPlanet.name:'⭐ '+(curStar?curStar.name:''))+' · '+GALN(S.g);
  $('p-cr').textContent='💰 '+AR(Math.floor(S.credits));
@@ -353,7 +365,7 @@ function land(p){
  // existing buildings
  (S.cols[p.key]?.b||[]).forEach(b=>placeMesh(b));
  {const id=p.type.id;const N=id==='gas'||id==='rock'?0:900;if(N){const g=new THREE.BufferGeometry();const a=new Float32Array(N*3);for(let i=0;i<N;i++){a[i*3]=(Math.random()-.5)*300;a[i*3+1]=Math.random()*120;a[i*3+2]=(Math.random()-.5)*300}g.setAttribute('position',new THREE.BufferAttribute(a,3));
-  const col={ocean:0x9ec8ff,ice:0xffffff,desert:0xe0c080,lava:0xff7040}[id]||0xffffff;weather=new THREE.Points(g,new THREE.PointsMaterial({color:col,size:id==='ocean'?1.2:2.2,transparent:true,opacity:.75}));weather.userData.k=id==='ocean'?90:id==='ice'?14:id==='lava'?10:5;weather.userData.wx=id==='desert'?30:0;surfGroup.add(weather)}else weather=null}
+  const col={ocean:0x9ec8ff,ice:0xffffff,desert:0xe0c080,lava:0xff7040,toxic:0xb8ff40,crystal:0xe0b0ff}[id]||0xffffff;weather=new THREE.Points(g,new THREE.PointsMaterial({color:col,size:id==='ocean'?1.2:2.2,transparent:true,opacity:.75}));weather.userData.k=id==='ocean'?90:id==='ice'?14:id==='lava'?10:5;weather.userData.wx=id==='desert'?30:0;surfGroup.add(weather)}else weather=null}
  surf.fog=new THREE.Fog(p.type.sky,120,420);orbit={a:.8,e:.7,r:60};
  $('acts').style.display='none';$('joy').style.bottom='84px';$('radar').style.display='none';$('ctx').innerHTML='';ctxState='';
  av=new THREE.Group();{const bm=new THREE.Mesh(new THREE.CapsuleGeometry(.9,1.6,4,8),new THREE.MeshStandardMaterial({color:0xffcc33,roughness:.5}));bm.position.y=1.7;av.add(bm);const vz=new THREE.Mesh(new THREE.SphereGeometry(.6,8,8),new THREE.MeshStandardMaterial({color:0x223355,metalness:.8,roughness:.2}));vz.position.set(0,2.4,.55);av.add(vz)}
@@ -430,12 +442,12 @@ function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.
 function start(){startMusic();mode='space';$('title').style.display='none';beep(300,.1);
  buildSystem();if(!S.visited)S.visited={};applyShips();hud();
  const tut=localStorage.getItem('uni-tut2');if(!tut){localStorage.setItem('uni-tut2','1');openMenu(`<h2>🚀 أهلاً بيك في الكون</h2><div class="row"><span>🕹️ العصا تحت على الشمال: وجّه السفينة</span></div><div class="row"><span>🔥 نار: دمّر القراصنة والكويكبات (الكويكبات بتديك حديد)</span></div><div class="row"><span>🚀 دفع: سرعة عالية (بتصرف وقود)</span></div><div class="row"><span>🪐 قرّب من كوكب واضغط هبوط، وابنِ مستعمرة بتكسبك فلوس</span></div><div class="row"><span>🛰️ قرّب من المحطة: تجارة وترقيات وسفن وعقود</span></div><div class="row"><span>🗺️ الخريطة: اقفز لنجوم جديدة، وأسعار البضاعة معروضة</span></div><div class="row"><span>🌀 الثقوب الدودية والحطام: مكافآت مفاجئة</span></div><div style="margin-top:10px"><button class="btn g" onclick="closeMenu()">فهمت، يلا نبدأ</button></div>`)}
- const mb=document.createElement('button');mb.className='btn d';mb.textContent='🗺️ الخريطة';mb.style.cssText='position:fixed;top:84px;left:6px;z-index:7;margin-top:34px;padding:6px 10px;font-size:13px';mb.onclick=()=>{if(mode==='space')openMap()};document.body.appendChild(mb);window.__mapBtn=mb;{let hq=localStorage.getItem('uni-q')!=='lo';const q=document.createElement('button');q.className='btn d';q.textContent=hq?'⚙️ جودة عالية':'⚙️ جودة خفيفة';q.style.cssText='position:fixed;top:160px;left:6px;z-index:7;margin-top:34px;padding:6px 10px;font-size:12px';q.onclick=()=>{hq=!hq;localStorage.setItem('uni-q',hq?'hi':'lo');renderer.setPixelRatio(hq?Math.min(devicePixelRatio,2):1);resize();q.textContent=hq?'⚙️ جودة عالية':'⚙️ جودة خفيفة'};document.body.appendChild(q);if(!hq){renderer.setPixelRatio(1);resize()}}const mu=document.createElement('button');mu.className='btn d';mu.textContent='🔊';mu.style.cssText='position:fixed;top:122px;left:6px;z-index:7;margin-top:34px;padding:6px 10px;font-size:13px';mu.onclick=()=>{musicOn=!musicOn;if(window.__mg)window.__mg.gain.value=musicOn?.05:0;mu.textContent=musicOn?'🔊':'🔇'};document.body.appendChild(mu);
+ const mb=document.createElement('button');mb.className='btn d';mb.textContent='🗺️ الخريطة';mb.style.cssText='position:fixed;top:84px;left:6px;z-index:7;margin-top:34px;padding:6px 10px;font-size:13px';mb.onclick=()=>{if(mode==='space')openMap()};document.body.appendChild(mb);window.__mapBtn=mb;{const ab=document.createElement('button');ab.className='btn d';ab.textContent='🏆';ab.style.cssText='position:fixed;top:198px;left:6px;z-index:7;margin-top:34px;padding:6px 10px;font-size:13px';ab.onclick=()=>openAch();document.body.appendChild(ab)}{let hq=localStorage.getItem('uni-q')!=='lo';const q=document.createElement('button');q.className='btn d';q.textContent=hq?'⚙️ جودة عالية':'⚙️ جودة خفيفة';q.style.cssText='position:fixed;top:160px;left:6px;z-index:7;margin-top:34px;padding:6px 10px;font-size:12px';q.onclick=()=>{hq=!hq;localStorage.setItem('uni-q',hq?'hi':'lo');renderer.setPixelRatio(hq?Math.min(devicePixelRatio,2):1);resize();q.textContent=hq?'⚙️ جودة عالية':'⚙️ جودة خفيفة'};document.body.appendChild(q);if(!hq){renderer.setPixelRatio(1);resize()}}const mu=document.createElement('button');mu.className='btn d';mu.textContent='🔊';mu.style.cssText='position:fixed;top:122px;left:6px;z-index:7;margin-top:34px;padding:6px 10px;font-size:13px';mu.onclick=()=>{musicOn=!musicOn;if(window.__mg)window.__mg.gain.value=musicOn?.05:0;mu.textContent=musicOn?'🔊':'🔇'};document.body.appendChild(mu);
  const mb2=document.createElement('button');mb2.className='btn d';mb2.textContent='🔄 تجميع';mb2.style.display='none';}
 $('startBtn').onclick=start;
 $('resetBtn').onclick=()=>{if(confirm('تبدأ من الأول؟ هتفقد التقدّم')){S=fresh();save();start()}};
 curStar=starAt(S.g,S.x,S.y);buildSystem();
-window.__u={get cam(){return cam},get bM(){return bMeshes},orbitSet:(a,e,r)=>{orbit.a=a;orbit.e=e;orbit.r=r},S,get mode(){return mode},land,openMap,openStation,jump,starAt,buildSystem,get av(){return avP},get crates(){return crates},get derelicts(){return derelicts},lootD:()=>lootD(),get nearD(){return nearD},get worm(){return worm},get planets(){return planets},get ship(){return ship},get pirates(){return pirates},get station(){return station},setSel:v=>selBuild=v,start,takeoff,QUESTS};
+window.__u={get cam(){return cam},get bM(){return bMeshes},orbitSet:(a,e,r)=>{orbit.a=a;orbit.e=e;orbit.r=r},S,get mode(){return mode},land,openMap,openStation,jump,starAt,buildSystem,get av(){return avP},get crates(){return crates},get derelicts(){return derelicts},lootD:()=>lootD(),get nearD(){return nearD},get worm(){return worm},openAch:()=>openAch(),achTick,get planets(){return planets},get ship(){return ship},get pirates(){return pirates},get station(){return station},setSel:v=>selBuild=v,start,takeoff,QUESTS};
 loop();
 </script>
 </body>
