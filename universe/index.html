@@ -199,7 +199,9 @@ const ACH=[
  ['col3','مستعمر (٣ كواكب مستعمرة)',()=>Object.keys(S.cols).length>=3,1200],['rich','مليونير (١٠٠٠٠٠٠)',()=>S.credits>=1000000,0],['rich5','ثري (٥٠٠٠٠)',()=>S.credits>=50000,1000]];
 function achTick(){S.ach=S.ach||{};for(const a of ACH){if(!S.ach[a[0]]&&a[2]()){S.ach[a[0]]=1;S.credits+=a[3];setTimeout(()=>toast('🏆 إنجاز: '+a[1]+(a[3]?' +'+AR(a[3])+' 💰':'')),600)}}}
 function openAch(){S.ach=S.ach||{};let h='<h2>🏆 الإنجازات</h2>';const st=S.stats;h+=`<div class="row"><small>قراصنة ${AR(st.kills)} · هبوط ${AR(st.lands)} · قفزات ${AR(st.jumps)} · خام ${AR(st.mined)} · صناديق ${AR(st.crates||0)} · حطام ${AR(st.loot||0)} · ثقوب ${AR(st.worms||0)} · عقود ${AR(st.deliveries||0)}</small></div>`;
- ACH.forEach(a=>{h+=`<div class="row"><span>${S.ach[a[0]]?'✅':'⬜'} ${a[1]}</span><small>${a[3]?AR(a[3])+' 💰':''}</small></div>`});h+=`<div style="margin-top:10px"><button class="btn d" onclick="closeMenu()">إغلاق</button></div>`;openMenu(h)}
+ ACH.forEach(a=>{h+=`<div class="row"><span>${S.ach[a[0]]?'✅':'⬜'} ${a[1]}</span><small>${a[3]?AR(a[3])+' 💰':''}</small></div>`});h+=`<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn" onclick="expSave()">📤 تصدير الحفظ</button><button class="btn" onclick="impSave()">📥 استيراد</button><button class="btn d" onclick="closeMenu()">إغلاق</button></div>`;openMenu(h)}
+window.expSave=()=>{const c=btoa(unescape(encodeURIComponent(JSON.stringify(S))));try{navigator.clipboard.writeText(c);toast('تم نسخ كود الحفظ')}catch(e){}prompt('كود الحفظ (انسخه واحتفظ بيه):',c)};
+window.impSave=()=>{const c=prompt('الصق كود الحفظ:');if(!c)return;try{const o=JSON.parse(decodeURIComponent(escape(atob(c.trim()))));if(typeof o.credits!=='number')throw 0;localStorage.setItem(KEY,JSON.stringify(o));location.reload()}catch(e){toast('الكود غير صالح')}};
 function questTick(){achTick();const q=QUESTS[S.q];if(q&&q.f()){S.credits+=q.r;toast(`✅ أنهيت المهمة: ${q.t}  +${AR(q.r)} 💰`);S.q++}}
 function hud(){
  $('p-loc').textContent=(mode==='surface'?'🪐 '+curPlanet.name:'⭐ '+(curStar?curStar.name:''))+' · '+GALN(S.g);
@@ -211,6 +213,9 @@ let menuOpen=false;
 function openMenu(h){$('panel').innerHTML=h;$('menu').classList.add('on');menuOpen=true}
 function closeMenu(){$('menu').classList.remove('on');menuOpen=false}
 window.closeMenu=closeMenu;
+function repLvl(){return Math.min(5,Math.floor(Math.sqrt((S.rep||0)/8)))}
+function addRep(n){const b=repLvl();S.rep=(S.rep||0)+n;if(repLvl()>b)setTimeout(()=>toast('⭐ سمعتك زادت: المستوى '+AR(repLvl())+' (خصم أكبر في المحطات)'),800)}
+function disc(){return repLvl()*.04}
 function cargoCount(){return Object.values(S.cargo).reduce((a,b)=>a+b,0)}
 /* ---------- map ---------- */
 let sel=null;
@@ -240,13 +245,14 @@ function warp(){const w=$('warp');w.classList.remove('on');void w.offsetWidth;w.
 function jump(s){const d=Math.hypot(s.x-S.x,s.y-S.y);const cost=Math.ceil(d*6);if(S.fuel<cost||!d)return;S.fuel-=cost;S.x=s.x;S.y=s.y;S.stats.jumps++;closeMenu();warp();buildSystem();toast('🌀 وصلت نظام '+curStar.name);questTick();save()}
 /* ---------- station ---------- */
 function openStation(){
- const s=curStar;let h=`<h2>🛰️ محطة ${s.name}</h2><div class="row"><span>رصيدك</span><b>💰 ${AR(Math.floor(S.credits))}</b></div><div class="row"><span>الشحنة</span><b>${AR(cargoCount())} / ${AR(S.cap)}</b></div><h3 style="margin:10px 0 2px">🛒 تجارة</h3>`;
- GOODS.forEach(g=>{const p=price(s,g.id);h+=`<div class="row"><span>${g.n} <small>سعر ${AR(p)} · معاك ${AR(S.cargo[g.id]||0)}</small></span><span><button class="btn g" onclick="trade('${g.id}',1)">شراء</button> <button class="btn r" onclick="trade('${g.id}',-1)">بيع</button></span></div>`});
+ const s=curStar;let h=`<h2>🛰️ محطة ${s.name}</h2><div class="row"><span>⭐ سمعتك: مستوى ${AR(repLvl())} (خصم ${AR(Math.round(disc()*100))}٪)</span><small>${AR(S.rep||0)} نقطة</small></div><div class="row"><span>رصيدك</span><b>💰 ${AR(Math.floor(S.credits))}</b></div><div class="row"><span>الشحنة</span><b>${AR(cargoCount())} / ${AR(S.cap)}</b></div><h3 style="margin:10px 0 2px">🛒 تجارة</h3>`;
+ GOODS.forEach(g=>{const p=Math.round(price(s,g.id)*(1-disc()));h+=`<div class="row"><span>${g.n} <small>سعر ${AR(p)} · معاك ${AR(S.cargo[g.id]||0)}</small></span><span><button class="btn g" onclick="trade('${g.id}',1)">شراء</button> <button class="btn r" onclick="trade('${g.id}',-1)">بيع</button></span></div>`});
  const fc=Math.ceil((S.maxFuel-S.fuel)*2),rc=Math.ceil((S.maxHull-S.hull)*3);
  h+=`<h3 style="margin:10px 0 2px">🔧 خدمات</h3><div class="row"><span>تعبئة وقود</span><button class="btn" onclick="svc('fuel')">${AR(fc)} 💰</button></div><div class="row"><span>إصلاح الهيكل</span><button class="btn" onclick="svc('hull')">${AR(rc)} 💰</button></div>`;
  [['sh','درع +٢٥',300,'maxSh'],['hull','هيكل +٢٥',300,'maxHull'],['fuel','خزان +٣٠',250,'maxFuel'],['cap','شحنة +١٠',200,'cap'],['gun','مدفع أقوى',400,'gun']].forEach(u=>{const lvl=u[0]==='gun'?S.gun:0;const cost=u[2]*(u[0]==='gun'?S.gun:1);h+=`<div class="row"><span>${u[1]}${u[0]==='gun'?' (مستوى '+AR(S.gun)+')':''}</span><button class="btn" onclick="upg('${u[0]}',${cost})">${AR(cost)} 💰</button></div>`});
  h+='<h3 style="margin:10px 0 2px">🚀 حظيرة السفن</h3>';S.ships=S.ships||{};
  [['fighter','مقاتل: مدفع +٢ ودرع +٥٠',1500],['hauler','شحن: سعة +٤٠',1200],['explorer','مستكشف: وقود +٨٠ وسرعة أعلى',1000]].forEach(x=>{h+=`<div class="row"><span>${x[1]}</span>${S.ships[x[0]]?'<small>✅ مملوكة</small>':`<button class="btn" onclick="buyShip('${x[0]}',${x[2]})">${AR(x[2])} 💰</button>`}</div>`});
+ h+='<h3 style="margin:10px 0 2px">🎨 طلاء السفينة</h3><div class="row" style="gap:6px;justify-content:flex-start">'+[['#d8e2ff','فضي'],['#ff5a5a','أحمر'],['#4cc3ff','أزرق'],['#6dff9a','أخضر'],['#ffd24c','ذهبي'],['#c070ff','بنفسجي']].map(c=>`<button class="btn" style="background:${c[0]};color:#000;padding:6px 10px;font-size:12px" onclick="paint('${c[0]}')">${c[1]}</button>`).join('')+'</div>';
  h+=contractHtml();h+=`<div style="margin-top:10px"><button class="btn d" onclick="closeMenu()">إغلاق</button></div>`;openMenu(h)}
 function offerFor(s){const r=mulberry(hash(s.g,s.x,s.y,4000+Math.floor(Date.now()/600000)));const g=GOODS[r()*4|0];const n=3+(r()*6|0);let tx,ty,tg;for(let k=0;k<30;k++){tx=s.x+Math.round((r()-.5)*8);ty=s.y+Math.round((r()-.5)*8);tg=starAt(s.g,tx,ty);if(tg&&(tx!==s.x||ty!==s.y))break;tg=null}
  if(!tg)return null;const d=Math.hypot(tx-s.x,ty-s.y);return{good:g.id,gn:g.n,n,tx,ty,g:s.g,tn:tg.name,reward:Math.round(g.b*n*(1.6+d*.35)+100)}}
@@ -255,12 +261,13 @@ function contractHtml(){const c=S.contract;let h='<h3 style="margin:10px 0 2px">
  else{const o=offerFor(curStar);if(o){window.__offer=o;h+=`<div class="row"><span>وصّل ${AR(o.n)} ${o.gn} إلى نظام <b>${o.tn}</b><br><small>المكافأة ${AR(o.reward)} 💰</small></span><button class="btn g" onclick="acceptC()">قبول</button></div>`}else h+='<div class="row"><small>مفيش عقود دلوقتي</small></div>'}
  return h}
 const SHIPC={fighter:[0xffb0b0,0xff3030],hauler:[0xe8e0a0,0xb08a20],explorer:[0xa0ffd8,0x20b080]};
-function applyShips(){S.ships=S.ships||{};let col=null;for(const k in S.ships)if(S.ships[k])col=SHIPC[k];if(col){ship.children.forEach(c=>{if(c.material&&c.material.color&&c.name!=='flame'){c.material.color.setHex(c.geometry.type==='BoxGeometry'&&c.geometry.parameters.width>5?col[1]:col[0])}})}}
+function applyShips(){S.ships=S.ships||{};if(S.paint){ship.children.forEach(c=>{if(c.material&&c.name!=='flame'&&c.geometry.type!=='BoxGeometry'||(c.geometry&&c.geometry.type==='BoxGeometry'&&c.geometry.parameters.width<1)){c.material.color.set(S.paint)}})}let col=null;for(const k in S.ships)if(S.ships[k])col=SHIPC[k];if(col&&!S.paint){ship.children.forEach(c=>{if(c.material&&c.material.color&&c.name!=='flame'){c.material.color.setHex(c.geometry.type==='BoxGeometry'&&c.geometry.parameters.width>5?col[1]:col[0])}})}}
 window.buyShip=(k,c)=>{if(S.credits<c){toast('رصيدك مش كفاية');return}S.credits-=c;S.ships=S.ships||{};S.ships[k]=1;if(k==='fighter'){S.gun+=2;S.maxSh+=50;S.sh=S.maxSh}else if(k==='hauler')S.cap+=40;else{S.maxFuel+=80;S.fuel=S.maxFuel}applyShips();toast('🚀 اشتريت سفينة جديدة');save();openStation();hud()};
+window.paint=c=>{S.paint=c;applyShips();toast('🎨 تم الطلاء');save()};
 window.acceptC=()=>{S.contract=window.__offer;toast('تم قبول العقد. اشترِ البضاعة من أي محطة');save();openStation()};
 window.dropC=()=>{S.contract=null;save();openStation()};
-window.deliver=()=>{const c=S.contract;if((S.cargo[c.good]||0)<c.n){toast('محتاج '+AR(c.n)+' '+c.gn+' في الشحنة');return}S.cargo[c.good]-=c.n;S.credits+=c.reward;S.stats.deliveries=(S.stats.deliveries||0)+1;toast('✅ تم التسليم +'+AR(c.reward));S.contract=null;questTick();save();openStation()};
-window.trade=(id,dir)=>{const p=price(curStar,id);if(dir>0){if(S.credits<p){toast('رصيدك مش كفاية');return}if(cargoCount()>=S.cap){toast('الشحنة ممتلئة');return}S.credits-=p;S.cargo[id]=(S.cargo[id]||0)+1}else{if(!S.cargo[id]){toast('مفيش منه معاك');return}S.credits+=p;S.cargo[id]--}save();openStation();hud()};
+window.deliver=()=>{const c=S.contract;if((S.cargo[c.good]||0)<c.n){toast('محتاج '+AR(c.n)+' '+c.gn+' في الشحنة');return}S.cargo[c.good]-=c.n;S.credits+=c.reward;S.stats.deliveries=(S.stats.deliveries||0)+1;addRep(5);toast('✅ تم التسليم +'+AR(c.reward));S.contract=null;questTick();save();openStation()};
+window.trade=(id,dir)=>{const p=dir>0?Math.round(price(curStar,id)*(1-disc())):Math.round(price(curStar,id)*(1+disc()/2));if(dir>0){if(S.credits<p){toast('رصيدك مش كفاية');return}if(cargoCount()>=S.cap){toast('الشحنة ممتلئة');return}S.credits-=p;S.cargo[id]=(S.cargo[id]||0)+1}else{if(!S.cargo[id]){toast('مفيش منه معاك');return}S.credits+=p;S.cargo[id]--}save();openStation();hud()};
 window.svc=t=>{if(t==='fuel'){const c=Math.ceil((S.maxFuel-S.fuel)*2);if(!c)return;if(S.credits<c){toast('رصيدك مش كفاية');return}S.credits-=c;S.fuel=S.maxFuel}else{const c=Math.ceil((S.maxHull-S.hull)*3);if(!c)return;if(S.credits<c){toast('رصيدك مش كفاية');return}S.credits-=c;S.hull=S.maxHull}openStation();hud();save()};
 window.upg=(k,c)=>{if(S.credits<c){toast('رصيدك مش كفاية');return}S.credits-=c;if(k==='sh'){S.maxSh+=25;S.sh=S.maxSh}else if(k==='hull'){S.maxHull+=25;S.hull=S.maxHull}else if(k==='fuel'){S.maxFuel+=30;S.fuel=S.maxFuel}else if(k==='cap')S.cap+=10;else S.gun++;openStation();hud();save()};
 /* ---------- input ---------- */
@@ -326,8 +333,8 @@ function spaceUpdate(dt,t){
  nearSt=false;if(station){nearSt=ship.position.distanceTo(station.g.position)<160}
  ctxUpdate();
 }
-function killPirate(p){space.remove(p.m);pirates.splice(pirates.indexOf(p),1);S.stats.kills++;const r=(p.boss?600:p.kind==='gun'?220:p.kind==='scout'?40:60)+Math.floor(Math.random()*60);S.credits+=r;toast(p.boss?`☠️ دمّرت الزعيم +${AR(r)} 💰`:`💥 دمّرت قرصان +${AR(r)} 💰`);beep(140,.3,'sawtooth',.08);questTick();pirateTimer=Math.max(pirateTimer,6)}
-function lootD(){const d=nearD;if(!d)return;S.loot[d.key]=1;d.g.visible=false;S.stats.loot=(S.stats.loot||0)+1;const v=150+Math.floor(Math.random()*350);S.credits+=v;let t='🛸 لقيت '+AR(v)+' 💰';
+function killPirate(p){space.remove(p.m);pirates.splice(pirates.indexOf(p),1);S.stats.kills++;addRep(p.boss?6:1);const r=(p.boss?600:p.kind==='gun'?220:p.kind==='scout'?40:60)+Math.floor(Math.random()*60);S.credits+=r;toast(p.boss?`☠️ دمّرت الزعيم +${AR(r)} 💰`:`💥 دمّرت قرصان +${AR(r)} 💰`);beep(140,.3,'sawtooth',.08);questTick();pirateTimer=Math.max(pirateTimer,6)}
+function lootD(){const d=nearD;if(!d)return;S.loot[d.key]=1;addRep(2);d.g.visible=false;S.stats.loot=(S.stats.loot||0)+1;const v=150+Math.floor(Math.random()*350);S.credits+=v;let t='🛸 لقيت '+AR(v)+' 💰';
  if(Math.random()<.6&&cargoCount()<S.cap){const g=GOODS[2+(Math.random()*3|0)];S.cargo[g.id]=(S.cargo[g.id]||0)+1;t+=' و١ '+g.n}
  if(Math.random()<.35){pirateTimer=0;for(let i=0;i<2;i++){const m=makeShip(0x7a1a1a,0xff4040);m.scale.setScalar(1.2);const a=Math.random()*6.28;m.position.copy(ship.position).add(new THREE.Vector3(Math.cos(a)*400,0,Math.sin(a)*400));space.add(m);pirates.push({m,hp:40,cd:1,boss:false})}t+=' · ⚠️ كمين قراصنة!'}
  toast(t);beep(520,.2,'triangle',.07);questTick();save();ctxState=''}
@@ -433,11 +440,12 @@ function surfUpdate(dt,t){
  const b=$('colBtn');if(b&&(Math.floor(t*2)%2===0))b.innerHTML='💰 تحصيل ('+AR(Math.floor(totalPending()))+')';
 }
 /* ---------- main ---------- */
-const clock=new THREE.Clock();let tt=0,hudT=0;
+const clock=new THREE.Clock();let tt=0,hudT=0,fpsAcc=0,fpsN=0,lowDone=false;
 function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.05);tt+=dt;
  if(mode==='space'){if(!menuOpen)spaceUpdate(dt,tt);else{vel.multiplyScalar(.98)}renderer.render(space,cam)}
  else if(mode==='surface'){surfUpdate(dt,tt);renderer.render(surf,cam)}
  else if(mode==='title'){cam.position.set(Math.cos(tt*.1)*3000,300,Math.sin(tt*.1)*3000);cam.lookAt(0,0,0);if(curStar){stars.position.copy(cam.position);planets.forEach(p=>p.mesh.rotation.y+=dt*.1)}renderer.render(space,cam)}
+ fpsAcc+=dt;fpsN++;if(fpsAcc>4&&mode!=='title'){const fps=fpsN/fpsAcc;fpsAcc=0;fpsN=0;if(fps<26&&!lowDone&&renderer.getPixelRatio()>1&&!menuOpen){lowDone=true;renderer.setPixelRatio(1);resize();localStorage.setItem('uni-q','lo');toast('تم تخفيف الجودة تلقائيًا عشان الأداء')}}
  hudT-=dt;if(hudT<=0){hudT=.2;if(mode!=='title')hud()}}
 function start(){startMusic();mode='space';$('title').style.display='none';beep(300,.1);
  buildSystem();if(!S.visited)S.visited={};applyShips();hud();
@@ -447,7 +455,7 @@ function start(){startMusic();mode='space';$('title').style.display='none';beep(
 $('startBtn').onclick=start;
 $('resetBtn').onclick=()=>{if(confirm('تبدأ من الأول؟ هتفقد التقدّم')){S=fresh();save();start()}};
 curStar=starAt(S.g,S.x,S.y);buildSystem();
-window.__u={get cam(){return cam},get bM(){return bMeshes},orbitSet:(a,e,r)=>{orbit.a=a;orbit.e=e;orbit.r=r},S,get mode(){return mode},land,openMap,openStation,jump,starAt,buildSystem,get av(){return avP},get crates(){return crates},get derelicts(){return derelicts},lootD:()=>lootD(),get nearD(){return nearD},get worm(){return worm},openAch:()=>openAch(),achTick,get planets(){return planets},get ship(){return ship},get pirates(){return pirates},get station(){return station},setSel:v=>selBuild=v,start,takeoff,QUESTS};
+window.__u={get cam(){return cam},get bM(){return bMeshes},orbitSet:(a,e,r)=>{orbit.a=a;orbit.e=e;orbit.r=r},S,get mode(){return mode},land,openMap,openStation,jump,starAt,buildSystem,get av(){return avP},get crates(){return crates},get derelicts(){return derelicts},lootD:()=>lootD(),get nearD(){return nearD},get worm(){return worm},openAch:()=>openAch(),achTick,addRep,repLvl,get planets(){return planets},get ship(){return ship},get pirates(){return pirates},get station(){return station},setSel:v=>selBuild=v,start,takeoff,QUESTS};
 loop();
 </script>
 </body>
