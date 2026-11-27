@@ -307,7 +307,7 @@ function makeAvatar(col,name){const g=new THREE.Group();const mb=new THREE.MeshL
  const arm=new THREE.Mesh(new THREE.BoxGeometry(.14,.14,.5),ms);arm.position.set(.28,1.32,-.2);
  const chute=new THREE.Mesh(new THREE.SphereGeometry(1.6,10,6,0,6.3,0,1.2),new THREE.MeshLambertMaterial({color:col,side:THREE.DoubleSide}));chute.position.y=3.6;
  const hel=new THREE.Mesh(new THREE.SphereGeometry(.26,10,6,0,6.3,0,1.5),new THREE.MeshLambertMaterial({color:col}));hel.position.y=1.86;const bp=new THREE.Mesh(new THREE.BoxGeometry(.4,.5,.2),new THREE.MeshLambertMaterial({color:0x333a44}));bp.position.set(0,1.25,.27);const tag=nameTag(name||'?');
- g.add(l1,l2,tor,head,gun,arm,chute,hel,bp,tag);g.userData={l1,l2,gun,chute,tag};scene.add(g);return g}
+ g.add(l1,l2,tor,head,gun,arm,chute,hel,bp,tag);g.userData={l1,l2,gun,chute,tag,mats:[mb,ms]};scene.add(g);return g}
 const PAL=[0xe53935,0xfb8c00,0xfdd835,0x43a047,0x00acc1,0x1e88e5,0x8e24aa,0xec407a];
 let MYCOL=-1;try{MYCOL=+(localStorage.getItem('brCol')||-1)}catch(e){}
 function renderCols(){const d=$('cols');if(!d)return;d.innerHTML='';[-1,...PAL.keys()].forEach(i=>{const b=document.createElement('div');b.style.cssText='width:26px;height:26px;border-radius:50%;cursor:pointer;border:3px solid '+(i===MYCOL?'#fff':'#0000')+';background:'+(i<0?'conic-gradient(red,yellow,lime,cyan,blue,magenta,red)':'#'+PAL[i].toString(16).padStart(6,'0'));b.onclick=()=>{MYCOL=i;try{localStorage.setItem('brCol',i)}catch(e){}renderCols()};d.appendChild(b)})}
@@ -721,7 +721,7 @@ function frame(){
   for(const p of G.players.values()){let a=avatars.get(p.id);if(p.id===G.me){if(a)a.visible=false;continue}
    if(!p.alive){if(a&&!p.deadT){p.deadT=1;a.rotation.set(0,p.yaw,0);a.rotation.x=-1.45;a.position.set(p.x,groundAt(p.x,p.z)+.3,p.z);a.userData.chute.visible=false}continue}
    if(!a){a=makeAvatar(colorFor(p.id),(G.duo&&p.id!==G.me&&me()&&p.team===me().team)?'🟢 '+p.name:p.name);avatars.set(p.id,a)}
-   a.visible=true;a.position.set(p.x,p.y,p.z);a.rotation.set(0,p.yaw,0);a.scale.y+=((p.cr?.75:1)-a.scale.y)*.25;const sw=p.para?0:Math.sin(G.t*9+p.id)*.5;a.userData.l1.rotation.x=sw;a.userData.l2.rotation.x=-sw;
+   a.visible=true;a.position.set(p.x,p.y,p.z);a.rotation.set(0,p.yaw,0);a.scale.y+=((p.cr?.75:1)-a.scale.y)*.25;{const u=a.userData,tot=p.hp+(p.sh||0),now=performance.now();if(u.lhp!==undefined&&tot<u.lhp-.5)u.hitU=now+160;u.lhp=tot;const on=now<(u.hitU||0);if(on!==u.hitOn){u.hitOn=on;for(const mt of u.mats){mt.emissive.setHex(on?0xff2200:0)}}}const sw=p.para?0:Math.sin(G.t*9+p.id)*.5;a.userData.l1.rotation.x=sw;a.userData.l2.rotation.x=-sw;
    a.userData.chute.visible=!!p.para;a.userData.tag.visible=Math.hypot(p.x-L.x,p.z-L.z)<70;
    const wi=G.host?p.wpns[p.cur]:p.wcur;if(wi>=0)a.userData.gun.material.color.setHex(W[wi].col)}
   const m=me();let cx=L.x,cy=L.y+1.65-.7*(L.crk||0),cz=L.z,yaw=L.yaw,pit=L.pitch;
