@@ -67,7 +67,7 @@ input{background:#fff;color:#111;text-align:center;width:240px;user-select:text;
  <div id="gren" style="position:absolute;right:14px;bottom:168px;font-size:20px;text-shadow:0 0 4px #000"></div>
  <button id="bset" style="position:absolute;bottom:235px;left:8px;pointer-events:auto;width:42px;height:42px;border-radius:50%;font-size:20px;padding:0;background:#0007;border:1px solid #fff5;color:#fff">⚙</button>
  <div id="pz" style="position:absolute;inset:0;background:#000b;display:none;z-index:9998;align-items:center;justify-content:center;pointer-events:auto"><div style="max-width:380px;width:86%;padding:22px;text-align:center;line-height:2.1;font-size:17px;background:#10253bee;border-radius:18px">⏸ <b>الإعدادات</b> (المباراة شغالة)<br><label>الحساسية <input type="range" id="sens2" min="40" max="220" style="width:150px;padding:0"></label><br><label>الصوت <input type="range" id="vol2" min="0" max="100" style="width:150px;padding:0"></label><br><button id="pzok" style="padding:10px 26px;font-size:18px;margin:6px">كمّل</button><button id="pzex" class="sec" style="padding:10px 18px;font-size:16px;margin:6px">اطلع من المباراة</button></div></div>
- <div id="scope"></div><div id="flash"></div><div id="cross"></div><div id="hit"></div><div id="lowhp"></div><div id="heal"></div><div id="hpop"></div><div id="dmg"><i></i></div>
+ <div id="sb" style="position:absolute;left:50%;top:90px;transform:translateX(-50%);min-width:230px;max-width:86%;background:#000c;border-radius:14px;padding:10px 16px;line-height:1.8;font-size:15px;display:none;z-index:50;pointer-events:none"></div><div id="scope"></div><div id="flash"></div><div id="cross"></div><div id="hit"></div><div id="lowhp"></div><div id="heal"></div><div id="hpop"></div><div id="dmg"><i></i></div>
  <div id="top"><div class="chip" id="alive">👥 30</div><div class="chip" id="kills">☠ 0</div><div class="chip" id="ztime">المنطقة</div></div>
  <canvas id="mini" width="130" height="130"></canvas>
  <canvas id="big" width="600" height="600"></canvas><div id="feed"></div><div id="msg"></div>
@@ -91,7 +91,7 @@ input{background:#fff;color:#111;text-align:center;width:240px;user-select:text;
  <label class="sub"><input type="checkbox" id="lite" style="width:auto"> وضع خفيف للموبايل الضعيف</label>
  <label class="sub"><input type="checkbox" id="fast" style="width:auto"> مباراة سريعة (المنطقة بتضيق أسرع)</label>
  <div class="sub" id="mstat"></div>
- <div class="sub">كمبيوتر: WASD حركة · ماوس تصويب · كليك نار · R تعمير · G قنبلة · E كواد · X إيموجي · V تعليم مكان للفريق · Space قفز · Shift جري · 1/2/3 أسلحة · كليك يمين تقريب<br>موبايل: عصا يسار للحركة، اسحب يمين للتصويب</div>
+ <div class="sub">كمبيوتر: WASD حركة · ماوس تصويب · كليك نار · R تعمير · G قنبلة · E كواد · X إيموجي · Tab متصدرين · V تعليم مكان للفريق · Space قفز · Shift جري · 1/2/3 أسلحة · كليك يمين تقريب<br>موبايل: عصا يسار للحركة، اسحب يمين للتصويب</div>
 </div>
 <div class="scr hide" id="lobby"><h2>غرفة الانتظار</h2><div class="sub">شارك الكود مع صحابك</div><div id="codebig">-----</div><div id="plist"></div>
  <div class="sub" id="lstat"></div><button id="bstart">ابدأ المباراة (الباقي بوتس)</button><button id="bleave" class="sec">خروج</button></div>
@@ -533,8 +533,8 @@ document.addEventListener('pointerlockchange',()=>{if(!document.pointerLockEleme
 $('sens').value=SENS*100;$('vol').value=VOL*100;$('sens').oninput=()=>{SENS=$('sens').value/100;localStorage.setItem('brSens',$('sens').value)};$('vol').oninput=()=>{VOL=$('vol').value/100;localStorage.setItem('brVol',$('vol').value)};
 const keys={};let mouseDown=false,fireTouch=false;
 let bigOn=false;
-addEventListener('keydown',e=>{keys[e.code]=true;if(G.mode!=='play')return;if(e.code==='KeyM')bigOn=!bigOn;if(e.code==='KeyR')reload();if(e.code==='KeyG')throwG();if(e.code==='KeyE')quadToggle();if(e.code==='KeyV')pingAt();if(e.code==='KeyX')emote();if(e.code==='Digit1')sw(0);if(e.code==='Digit2')sw(1);if(e.code==='Digit3')sw(2);if(e.code==='KeyQ')sw((L.cur+1)%3)});
-addEventListener('keyup',e=>keys[e.code]=false);
+addEventListener('keydown',e=>{keys[e.code]=true;if(G.mode!=='play')return;if(e.code==='KeyM')bigOn=!bigOn;if(e.code==='KeyR')reload();if(e.code==='KeyG')throwG();if(e.code==='KeyE')quadToggle();if(e.code==='KeyV')pingAt();if(e.code==='KeyX')emote();if(e.code==='Tab'){e.preventDefault();sbToggle(true)}if(e.code==='Digit1')sw(0);if(e.code==='Digit2')sw(1);if(e.code==='Digit3')sw(2);if(e.code==='KeyQ')sw((L.cur+1)%3)});
+addEventListener('keyup',e=>{keys[e.code]=false;if(e.code==='Tab')sbToggle(false)});$('alive').style.pointerEvents='auto';$('alive').onclick=()=>sbToggle();$('alive').addEventListener('touchstart',e=>{e.stopPropagation()},{passive:true});
 function requestLock(){try{const r=canvas.requestPointerLock&&canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{})}catch(e){}}
 canvas.addEventListener('click',()=>{if(G.mode==='play'&&!TOUCH&&!document.pointerLockElement&&!L.dead)requestLock()});
 addEventListener('mousemove',e=>{if(document.pointerLockElement&&G.mode==='play'&&!L.dead){const s=.0022*SENS*(L.zoom?(L.wpns[L.cur]===4?[.4,.22,.12][L.zlv||0]:.4):1);L.yaw-=e.movementX*s;L.pitch=Math.max(-1.5,Math.min(1.5,L.pitch-e.movementY*s))}});
@@ -543,6 +543,12 @@ addEventListener('mouseup',e=>{if(e.button===0)mouseDown=false;if(e.button===2)L
 addEventListener('contextmenu',e=>e.preventDefault());
 function zoomTap(){if(L.wpns[L.cur]===4&&L.zoom){L.zlv=(L.zlv||0)+1;if(L.zlv>2){L.zlv=0;L.zoom=false}}else{L.zoom=!L.zoom;L.zlv=0}}
 addEventListener('wheel',e=>{if(G.mode==='play'&&L.zoom&&L.wpns[L.cur]===4){L.zlv=Math.max(0,Math.min(2,(L.zlv||0)+(e.deltaY<0?1:-1)))}},{passive:true});
+let sbOn=false;
+function sbRender(){const e=$('sb');if(!sbOn||G.mode!=='play'){e.style.display='none';return}const m=me();const all=[...G.players.values()];const al=all.filter(p=>p.alive).length;
+ const top=all.slice().sort((a,b)=>(b.kills-a.kills)||((b.alive?1:0)-(a.alive?1:0))).slice(0,8);
+ e.innerHTML='<b>🏁 المتصدرين</b> · عايشين '+al+' من '+all.length+'<hr style="border:0;border-top:1px solid #fff3;margin:4px 0">'+top.map((p,i)=>(p.alive?'':'💀 ')+(m&&p.id===m.id?'<b style="color:#fd4">':'<span>')+(i+1)+'. '+String(p.name).replace(/</g,'')+' · '+p.kills+(m&&p.id===m.id?'</b>':'</span>')).join('<br>');e.style.display='block'}
+setInterval(sbRender,400);
+function sbToggle(v){sbOn=v===undefined?!sbOn:v;sbRender()}
 function sw(s){if(L.wpns[s]>=0){L.cur=s;L.reloadT=0;L.zoom=false}}
 function reload(){const wi=L.wpns[L.cur];if(wi<0||L.reloadT>0||L.mag[L.cur]>=W[wi].mag)return;L.reloadT=W[wi].rel;sfx(900,.1,.1)}
 let joyId=null,lookId=null,joyV={x:0,y:0},lookLast=null;
@@ -641,5 +647,5 @@ function frame(){
  else{G.t+=dt;vm.visible=false;cam.fov=75;cam.updateProjectionMatrix();cam.position.set(Math.sin(G.t*.1)*250,70,Math.cos(G.t*.1)*250);cam.lookAt(0,5,0)}
  renderer.render(scene,cam)}
 frame();
-window.__G=G;window.__L=L;showStats();$('tutok').onclick=()=>{$('tut').style.display='none';try{localStorage.setItem('brTut','1')}catch(e){}};window.__dbg={emote,showEmo,avatars,BCN,FL,setAtmos0:0,openPz,doDrop,DFX,PINGS,pingAt,QUADS,quadToggle,GR,throwG,showStats,setAtmos,PADS,fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
+window.__G=G;window.__L=L;showStats();$('tutok').onclick=()=>{$('tut').style.display='none';try{localStorage.setItem('brTut','1')}catch(e){}};window.__dbg={sbToggle,emote,showEmo,avatars,BCN,FL,setAtmos0:0,openPz,doDrop,DFX,PINGS,pingAt,QUADS,quadToggle,GR,throwG,showStats,setAtmos,PADS,fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
 </script></body></html>
