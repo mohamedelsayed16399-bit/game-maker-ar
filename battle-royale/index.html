@@ -27,6 +27,7 @@ input{background:#fff;color:#111;text-align:center;width:240px;user-select:text;
 #cross:before{left:10px;top:0;width:2px;height:22px}#cross:after{top:10px;left:0;height:2px;width:22px}
 #hit{position:absolute;left:50%;top:50%;width:34px;height:34px;margin:-17px;border:3px solid #f33;border-radius:50%;opacity:0;transition:opacity .25s}
 #lowhp{position:absolute;inset:0;pointer-events:none;opacity:0;box-shadow:inset 0 0 90px 30px #c00;transition:opacity .4s}
+#heal{position:absolute;inset:0;pointer-events:none;opacity:0;box-shadow:inset 0 0 110px 40px #2e7;transition:opacity .9s}#heal.on{opacity:.8;transition:none}#hpop{position:absolute;left:50%;top:38%;transform:translateX(-50%);font-size:34px;font-weight:bold;color:#7f9;text-shadow:0 2px 6px #000;pointer-events:none;opacity:0}#hpop.on{animation:hp 1.2s ease-out}@keyframes hp{0%{opacity:1;top:42%}100%{opacity:0;top:30%}}
 #lowhp.on{animation:lh 1s infinite}@keyframes lh{0%,100%{opacity:.25}50%{opacity:.7}}
 #dmg{position:absolute;left:50%;top:50%;width:0;height:0;opacity:0;transition:opacity .6s}
 #dmg i{position:absolute;left:-30px;top:-150px;width:60px;height:28px;background:radial-gradient(ellipse at 50% 100%,#f22,#f220 70%)}
@@ -65,7 +66,7 @@ input{background:#fff;color:#111;text-align:center;width:240px;user-select:text;
  <div id="gren" style="position:absolute;right:14px;bottom:168px;font-size:20px;text-shadow:0 0 4px #000"></div>
  <button id="bset" style="position:absolute;bottom:235px;left:8px;pointer-events:auto;width:42px;height:42px;border-radius:50%;font-size:20px;padding:0;background:#0007;border:1px solid #fff5;color:#fff">⚙</button>
  <div id="pz" style="position:absolute;inset:0;background:#000b;display:none;z-index:9998;align-items:center;justify-content:center;pointer-events:auto"><div style="max-width:380px;width:86%;padding:22px;text-align:center;line-height:2.1;font-size:17px;background:#10253bee;border-radius:18px">⏸ <b>الإعدادات</b> (المباراة شغالة)<br><label>الحساسية <input type="range" id="sens2" min="40" max="220" style="width:150px;padding:0"></label><br><label>الصوت <input type="range" id="vol2" min="0" max="100" style="width:150px;padding:0"></label><br><button id="pzok" style="padding:10px 26px;font-size:18px;margin:6px">كمّل</button><button id="pzex" class="sec" style="padding:10px 18px;font-size:16px;margin:6px">اطلع من المباراة</button></div></div>
- <div id="scope"></div><div id="flash"></div><div id="cross"></div><div id="hit"></div><div id="lowhp"></div><div id="dmg"><i></i></div>
+ <div id="scope"></div><div id="flash"></div><div id="cross"></div><div id="hit"></div><div id="lowhp"></div><div id="heal"></div><div id="hpop"></div><div id="dmg"><i></i></div>
  <div id="top"><div class="chip" id="alive">👥 30</div><div class="chip" id="kills">☠ 0</div><div class="chip" id="ztime">المنطقة</div></div>
  <canvas id="mini" width="130" height="130"></canvas>
  <canvas id="big" width="600" height="600"></canvas><div id="feed"></div><div id="msg"></div>
@@ -466,10 +467,10 @@ function onMyDeath(ev){L.dead=true;{const k=G.players.get(ev.kid);if(k&&k.alive&
 function endMatch(o){G.mode='over';$('hud').classList.remove('on');$('touch').classList.remove('on');$('bexit').style.display='none';if(document.pointerLockElement)document.exitPointerLock();
  const won=o.wid===G.me;$('gtitle').textContent=won?'🏆 انت الملك! فزت!':(o.w==='-'?'انتهت المباراة':'الفائز: '+o.w);
  const m=me();
- $('gdet').innerHTML=o.res.map(r=>`${r.p===1?'🥇':r.p===2?'🥈':r.p===3?'🥉':'#'+r.p} ${r.n} · قتلى ${r.k}`).join('<br>')+`<hr>مركزك: ${m?(won?1:(m.place||'?')):'-'} · قتلاك: ${m?m.kills:0}`;
+ $('gdet').innerHTML=o.res.map(r=>`${r.p===1?'🥇':r.p===2?'🥈':r.p===3?'🥉':'#'+r.p} ${r.n} · قتلى ${r.k}`).join('<br>')+`<hr>مركزك: ${m?(won?1:(m.place||'?')):'-'} · قتلاك: ${m?m.kills:0}`+(G.t0?`<br>⏱ وقت البقاء: ${Math.floor((performance.now()-G.t0)/60000)}د ${Math.floor((performance.now()-G.t0)/1000)%60}ث`:'');
  $('go').classList.remove('hide');saveBest(m?m.kills:0,won)}
 function showStats(){try{const b=JSON.parse(localStorage.getItem('brBest')||'null');$('stats').textContent=b&&b.g?`🏆 انتصاراتك ${b.w} من ${b.g} مباراة · أعلى قتلى ${b.k}`:''}catch(e){}}
-function saveBest(k,w){try{const b=JSON.parse(localStorage.getItem('brBest')||'{"k":0,"w":0,"g":0}');b.k=Math.max(b.k,k);b.g++;if(w)b.w++;localStorage.setItem('brBest',JSON.stringify(b))}catch(e){}}
+function saveBest(k,w){G.t0=0;try{const b=JSON.parse(localStorage.getItem('brBest')||'{"k":0,"w":0,"g":0}');b.k=Math.max(b.k,k);b.g++;if(w)b.w++;localStorage.setItem('brBest',JSON.stringify(b))}catch(e){}}
 function setStat(t){$('mstat').textContent=t}
 function lobbyBroadcast(){const names=[G.myName||'أنا',...[...G.conns.values()].map(c=>c.pname||'...')];broadcast({t:'lobby',names});renderLobby(names)}
 function renderLobby(names){$('plist').innerHTML=names.map((n,i)=>(i===0?'👑 ':'🎮 ')+n.replace(/</g,'')).join('<br>');$('lstat').textContent=names.length+' لاعب · الباقي بوتس لحد 30'}
@@ -494,7 +495,7 @@ function joinRoom(){
   c.on('open',()=>{clearTimeout(to);c.send({t:'hello',n:G.myName});$('menu').classList.add('hide');$('lobby').classList.remove('hide');$('codebig').textContent=code;$('bstart').style.display='none';$('plist').textContent='...'});
   c.on('data',o=>onMsg(0,o));c.on('close',()=>{if(G.mode!=='over'&&G.mode!=='menu'){toMenu();setStat('الهوست فصل')}})});
  peer.on('error',e=>setStat('خطأ: '+e.type))}
-function toMenu(){showStats();G.mode='menu';G.over=false;['lobby','go'].forEach(i=>$(i).classList.add('hide'));$('menu').classList.remove('hide');$('hud').classList.remove('on');$('touch').classList.remove('on');$('bexit').style.display='none';
+function toMenu(){G.t0=0;showStats();G.mode='menu';G.over=false;['lobby','go'].forEach(i=>$(i).classList.add('hide'));$('menu').classList.remove('hide');$('hud').classList.remove('on');$('touch').classList.remove('on');$('bexit').style.display='none';
  try{G.peer&&G.peer.destroy()}catch(e){}G.peer=null;G.conns.clear();G.host=false;G.solo=false;if(document.pointerLockElement)document.exitPointerLock()}
 function applyLite(){const l=$('lite').checked;renderer.setPixelRatio(l?.7:Math.min(devicePixelRatio,TOUCH?1.5:2));scene.fog.far=l?260:520;scene.fog.near=l?60:120;cam.far=l?300:900;cam.updateProjectionMatrix();resize()}
 $('lite').onchange=applyLite;
@@ -591,7 +592,7 @@ function updateHud(){const m=me();if(!m)return;
  const now=performance.now();G.feed=G.feed.filter(f=>f.e>now);$('feed').innerHTML=G.feed.map(f=>f.t).join('<br>');
  $('scope').style.display=(L.zoom&&wi===4)?'block':'none'}
 function frame(){
- requestAnimationFrame(frame);const dt=Math.min(.05,clock.getDelta());if(G.mode==='play'){adaptRes(dt);stepDrops(dt);stepGren(dt);quadStep();$('gren').textContent='💣 '+(L.gren||0)+(TOUCH?'':' (G)')}{const mm=G.players&&G.players.get(G.me);const lo=!!(mm&&G.mode==='play'&&!L.dead&&mm.hp<=30);if(lo!==frame._lo){frame._lo=lo;$('lowhp').classList.toggle('on',lo)}}
+ requestAnimationFrame(frame);const dt=Math.min(.05,clock.getDelta());if(G.mode==='play'){if(!G.t0)G.t0=performance.now();adaptRes(dt);stepDrops(dt);stepGren(dt);quadStep();$('gren').textContent='💣 '+(L.gren||0)+(TOUCH?'':' (G)')}{const mm=G.players&&G.players.get(G.me);if(mm&&G.mode==='play'){const hv=mm.hp;if(frame._hp!==undefined&&hv-frame._hp>=8&&mm.alive!==false){const h=$('heal'),hp=$('hpop');hp.textContent='+'+Math.round(hv-frame._hp)+' ❤';h.classList.add('on');hp.classList.remove('on');void hp.offsetWidth;hp.classList.add('on');setTimeout(()=>h.classList.remove('on'),120)}frame._hp=hv}else frame._hp=undefined;const lo=!!(mm&&G.mode==='play'&&!L.dead&&mm.hp<=30);if(lo!==frame._lo){frame._lo=lo;$('lowhp').classList.toggle('on',lo)}}
  if(G.mode==='play'){
   if(G.host)hostTick(dt);else G.t+=dt;
   localUpdate(dt);
