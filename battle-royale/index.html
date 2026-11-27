@@ -154,7 +154,9 @@ const W=[
  {n:'رشاش',d:11,r:.085,mag:30,pel:1,spr:.03,rng:90,rel:1.5,col:0x4aa3ff,snd:420},
  {n:'بندقية',d:21,r:.12,mag:28,pel:1,spr:.015,rng:170,rel:1.7,col:0x66dd66,snd:330},
  {n:'شوتجن',d:9,r:.85,mag:6,pel:9,spr:.07,rng:45,rel:2.2,col:0xff8844,snd:200},
- {n:'قناص',d:85,r:1.35,mag:5,pel:1,spr:.002,rng:320,rel:2.4,col:0xcc66ff,snd:260}];
+ {n:'قناص',d:85,r:1.35,mag:5,pel:1,spr:.002,rng:320,rel:2.4,col:0xcc66ff,snd:260},
+ {n:'ريفولفر',d:46,r:.7,mag:6,pel:1,spr:.006,rng:140,rel:1.9,col:0xffd54a,snd:240},
+ {n:'رشاش ثقيل',d:15,r:.07,mag:60,pel:1,spr:.045,rng:100,rel:3.2,col:0xff4a4a,snd:360}];
 const NAMES=['صقر','نمر','أسد','ذئب','فهد','عقاب','شبح','برق','رعد','ظل','كوبرا','نينجا','فارس','حارس','قناص','وحش','ملك','ثعلب','دب','تنين','صاروخ','عاصفة','نار','جليد','سيف','درع','سهم','نجم','قمر','شمس','بركان','عنبر'];
 const ZPH=[{r:330,w:55,s:40,d:1},{r:210,w:40,s:30,d:2},{r:120,w:35,s:25,d:4},{r:60,w:30,s:20,d:7},{r:20,w:25,s:18,d:10},{r:1,w:8,s:14,d:14}];
 const canvas=$('c');
@@ -194,9 +196,9 @@ function buildScene(){
 }
 buildScene();
 const LOOT=[];
-const LT=[{n:'مسدس',w:0,c:0xcccccc},{n:'رشاش',w:1,c:0x4aa3ff},{n:'بندقية',w:2,c:0x66dd66},{n:'شوتجن',w:3,c:0xff8844},{n:'قناص',w:4,c:0xcc66ff},{n:'علاج',c:0xff4466,hp:55},{n:'درع',c:0x33ccff,sh:50},{n:'إمداد',c:0xffd700,drop:1}];
+const LT=[{n:'مسدس',w:0,c:0xcccccc},{n:'رشاش',w:1,c:0x4aa3ff},{n:'بندقية',w:2,c:0x66dd66},{n:'شوتجن',w:3,c:0xff8844},{n:'قناص',w:4,c:0xcc66ff},{n:'علاج',c:0xff4466,hp:55},{n:'درع',c:0x33ccff,sh:50},{n:'إمداد',c:0xffd700,drop:1},{n:'ريفولفر',w:5,c:0xffd54a},{n:'رشاش ثقيل',w:6,c:0xff4a4a}];
 const DROPS=[];
-function genLoot(){const r=rng(555);const pick=()=>{const v=r();return v<.12?0:v<.27?1:v<.4?2:v<.5?3:v<.56?4:v<.78?5:6};
+function genLoot(){const r=rng(555);const pick=()=>{const v=r();return v<.12?0:v<.27?1:v<.4?2:v<.5?3:v<.56?4:v<.6?8:v<.64?9:v<.82?5:6};
  const add=(x,z)=>{LOOT.push({id:LOOT.length,t:pick(),x,z,y:groundAt(x,z)+.5})};
  for(const h of houses){const k=h.big?7:4;for(let i=0;i<k;i++)add(h.x+(r()-.5)*(h.hw*2-2),h.z+(r()-.5)*(h.hd*2-2))}
  let n=0,tr=0;while(n<110&&tr<2000){tr++;const x=(r()-.5)*700,z=(r()-.5)*700;if(H(x,z)<1.2||Math.hypot(x,z)>350)continue;add(x,z);n++}
