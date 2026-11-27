@@ -176,7 +176,7 @@ const COLS=["#ffb020","#ff4d6d","#38d27a","#49a6ff","#b06cff","#f5f5f5"];
 const PAL=[
  {t:"player",n:"اللاعب",w:1,h:1},{t:"block",n:"منصة",w:3,h:1},{t:"mover",n:"منصة متحركة",w:3,h:1},
  {t:"coin",n:"عملة",w:1,h:1},{t:"enemy",n:"عدو",w:1,h:1},{t:"flyer",n:"طائر",w:1,h:1},
- {t:"spike",n:"شوك",w:1,h:1},{t:"spring",n:"نابض",w:1,h:1},{t:"goal",n:"العلم",w:1,h:1},{t:"sign",n:"لافتة",w:1,h:1},{t:"chaser",n:"عدو مطارد",w:1,h:1},{t:"turret",n:"مدفع",w:1,h:1},{t:"boss",n:"زعيم",w:3,h:3},{t:"heart",n:"قلب",w:1,h:1},{t:"star",n:"نجمة قوة",w:1,h:1},{t:"portal",n:"بوابة سحرية",w:1,h:2},{t:"saw",n:"منشار متحرك",w:1,h:1},{t:"ice",n:"جليد زلق",w:2,h:1},{t:"belt",n:"سير متحرك",w:3,h:1},{t:"key",n:"مفتاح",w:1,h:1},{t:"door",n:"باب",w:1,h:3},{t:"check",n:"نقطة حفظ",w:1,h:1}
+ {t:"spike",n:"شوك",w:1,h:1},{t:"spring",n:"نابض",w:1,h:1},{t:"goal",n:"العلم",w:1,h:1},{t:"sign",n:"لافتة",w:1,h:1},{t:"chaser",n:"عدو مطارد",w:1,h:1},{t:"turret",n:"مدفع",w:1,h:1},{t:"boss",n:"زعيم",w:3,h:3},{t:"heart",n:"قلب",w:1,h:1},{t:"star",n:"نجمة قوة",w:1,h:1},{t:"portal",n:"بوابة سحرية",w:1,h:2},{t:"saw",n:"منشار متحرك",w:1,h:1},{t:"hopper",n:"عدو نطّاط",w:1,h:1},{t:"ice",n:"جليد زلق",w:2,h:1},{t:"belt",n:"سير متحرك",w:3,h:1},{t:"key",n:"مفتاح",w:1,h:1},{t:"door",n:"باب",w:1,h:3},{t:"check",n:"نقطة حفظ",w:1,h:1}
 ];
 const PINFO={}; PAL.forEach(p=>PINFO[p.t]=p);
 const RESIZE={block:1,mover:1,door:1};
@@ -277,6 +277,7 @@ function drawObj(c,o,px,py,pw,ph,th,t){
   case"coin":{
     const k=Math.abs(Math.cos(t*3+o.x));c.fillStyle="#ffcc00";c.beginPath();c.ellipse(px+s/2,py+s/2,s*0.28*(0.35+0.65*k),s*0.3,0,0,7);c.fill();
     c.strokeStyle="#b8860b";c.lineWidth=2;c.stroke();break}
+  case"hopper":{const sq=1+Math.sin(t*9+o.x)*0.06,hx=px+s/2,by=py+s-4;c.fillStyle="#2f9e44";c.beginPath();c.ellipse(hx,by-13,17*sq,15/sq,0,Math.PI,0);c.lineTo(hx+17*sq,by-2);c.lineTo(hx-17*sq,by-2);c.closePath();c.fill();c.strokeStyle="#1b5e20";c.lineWidth=2;c.stroke();c.strokeStyle="#adb5bd";c.lineWidth=3;c.beginPath();c.moveTo(hx-8,by-2);c.lineTo(hx-12,by+2);c.lineTo(hx-6,by+3);c.moveTo(hx+8,by-2);c.lineTo(hx+12,by+2);c.lineTo(hx+6,by+3);c.stroke();c.fillStyle="#fff";c.beginPath();c.arc(hx-6,by-16,4,0,7);c.arc(hx+6,by-16,4,0,7);c.fill();c.fillStyle="#111";c.beginPath();c.arc(hx-5,by-16,2,0,7);c.arc(hx+7,by-16,2,0,7);c.fill();break}
   case"ice":{c.fillStyle="#a5d8ff";c.fillRect(px,py,pw,ph);c.fillStyle="#d0ebff";c.fillRect(px,py,pw,6);c.strokeStyle="#ffffffaa";c.lineWidth=2;for(let xx=0;xx<pw;xx+=T){c.beginPath();c.moveTo(px+xx+8,py+ph-8);c.lineTo(px+xx+22,py+10);c.stroke()}c.strokeStyle="#4dabf7";c.strokeRect(px+1,py+1,pw-2,ph-2);break}
   case"belt":{c.fillStyle="#495057";c.fillRect(px,py,pw,ph);c.fillStyle="#ffd43b";const off=(t*40)%T;for(let xx=-T;xx<pw;xx+=T){const x0=px+xx+off;if(x0<px-4||x0>px+pw-14)continue;c.beginPath();c.moveTo(x0,py+10);c.lineTo(x0+14,py+ph/2);c.lineTo(x0,py+ph-10);c.lineTo(x0+5,py+ph/2);c.fill()}c.strokeStyle="#212529";c.lineWidth=3;c.strokeRect(px+1.5,py+1.5,pw-3,ph-3);break}
   case"saw":{const hx=px+s/2,hy=py+s/2,R=17;c.save();c.translate(hx,hy);c.rotate(t*9+o.x);c.fillStyle="#ced4da";c.beginPath();for(let i=0;i<16;i++){const a=i*Math.PI/8,r=i%2?R*0.75:R;c.lineTo(Math.cos(a)*r,Math.sin(a)*r)}c.closePath();c.fill();c.strokeStyle="#495057";c.lineWidth=2;c.stroke();c.fillStyle="#e03131";c.beginPath();c.arc(0,0,5,0,7);c.fill();c.restore();break}
@@ -620,6 +621,7 @@ function loadLevel(){
     else if(o.t==="check")P.checks.push({x:r.x,y:r.y,w:T,h:T,on:false});
     else if(o.t==="mover"){const m={...r,bx:r.x,by:r.y,r:(o.r||4)*T,v:o.v|0,ph:0,dx:0,dy:0};P.movers.push(m)}
     else if(o.t==="coin")P.coins.push({x:r.x+T/2,y:r.y+T/2,o});
+    else if(o.t==="hopper")P.enemies.push({k:"e",hop:1,hc:Math.random()*1.1,x:r.x+4,y:r.y+6,w:T-8,h:T-8,vx:(Math.random()<.5?-1:1)*60,vy:0,dir:1,ch:0,alive:true,sx:r.x,sy:r.y});
     else if(o.t==="enemy")P.enemies.push({k:"e",x:r.x+4,y:r.y+6,w:T-8,h:T-8,vx:(Math.random()<.5?-1:1)*70,vy:0,dir:1,ch:0,alive:true,sx:r.x,sy:r.y});
     else if(o.t==="saw")P.saws.push({x:r.x,y:r.y,bx:r.x,by:r.y,w:T-10,h:T-10,o,rng:T*(o.r||4)});
     else if(o.t==="portal")P.portals.push({x:r.x,y:r.y,w:T,h:T*2,o});
@@ -756,7 +758,7 @@ function stepPlay(dt){
         e.vy=Math.min(900,e.vy+1800*dt);
         const sgn=Math.sign(e.vx)||1;
         const r=moveBox(e,e.vx*dt,e.vy*dt,false);
-        if(r.landed)e.vy=0;
+        if(r.landed){e.vy=0;if(e.hop){e.hc-=dt;if(e.hc<=0){e.vy=-640;e.hc=1.1}}}
         if(r.hitX){e.vx=-e.vx}
         else if(r.landed){ // edge check
           const ax_=sgn>0?e.x+e.w+2:e.x-2,ay_=e.y+e.h+4;
@@ -866,7 +868,7 @@ function renderPlay(){
   if(P.boss&&!P.boss.dead){const B=P.boss;drawObj(cx,B.o,B.x,B.y,B.w,B.h,th,t);cx.fillStyle="#000a";cx.fillRect(B.x+10,B.y-16,B.w-20,10);cx.fillStyle="#ff4d6d";cx.fillRect(B.x+11,B.y-15,(B.w-22)*B.hp/B.max,8)}
   for(const u of P.turrets)drawObj(cx,{t:"turret"},u.x,u.y,0,0,th,t);
   for(const q of P.bul){cx.fillStyle="#ff5252";cx.beginPath();cx.arc(q.x+6,q.y+6,7,0,7);cx.fill();cx.fillStyle="#ffd0d0";cx.beginPath();cx.arc(q.x+4,q.y+4,2.5,0,7);cx.fill()}
-  for(const e of P.enemies)if(e.alive)drawObj(cx,{t:e.ch2?"chaser":e.k==="e"?"enemy":"flyer"},e.x-(e.k==="e"?4:6),e.y-(e.k==="e"?6:6),0,0,th,t);
+  for(const e of P.enemies)if(e.alive)drawObj(cx,{t:e.ch2?"chaser":e.hop?"hopper":e.k==="e"?"enemy":"flyer",x:e.sx/T},e.x-(e.k==="e"?4:6),e.y-(e.k==="e"?6:6),0,0,th,t);
   const pl=P.player;
   if(P.state!=="dead"&&(pl.inv<=0||Math.floor(t*14)%2===0)){drawPlayer(cx,pl.x-8,pl.y-2,T,G.col,G.char,pl.face,t,Math.abs(pl.vx)>20&&(pl.on||G.mode==="top"))}
   for(const q of P.particles){cx.globalAlpha=Math.max(0,q.l);cx.fillStyle=q.c;cx.fillRect(q.x-3,q.y-3,6,6)}cx.globalAlpha=1;
