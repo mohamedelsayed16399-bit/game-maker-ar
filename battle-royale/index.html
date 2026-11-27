@@ -63,6 +63,8 @@ input{background:#fff;color:#111;text-align:center;width:240px;user-select:text;
  <div id="specn" style="position:absolute;top:44px;left:50%;transform:translateX(-50%);background:#000a;padding:4px 14px;border-radius:14px;display:none;font-size:15px"></div>
  <div id="tut" style="position:absolute;inset:0;background:#000c;display:none;z-index:9999;align-items:center;justify-content:center;pointer-events:auto"><div style="max-width:420px;padding:22px;text-align:center;line-height:1.9;font-size:17px">👑 <b>إزاي تكسب</b><br>• انزل بالباراشوت جنب بيت وخد سلاح<br>• خد علاج ودرع، وخليك جوه الدايرة البيضا<br>• الدواسات الفيروزي بتطيّرك، اضغط قفز في الهوا للجلايدر<br>• آخر واحد (أو فريق) يفضل يكسب<br><button id="tutok" style="margin-top:12px;padding:10px 26px;font-size:18px">ماشي، يلا!</button></div></div>
  <div id="gren" style="position:absolute;right:14px;bottom:168px;font-size:20px;text-shadow:0 0 4px #000"></div>
+ <button id="bset" style="position:absolute;bottom:235px;left:8px;pointer-events:auto;width:42px;height:42px;border-radius:50%;font-size:20px;padding:0;background:#0007;border:1px solid #fff5;color:#fff">⚙</button>
+ <div id="pz" style="position:absolute;inset:0;background:#000b;display:none;z-index:9998;align-items:center;justify-content:center;pointer-events:auto"><div style="max-width:380px;width:86%;padding:22px;text-align:center;line-height:2.1;font-size:17px;background:#10253bee;border-radius:18px">⏸ <b>الإعدادات</b> (المباراة شغالة)<br><label>الحساسية <input type="range" id="sens2" min="40" max="220" style="width:150px;padding:0"></label><br><label>الصوت <input type="range" id="vol2" min="0" max="100" style="width:150px;padding:0"></label><br><button id="pzok" style="padding:10px 26px;font-size:18px;margin:6px">كمّل</button><button id="pzex" class="sec" style="padding:10px 18px;font-size:16px;margin:6px">اطلع من المباراة</button></div></div>
  <div id="scope"></div><div id="flash"></div><div id="cross"></div><div id="hit"></div><div id="lowhp"></div><div id="dmg"><i></i></div>
  <div id="top"><div class="chip" id="alive">👥 30</div><div class="chip" id="kills">☠ 0</div><div class="chip" id="ztime">المنطقة</div></div>
  <canvas id="mini" width="130" height="130"></canvas>
@@ -503,6 +505,10 @@ $('bstart').onclick=()=>{audio();startMatch()};
 $('bleave').onclick=toMenu;$('bagain').onclick=toMenu;$('bexit').onclick=toMenu;
 $('nm').value=localStorage.getItem('brName')||'';$('nm').onchange=()=>localStorage.setItem('brName',$('nm').value);
 let SENS=+(localStorage.getItem('brSens')||100)/100,VOL=+(localStorage.getItem('brVol')||80)/100;
+function openPz(){if(G.mode!=='play')return;$('sens2').value=SENS*100;$('vol2').value=VOL*100;$('pz').style.display='flex';if(document.pointerLockElement)document.exitPointerLock()}
+$('bset').onclick=openPz;$('pzok').onclick=()=>{$('pz').style.display='none';if(!TOUCH&&!L.dead)requestLock()};$('pzex').onclick=()=>{$('pz').style.display='none';toMenu()};
+$('sens2').oninput=()=>{SENS=$('sens2').value/100;$('sens').value=$('sens2').value;localStorage.setItem('brSens',$('sens2').value)};$('vol2').oninput=()=>{VOL=$('vol2').value/100;$('vol').value=$('vol2').value;localStorage.setItem('brVol',$('vol2').value)};
+document.addEventListener('pointerlockchange',()=>{if(!document.pointerLockElement&&G.mode==='play'&&!L.dead&&!TOUCH&&$('pz').style.display!=='flex'&&!(window.__nopz))openPz()});
 $('sens').value=SENS*100;$('vol').value=VOL*100;$('sens').oninput=()=>{SENS=$('sens').value/100;localStorage.setItem('brSens',$('sens').value)};$('vol').oninput=()=>{VOL=$('vol').value/100;localStorage.setItem('brVol',$('vol').value)};
 const keys={};let mouseDown=false,fireTouch=false;
 let bigOn=false;
@@ -612,5 +618,5 @@ function frame(){
  else{G.t+=dt;vm.visible=false;cam.fov=75;cam.updateProjectionMatrix();cam.position.set(Math.sin(G.t*.1)*250,70,Math.cos(G.t*.1)*250);cam.lookAt(0,5,0)}
  renderer.render(scene,cam)}
 frame();
-window.__G=G;window.__L=L;showStats();$('tutok').onclick=()=>{$('tut').style.display='none';try{localStorage.setItem('brTut','1')}catch(e){}};window.__dbg={doDrop,DFX,PINGS,pingAt,QUADS,quadToggle,GR,throwG,showStats,setAtmos,PADS,fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
+window.__G=G;window.__L=L;showStats();$('tutok').onclick=()=>{$('tut').style.display='none';try{localStorage.setItem('brTut','1')}catch(e){}};window.__dbg={openPz,doDrop,DFX,PINGS,pingAt,QUADS,quadToggle,GR,throwG,showStats,setAtmos,PADS,fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
 </script></body></html>
