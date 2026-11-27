@@ -258,6 +258,13 @@ function drawMap(){const cv=$('mapc');if(!cv)return;const c=cv.getContext('2d');
   if(x===S.x&&y===S.y){c.strokeStyle='#fff';c.lineWidth=2;c.strokeRect(px-14,py-14,28,28)}
   if(sel&&sel.x===x&&sel.y===y){c.strokeStyle='#ff0';c.lineWidth=2;c.beginPath();c.arc(px,py,17,0,6.28);c.stroke()}
   c.fillStyle='#cfe';c.font='13px sans-serif';c.textAlign='center';c.fillText(s.name,px,py+25)}}
+const _dm=drawMap;drawMap=function(){_dm();const cv=$('mapc');if(!cv)return;const c=cv.getContext('2d'),k=480/9;
+const cx=(4.5)*k,cy=(4.5)*k;const rr=S.fuel/(6*(1-.08*skp(1)))*k;c.save();c.setLineDash([6,6]);c.strokeStyle='rgba(120,255,160,.45)';c.lineWidth=1.5;c.beginPath();c.arc(cx,cy,Math.min(rr,700),0,6.28);c.stroke();c.restore();
+for(let x=S.x-5;x<=S.x+5;x++)for(let y=S.y-5;y<=S.y+5;y++){const s=starAt(S.g,x,y);if(!s)continue;const px=(x-S.x+4.5+s.ox)*k,py=(y-S.y+4.5+s.oy)*k;
+if(nebIs(s)){const g=c.createRadialGradient(px,py,2,px,py,30);g.addColorStop(0,'rgba(190,90,255,.5)');g.addColorStop(1,'rgba(190,90,255,0)');c.fillStyle=g;c.beginPath();c.arc(px,py,30,0,6.28);c.fill()}
+if(s.danger>.66){c.strokeStyle='#f55';c.lineWidth=1.5;c.beginPath();c.moveTo(px+10,py-14);c.lineTo(px+16,py-4);c.lineTo(px+4,py-4);c.closePath();c.stroke()}}
+if(sel&&(sel.x!==S.x||sel.y!==S.y)){c.save();c.setLineDash([4,5]);c.strokeStyle='#ff0';c.lineWidth=1.5;c.beginPath();c.moveTo(cx,cy);c.lineTo((sel.x-S.x+4.5+sel.ox)*k,(sel.y-S.y+4.5+sel.oy)*k);c.stroke();c.restore()}
+c.font='12px sans-serif';c.textAlign='right';c.fillStyle='#9fe';c.fillText('⭕ مدى الوقود  🟣 سديم  🔺 خطر',470,472)};
 function warp(){const w=$('warp');w.classList.remove('on');void w.offsetWidth;w.classList.add('on');beep(120,.8,'sawtooth',.06)}
 function jump(s){const d=Math.hypot(s.x-S.x,s.y-S.y);const cost=Math.ceil(d*6*(1-.08*skp(1)));if(S.fuel<cost||!d)return;S.fuel-=cost;S.x=s.x;S.y=s.y;S.stats.jumps++;closeMenu();warp();buildSystem();toast('🌀 وصلت نظام '+curStar.name+' · أراضي '+FACS[facOf(S.g,curStar.x,curStar.y)][0]);questTick();save()}
 /* ---------- station ---------- */
@@ -819,4 +826,4 @@ window.__u={get space(){return space},get ebullets(){return ebullets},get bullet
 loop();
 </script>
 </body>
- </html>
+                                                                                                                                                                            </html>
