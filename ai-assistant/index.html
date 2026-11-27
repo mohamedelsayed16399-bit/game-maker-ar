@@ -47,7 +47,7 @@ header button{background:none;border:0;color:var(--tx);font-size:18px;cursor:poi
 </style>
 </head>
 <body>
-<header><div style="font-size:22px">🤖</div><h1>مساعدي الذكي</h1><span class="note">يعمل محليًا 100%</span><button id="theme" title="الوضع">🌓</button><button id="clr" title="مسح المحادثة">🗑️</button></header>
+<header><div style="font-size:22px">🤖</div><h1>مساعدي الذكي</h1><span class="note">يعمل محليًا 100%</span><button id="spk" title="قراءة الردود بصوت">🔇</button><button id="theme" title="الوضع">🌓</button><button id="clr" title="مسح المحادثة">🗑️</button></header>
 <div class="tabs" id="tabs"></div>
 <main>
 <section class="pane on" id="p-chat">
@@ -191,7 +191,7 @@ function habitTips(){const u=usage,h=u._h||{},o=[];const tot=Object.values(h).re
  if(!(u.mem))o.push('جرب "اسمي ..." و"افتكر إن ... هو ..." عشان أفتكر حاجات عنك.');
  if(docs.length===0)o.push('ضيف مستنداتك في تبويب "مستنداتي" وابحث فيها بسرعة.');
  return 'اقتراحات من استخدامك (إحصائيات محلية، مش ذكاء توليدي):\n'+o.map(x=>'• '+x).join('\n')}
-function go(){const v=$('#inp').value;if(!v.trim())return;add('u',v);$('#inp').value='';bump('msg');const ty=document.createElement('div');ty.className='m b typing';ty.textContent='...';$('#msgs').appendChild(ty);$('#msgs').scrollTop=1e9;setTimeout(()=>{ty.remove();let r;try{r=brain(v)}catch(e){r='حصل خطأ: '+e.message}add('b',r)},220+Math.random()*200)}
+function go(){const v=$('#inp').value;if(!v.trim())return;add('u',v);$('#inp').value='';bump('msg');const ty=document.createElement('div');ty.className='m b typing';ty.textContent='...';$('#msgs').appendChild(ty);$('#msgs').scrollTop=1e9;setTimeout(()=>{ty.remove();let r;try{r=brain(v)}catch(e){r='حصل خطأ: '+e.message}add('b',r);say(r);const qs=quick(r);if(qs.length){const w=document.createElement('div');w.className='chips';qs.forEach(x=>{const b=document.createElement('button');b.className='s';b.textContent=x;b.onclick=()=>{$('#inp').value=x;go();w.remove()};w.appendChild(b)});$('#msgs').appendChild(w);$('#msgs').scrollTop=1e9}},220+Math.random()*200)}
 $('#send').onclick=go;$('#inp').addEventListener('keydown',e=>{if(e.key==='Enter')go()});
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
 if(!SR)$('#mic').style.display='none';else $('#mic').onclick=()=>{const r=new SR();r.lang='ar-EG';r.onresult=e=>{$('#inp').value=e.results[0][0].transcript;go()};r.onerror=()=>add('b','تعذر الميكروفون.',false);r.start()};
@@ -247,8 +247,13 @@ $('#dask').onclick=()=>{$('#dout').textContent=docAnswer($('#dq').value)};
 $('#dq').addEventListener('keydown',e=>{if(e.key==='Enter')$('#dask').click()});
 $('#dfile').onchange=e=>{[...e.target.files].forEach(f=>{const r=new FileReader();r.onload=()=>addDoc(f.name,String(r.result));r.readAsText(f)})};
 renderDocs();
+
+let speak=LS.get('speak',false);function setSpk(){$('#spk').textContent=speak?'🔊':'🔇'}setSpk();
+$('#spk').onclick=()=>{speak=!speak;LS.set('speak',speak);setSpk();if(!('speechSynthesis' in window))add('b','المتصفح ده مش بيدعم القراءة الصوتية.',false)};
+function say(t){if(!speak||!('speechSynthesis' in window))return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t.replace(/[•\n]+/g,'. '));u.lang='ar-EG';speechSynthesis.speak(u)}catch(e){}}
+function quick(r){const q=[];if(/سجلت/.test(r))q.push('مهامي');if(/المؤقت/.test(r))q.push('عندي ايه النهارده');if(/مش متأكد/.test(r))q.push('اقتراحات','ملخص اليوم');if(/الكيلو|باوند/.test(r))q.push('و 10');if(/حفظت اسمك/.test(r))q.push('ايه اللي تعرفه عني؟');return q.slice(0,3)}
 if(LS.get('light',false))document.body.classList.add('light');$('#theme').onclick=()=>{const l=document.body.classList.toggle('light');LS.set('light',l)};$('#clr').onclick=()=>{if(confirm('تمسح المحادثة؟')){hist=[];LS.set('hist',hist);$('#msgs').innerHTML='';add('b','تم مسح المحادثة.',false)}};
-hist.forEach(([r,t])=>add(r,t,false));if(!hist.length)add('b','أهلا! أنا مساعدك الذكي. شغال كله جوه متصفحك، ومفيش بيانات بتخرج من جهازك. جرب الأزرار اللي تحت أو اكتب سؤالك.');
+hist.forEach(([r,t])=>add(r,t,false));if(!hist.length)add('b','نصايح سريعة: اكتب "ملخص اليوم" أو "فكرني ... بكرا الساعة ٥" أو "عد تنازلي ٥ دقايق". اضغط 🔊 عشان أقرا الردود بصوت، و🌓 للوضع الفاتح.',false);if(!hist.length)add('b','أهلا! أنا مساعدك الذكي. شغال كله جوه متصفحك، ومفيش بيانات بتخرج من جهازك. جرب الأزرار اللي تحت أو اكتب سؤالك.');
 if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body>
