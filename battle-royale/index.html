@@ -523,10 +523,11 @@ function fireworks(){const c=document.createElement('canvas');c.width=innerWidth
   x.globalCompositeOperation='destination-out';x.fillStyle='rgba(0,0,0,.18)';x.fillRect(0,0,c.width,c.height);x.globalCompositeOperation='lighter';
   for(let i=P.length-1;i>=0;i--){const p=P[i];p.x+=p.vx;p.y+=p.vy;p.vy+=.06;p.vx*=.985;p.l-=.012;if(p.l<=0){P.splice(i,1);continue}x.fillStyle='hsla('+p.h+',100%,60%,'+p.l+')';x.fillRect(p.x,p.y,3,3)}
   requestAnimationFrame(loop)};requestAnimationFrame(loop)}
+function rankTitle(won,pl,k){if(won&&k>=5)return'👑 سفاح الجزيرة';if(won)return'🏆 ملك الجزيرة';if(k>=5)return'💀 قناص محترف';if(pl>0&&pl<=3)return'🥉 من الكبار';if(k>=2)return'⚔ مقاتل';if(k===1)return'🎯 أول دم';return'🌱 مبتدئ'}
 function endMatch(o){G.mode='over';$('hud').classList.remove('on');$('touch').classList.remove('on');$('bexit').style.display='none';if(document.pointerLockElement)document.exitPointerLock();
  const won=o.wid===G.me;$('gtitle').textContent=won?'🏆 انت الملك! فزت!':(o.w==='-'?'انتهت المباراة':'الفائز: '+o.w);
  const m=me();
- $('gdet').innerHTML=o.res.map(r=>`${r.p===1?'🥇':r.p===2?'🥈':r.p===3?'🥉':'#'+r.p} ${r.n} · قتلى ${r.k}`).join('<br>')+`<hr>مركزك: ${m?(won?1:(m.place||'?')):'-'} · قتلاك: ${m?m.kills:0}`+(G.t0?`<br>⏱ وقت البقاء: ${Math.floor((performance.now()-G.t0)/60000)}د ${Math.floor((performance.now()-G.t0)/1000)%60}ث`:'');
+ $('gdet').innerHTML=o.res.map(r=>`${r.p===1?'🥇':r.p===2?'🥈':r.p===3?'🥉':'#'+r.p} ${r.n} · قتلى ${r.k}`).join('<br>')+`<hr>مركزك: ${m?(won?1:(m.place||'?')):'-'} · قتلاك: ${m?m.kills:0}`+`<br>🎖 لقبك: <b>${rankTitle(won,m?m.place:0,m?m.kills:0)}</b>`+(G.t0?`<br>⏱ وقت البقاء: ${Math.floor((performance.now()-G.t0)/60000)}د ${Math.floor((performance.now()-G.t0)/1000)%60}ث`:'');
  if(won)fireworks();$('go').classList.remove('hide');saveBest(m?m.kills:0,won)}
 function showStats(){try{const b=JSON.parse(localStorage.getItem('brBest')||'null');$('stats').textContent=b&&b.g?`🏆 انتصاراتك ${b.w} من ${b.g} مباراة · أعلى قتلى ${b.k}`:''}catch(e){}}
 function saveBest(k,w){G.t0=0;try{const b=JSON.parse(localStorage.getItem('brBest')||'{"k":0,"w":0,"g":0}');b.k=Math.max(b.k,k);b.g++;if(w)b.w++;localStorage.setItem('brBest',JSON.stringify(b))}catch(e){}}
@@ -691,5 +692,5 @@ function frame(){
  else{G.t+=dt;vm.visible=false;cam.fov=75;cam.updateProjectionMatrix();cam.position.set(Math.sin(G.t*.1)*250,70,Math.cos(G.t*.1)*250);cam.lookAt(0,5,0)}
  renderer.render(scene,cam)}
 frame();
-window.__G=G;window.__L=L;showStats();$('tutok').onclick=()=>{$('tut').style.display='none';try{localStorage.setItem('brTut','1')}catch(e){}};window.__dbg={quickChat,QC,ENG,zoneRef:()=>__G.zone,fireworks,FORT,sbToggle,emote,showEmo,avatars,BCN,FL,setAtmos0:0,openPz,doDrop,DFX,PINGS,pingAt,QUADS,quadToggle,GR,throwG,showStats,setAtmos,PADS,fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
+window.__G=G;window.__L=L;showStats();$('tutok').onclick=()=>{$('tut').style.display='none';try{localStorage.setItem('brTut','1')}catch(e){}};window.__dbg={rankTitle,quickChat,QC,ENG,zoneRef:()=>__G.zone,fireworks,FORT,sbToggle,emote,showEmo,avatars,BCN,FL,setAtmos0:0,openPz,doDrop,DFX,PINGS,pingAt,QUADS,quadToggle,GR,throwG,showStats,setAtmos,PADS,fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
 </script></body></html>
