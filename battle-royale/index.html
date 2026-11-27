@@ -166,8 +166,10 @@ try{renderer=new THREE.WebGLRenderer({canvas,antialias:!TOUCH,powerPreference:'h
 renderer.setPixelRatio(Math.min(devicePixelRatio,TOUCH?1.5:2));
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x9fd0f5);scene.fog=new THREE.Fog(0x9fd0f5,120,520);
 const cam=new THREE.PerspectiveCamera(75,1,.1,900);cam.rotation.order='YXZ';scene.add(cam);
-scene.add(new THREE.HemisphereLight(0xdff0ff,0x4a5a3a,1.0));
+const hemi=new THREE.HemisphereLight(0xdff0ff,0x4a5a3a,1.0);scene.add(hemi);
 const sun=new THREE.DirectionalLight(0xfff0d0,1.4);sun.position.set(150,250,100);scene.add(sun);
+const ATM=[{n:'نهار صافي',sky:0x9fd0f5,fn:120,ff:520,sun:0xfff0d0,si:1.4,hi:1.0},{n:'غروب',sky:0xf2a46b,fn:90,ff:430,sun:0xff9a55,si:1.25,hi:.85},{n:'غيم وضباب',sky:0xaab4bd,fn:40,ff:300,sun:0xdde4ea,si:.8,hi:1.15},{n:'فجر',sky:0xc9a6d9,fn:80,ff:400,sun:0xffd0e0,si:1.0,hi:.9}];
+function setAtmos(i){const a=ATM[i%ATM.length];scene.background.setHex(a.sky);scene.fog.color.setHex(a.sky);scene.fog.near=a.fn;scene.fog.far=a.ff;sun.color.setHex(a.sun);sun.intensity=a.si;hemi.intensity=a.hi;G.atm=a.n;return a.n}
 function resize(){renderer.setSize(innerWidth,innerHeight,false);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix()}
 addEventListener('resize',resize);resize();
 let lootMesh,beamMesh,zoneMesh;
@@ -396,6 +398,7 @@ function hitMarker(h){const e=$('hit');e.style.borderColor=h?'#ff0':'#f33';e.sty
 function flash(sx,sz){if(sx!==undefined){const dx=sx-L.x,dz=sz-L.z,fx=-Math.sin(L.yaw),fz=-Math.cos(L.yaw),rx=Math.cos(L.yaw),rz=-Math.sin(L.yaw);const a=Math.atan2(dx*rx+dz*rz,dx*fx+dz*fz)*180/Math.PI;const e=$('dmg');e.style.transition='none';e.style.transform='rotate('+a+'deg)';e.style.opacity=1;requestAnimationFrame(()=>{e.style.transition='opacity .8s';e.style.opacity=0})}const e=$('flash');e.style.opacity=.9;setTimeout(()=>e.style.opacity=0,180);sfx(150,.3,.15)}
 function beginLocal(list){
  G.mode='play';G.over=false;G.t=0;resetLoot();
+ {const a0=list[0]||{x:0,z:0};const nm=setAtmos(Math.floor(Math.abs(a0.x*7+a0.z*13))%ATM.length);setTimeout(()=>msg('الجو: '+nm,2500),400)}
  for(const a of avatars.values())scene.remove(a);avatars.clear();
  if(!G.host){G.players.clear();for(const a of list){const p=newPlayer(a.id,a.n,a.h);p.team=a.tm;G.players.set(a.id,p)}}
  const my=list.find(a=>a.id===G.me);L.x=my.x;L.z=my.z;L.y=150;L.vy=0;L.para=true;L.wpns=[0,-1,-1];L.cur=0;L.mag=[12,0,0];L.lastW=[0,-1,-1];L.reloadT=0;L.yaw=Math.random()*6.28;L.pitch=-.3;L.dead=false;L.zoom=false;
@@ -551,5 +554,5 @@ function frame(){
  else{G.t+=dt;vm.visible=false;cam.fov=75;cam.updateProjectionMatrix();cam.position.set(Math.sin(G.t*.1)*250,70,Math.cos(G.t*.1)*250);cam.lookAt(0,5,0)}
  renderer.render(scene,cam)}
 frame();
-window.__G=G;window.__L=L;window.__dbg={PADS,fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
+window.__G=G;window.__L=L;window.__dbg={setAtmos,PADS,fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
 </script></body></html>
