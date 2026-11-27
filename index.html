@@ -114,6 +114,7 @@ textarea{width:100%;min-height:70px;direction:ltr;font-size:12px}
   <div class="row"><label>صورة اللاعب (وش صاحبك مثلا)</label><button class="btn" id="imgPb">اختار صورة</button><button class="btn" id="imgPc">شيل</button></div>
   <div class="row"><label>صورة الأعداء</label><button class="btn" id="imgEb">اختار صورة</button><button class="btn" id="imgEc">شيل</button></div>
   <div class="row"><label>صورة الخلفية (أي صورة تعجبك)</label><button class="btn" id="imgBb">اختار صورة</button><button class="btn" id="imgBc">شيل</button></div>
+  <div class="row"><label>صورة الأرض والبلوكات</label><button class="btn" id="imgTb">اختار صورة</button><button class="btn" id="imgTc">شيل</button></div>
   <input type="file" id="imgF" accept="image/*" style="display:none">
   <div class="row"><label>عدد الأرواح</label><input type="number" id="sLives" min="1" max="9" style="width:80px"></div>
   <div class="row"><label>لازم تجمع كل العملات قبل العلم</label><input type="checkbox" id="sReq"></div>
@@ -265,6 +266,7 @@ function drawObj(c,o,px,py,pw,ph,th,t){
   switch(o.t){
   case"block":case"mover":{
     c.fillStyle=th.blk;c.fillRect(px,py,pw,ph);
+    {const tim=G&&getImg(G.imgT);if(tim&&o.t==="block"){for(let xx=0;xx<pw;xx+=T)for(let yy=0;yy<ph;yy+=T)c.drawImage(tim,px+xx,py+yy,T,T)}}
     c.fillStyle="#0002";
     for(let yy=T;yy<ph;yy+=T)c.fillRect(px,py+yy-1,pw,2);
     for(let yy=0;yy<ph;yy+=T)for(let xx=(yy/T%2)*T/2;xx<pw;xx+=T)c.fillRect(px+xx,py+yy,2,Math.min(T,ph-yy));
@@ -893,11 +895,11 @@ async function dec(code){
 }
 // compact: objects as arrays
 function pack(g){
-  return {v:1,ip:g.imgP||"",ie:g.imgE||"",ib:g.imgB||"",ph:g.ph|0,n:g.title,m:g.mode,th:g.theme,c:g.char,k:g.col,l:g.lives,q:g.req?1:0,
+  return {v:1,ip:g.imgP||"",ie:g.imgE||"",ib:g.imgB||"",it:g.imgT||"",ph:g.ph|0,n:g.title,m:g.mode,th:g.theme,c:g.char,k:g.col,l:g.lives,q:g.req?1:0,
     L:g.levels.map(l=>({t:l.title||"",w:l.w,h:l.h,o:l.o.map(o=>{const a=[o.t,o.x,o.y,o.w,o.h];if(o.t==="mover")a.push(o.r||4,o.v|0);if(o.t==="sign")a.push(o.s||"");return a})}))};
 }
 function unpack(p){
-  const g=newGame(p.n);g.mode=p.m==="top"?"top":"plat";g.theme=THEMES[p.th]?p.th:"day";g.char=CHARS[p.c]?p.c:"cat";g.col=/^#[0-9a-f]{3,8}$/i.test(p.k)?p.k:COLS[0];g.lives=Math.max(1,Math.min(9,p.l|0||3));g.imgP=/^data:image\/(webp|jpeg|png);base64,[A-Za-z0-9+\/=]{20,20000}$/.test(p.ip||"")?p.ip:"";g.imgE=/^data:image\/(webp|jpeg|png);base64,[A-Za-z0-9+\/=]{20,20000}$/.test(p.ie||"")?p.ie:"";g.imgB=/^data:image\/(webp|jpeg|png);base64,[A-Za-z0-9+\/=]{20,20000}$/.test(p.ib||"")?p.ib:"";g.req=!!p.q;g.ph=PHYS[p.ph|0]?p.ph|0:0;
+  const g=newGame(p.n);g.mode=p.m==="top"?"top":"plat";g.theme=THEMES[p.th]?p.th:"day";g.char=CHARS[p.c]?p.c:"cat";g.col=/^#[0-9a-f]{3,8}$/i.test(p.k)?p.k:COLS[0];g.lives=Math.max(1,Math.min(9,p.l|0||3));g.imgP=/^data:image\/(webp|jpeg|png);base64,[A-Za-z0-9+\/=]{20,20000}$/.test(p.ip||"")?p.ip:"";g.imgE=/^data:image\/(webp|jpeg|png);base64,[A-Za-z0-9+\/=]{20,20000}$/.test(p.ie||"")?p.ie:"";g.imgB=/^data:image\/(webp|jpeg|png);base64,[A-Za-z0-9+\/=]{20,20000}$/.test(p.ib||"")?p.ib:"";g.imgT=/^data:image\/(webp|jpeg|png);base64,[A-Za-z0-9+\/=]{20,20000}$/.test(p.it||"")?p.it:"";g.req=!!p.q;g.ph=PHYS[p.ph|0]?p.ph|0:0;
   g.title=String(p.n||"لعبة").slice(0,40);
   g.levels=p.L.slice(0,12).map(l=>({title:String(l.t||"").slice(0,50),w:Math.max(8,Math.min(200,l.w|0)),h:Math.max(8,Math.min(60,l.h|0)),o:l.o.slice(0,3000).filter(a=>PINFO[a[0]]).map(a=>{const o={t:a[0],x:a[1]|0,y:a[2]|0,w:Math.max(1,a[3]|0),h:Math.max(1,a[4]|0)};if(o.t==="mover"){o.r=a[5]||4;o.v=a[6]|0}if(o.t==="sign")o.s=String(a[5]||"").slice(0,60);return o})}));
   return g;
@@ -991,6 +993,7 @@ function openSet(){
 }
 $("bSet").onclick=openSet;
 let imgTarget=null;
+$("imgTb").onclick=()=>{imgTarget="imgT";$("imgF").click()};$("imgTc").onclick=()=>{delete G.imgT;dirty();toast("اتشالت صورة الأرض")};
 $("imgBb").onclick=()=>{imgTarget="imgB";$("imgF").click()};$("imgBc").onclick=()=>{delete G.imgB;dirty();toast("اتشالت صورة الخلفية")};
 $("imgPb").onclick=()=>{imgTarget="imgP";$("imgF").click()};$("imgEb").onclick=()=>{imgTarget="imgE";$("imgF").click()};
 $("imgPc").onclick=()=>{delete G.imgP;toast("اتشالت صورة اللاعب")};$("imgEc").onclick=()=>{delete G.imgE;toast("اتشالت صورة الأعداء")};
