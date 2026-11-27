@@ -770,7 +770,7 @@ for(let i=asr.rocks.length-1;i>=0;i--){const k=asr.rocks[i];k.m.position.add(k.v
 asrBar.style.display='block';asrBar.textContent='☄️ '+AR(Math.max(0,Math.ceil(asr.t)))+' ث · فجّرت '+AR(asr.sh);
 if(asr.t<=0&&asr.rocks.length===0){const r=asr.hit===0?1500:asr.hit<=3?700:300;S.credits+=r;S.stats.storms=(S.stats.storms||0)+1;toast('☄️ عديت العاصفة! '+(asr.hit===0?'من غير ولا خدش ':'')+'+'+AR(r)+' 💰 ('+AR(asr.sh)+' نيزك اتفجر +'+AR(asr.sh*25)+')');asr=null;asrBar.style.display='none';hud();save()}}else asrBar.style.display='none'}
 let dvBar=null,dvCd=0,dvSp=0;
-window.setDvSp=v=>{dvSp=v};window.summonDevourer=()=>{if(pirates.some(p=>p.devour)){toast('الملتهم موجود بالفعل');return}if(xpLvl()<5){toast('محتاج مستوى خبرة ٥ على الأقل');return}if(S.credits<2000){toast('محتاج ٢٠٠٠ 💰 للاستدعاء');return}S.credits-=2000;closeMenu();const g=makeShip(0x2a0a40,0xc040ff);g.scale.setScalar(10);g.position.copy(ship.position).add(new THREE.Vector3(0,80,-1800));space.add(g);pirates.push({m:g,boss:true,devour:true,kind:null,hp:2000,max:2000,cd:2});dvSp=6;toast('👁️ الملتهم ظهر! أقوى عدو في الكون');hud()};
+window.setDvSp=v=>{dvSp=v};window.summonDevourer=()=>{if(pirates.some(p=>p.devour)){toast('الملتهم موجود بالفعل');return}if(xpLvl()<5){toast('محتاج مستوى خبرة ٥ على الأقل');return}if(S.credits<2000){toast('محتاج ٢٠٠٠ 💰 للاستدعاء');return}S.credits-=2000;closeMenu();const g=makeShip(0x6a2a9a,0xe060ff);g.scale.setScalar(14);const eye=new THREE.Mesh(new THREE.SphereGeometry(3.2,16,16),new THREE.MeshBasicMaterial({color:0xff40ff}));eye.position.set(0,1,-3);g.add(eye);const halo=new THREE.Mesh(new THREE.SphereGeometry(7,16,16),new THREE.MeshBasicMaterial({color:0xaa30ff,transparent:true,opacity:.25,depthWrite:false}));g.add(halo);g.position.copy(ship.position).add(new THREE.Vector3(0,80,-1800));space.add(g);pirates.push({m:g,boss:true,devour:true,kind:null,hp:2000,max:2000,cd:2});dvSp=6;toast('👁️ الملتهم ظهر! أقوى عدو في الكون');hud()};
 function devourUpdate(dt){if(!dvBar){dvBar=document.createElement('div');dvBar.style.cssText='max-width:230px;text-align:center;pointer-events:none;background:#000a;border:1px solid #c040ff;border-radius:10px;padding:4px 10px;font-size:13px;color:#e8b0ff;direction:rtl';hudStack().appendChild(dvBar)}
 const al=pirates.find(q=>q.devour);if(!al){dvBar.style.display='none';return}
 const ph=al.hp>1300?1:al.hp>600?2:3;dvBar.style.display='block';dvBar.textContent='👁️ الملتهم · طور '+AR(ph)+' · '+AR(Math.max(0,Math.round(al.hp/al.max*100)))+'٪';
@@ -801,4 +801,4 @@ window.__u={dvPlace:d=>{const p=pirates.find(q=>q.devour);if(p)p.m.position.copy
 loop();
 </script>
 </body>
-</html>
+ </html>
