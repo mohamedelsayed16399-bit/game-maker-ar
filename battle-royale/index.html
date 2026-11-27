@@ -370,7 +370,7 @@ function startMatch(){
  let id=100;const total=30;const names=NAMES.slice().sort(()=>Math.random()-.5);
  const mkPos=()=>{for(let i=0;i<50;i++){const a=spawnR()*6.28,r=Math.sqrt(spawnR())*280;const x=Math.cos(a)*r,z=Math.sin(a)*r;if(H(x,z)>1)return[x,z]}return[0,0]};
  for(const h of hum){const p=newPlayer(h.id,h.name,true);const [x,z]=mkPos();p.x=x;p.z=z;p.y=150;G.players.set(p.id,p)}
- let bi=0;while(G.players.size<total){const p=newPlayer(id++,names[bi++%names.length]+' '+(10+Math.floor(Math.random()*89)),false);const [x,z]=mkPos();p.x=x;p.z=z;p.y=150;const [tx,tz]=mkPos();p.ai={tx,tz,wt:0,react:0,vis:0,tgt:null,stuck:0,lx:x,lz:z,sT:0,sd:1,skill:.4+Math.random()*.5};G.players.set(p.id,p)}
+ let bi=0;while(G.players.size<total){const pr=Math.random(),pers=pr<.22?'r':pr<.42?'c':'n';const p=newPlayer(id++,(pers==='r'?'🔥':pers==='c'?'🏕':'')+names[bi++%names.length]+' '+(10+Math.floor(Math.random()*89)),false);const [x,z]=mkPos();p.x=x;p.z=z;p.y=150;const [tx,tz]=mkPos();p.ai={tx,tz,wt:0,react:0,vis:0,tgt:null,stuck:0,lx:x,lz:z,sT:0,sd:1,skill:Math.min(.95,.4+Math.random()*.5+(pers==='c'?.12:0)),pers};G.players.set(p.id,p)}
  {let i=0;for(const p of G.players.values()){p.team=Math.floor(i/(G.tsize||1));i++}}
  const f=G.fast?.45:1;G.zone={cx:0,cz:0,r:420,tcx:0,tcz:0,tr:420,ph:-1,t:(25+20)*f,state:'wait',scx:0,scz:0,sr:420,dur:1};
  const list=[...G.players.values()].map(p=>({id:p.id,n:p.name,h:p.human,x:p.x,z:p.z,tm:p.team}));
@@ -421,9 +421,11 @@ function botStep(b,dt){const ai=b.ai;if(!b.alive)return;
   else if(mt){if(ai.wt<=0){ai.wt=3+Math.random()*3;let bl=null,bd=20;for(const l of LOOT){if(taken.has(l.id))continue;const d=Math.hypot(l.x-b.x,l.z-b.z);if(d<bd&&Math.hypot(l.x-mt.x,l.z-mt.z)<24&&(!LT[l.t].hp||b.hp<90)){bd=d;bl=l}}if(bl){ai.tx=bl.x;ai.tz=bl.z}else{ai.tx=b.x;ai.tz=b.z}}}
   else if(ai.wt<=0||Math.hypot(ai.tx-b.x,ai.tz-b.z)<2.5){ai.wt=6+Math.random()*6;
    let bl=null,bd=90;for(const l of LOOT){if(taken.has(l.id))continue;const d=Math.hypot(l.x-b.x,l.z-b.z);if(d<bd&&(!LT[l.t].hp||b.hp<90)){bd=d;bl=l}}
-   if(bl&&Math.random()<.85){ai.tx=bl.x;ai.tz=bl.z}else{const a=Math.random()*6.28,r=Math.random()*Math.max(10,z.r*.8);ai.tx=z.cx+Math.cos(a)*r;ai.tz=z.cz+Math.sin(a)*r}}
+   let fh=null;if(ai.pers==='r'&&b.wpns.some(w=>w>=0&&w!==0)&&Math.random()<.6){let fd=170;for(const p of G.players.values()){if(!p.alive||p===b||p.para||(G.duo&&p.team===b.team))continue;const dd=Math.hypot(p.x-b.x,p.z-b.z);if(dd<fd){fd=dd;fh=p}}}
+   if(fh){ai.tx=fh.x;ai.tz=fh.z;ai.wt=3}else if(ai.pers==='c'&&inZ&&b.wpns.some(w=>w>=0&&w!==0)&&Math.random()<.5){ai.tx=b.x;ai.tz=b.z;ai.wt=7+Math.random()*7}
+   else if(bl&&Math.random()<.85){ai.tx=bl.x;ai.tz=bl.z}else{const a=Math.random()*6.28,r=Math.random()*Math.max(10,z.r*.8);ai.tx=z.cx+Math.cos(a)*r;ai.tz=z.cz+Math.sin(a)*r}}
   const dx=ai.tx-b.x,dz=ai.tz-b.z,d=Math.hypot(dx,dz)||1;wx=dx/d;wz=dz/d;b.yaw=Math.atan2(-dx,-dz)}
- const l=Math.hypot(wx,wz)||1;const sp=tg?4.6:5.4;const nx=b.x+wx/l*sp*dt,nz=b.z+wz/l*sp*dt;
+ const l=Math.hypot(wx,wz)||1;const sp=(tg?4.6:5.4)*(ai.pers==='r'?1.12:1);const nx=b.x+wx/l*sp*dt,nz=b.z+wz/l*sp*dt;
  if(groundAt(nx,nz)>-1.6&&Math.hypot(nx,nz)<R_ISL*.98){b.x=nx;b.z=nz;resolve(b,.4)}
  b.y=groundAt(b.x,b.z);
  ai.stuck+=dt;if(ai.stuck>1.5){ai.stuck=0;if(Math.hypot(b.x-ai.lx,b.z-ai.lz)<1.2){ai.wt=0;const a=Math.random()*6.28;ai.tx=b.x+Math.cos(a)*30;ai.tz=b.z+Math.sin(a)*30}ai.lx=b.x;ai.lz=b.z}
