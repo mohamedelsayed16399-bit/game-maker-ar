@@ -167,7 +167,8 @@ const W=[
  {n:'شوتجن',d:9,r:.85,mag:6,pel:9,spr:.07,rng:45,rel:2.2,col:0xff8844,snd:200},
  {n:'قناص',d:85,r:1.35,mag:5,pel:1,spr:.002,rng:320,rel:2.4,col:0xcc66ff,snd:260},
  {n:'ريفولفر',d:46,r:.7,mag:6,pel:1,spr:.006,rng:140,rel:1.9,col:0xffd54a,snd:240},
- {n:'رشاش ثقيل',d:15,r:.07,mag:60,pel:1,spr:.045,rng:100,rel:3.2,col:0xff4a4a,snd:360}];
+ {n:'رشاش ثقيل',d:15,r:.07,mag:60,pel:1,spr:.045,rng:100,rel:3.2,col:0xff4a4a,snd:360},
+ {n:'نصف آلي',d:38,r:.26,mag:12,pel:1,spr:.007,rng:230,rel:2.0,col:0x40e0d0,snd:290}];
 const NAMES=['صقر','نمر','أسد','ذئب','فهد','عقاب','شبح','برق','رعد','ظل','كوبرا','نينجا','فارس','حارس','قناص','وحش','ملك','ثعلب','دب','تنين','صاروخ','عاصفة','نار','جليد','سيف','درع','سهم','نجم','قمر','شمس','بركان','عنبر'];
 const ZPH=[{r:330,w:55,s:40,d:1},{r:210,w:40,s:30,d:2},{r:120,w:35,s:25,d:4},{r:60,w:30,s:20,d:7},{r:20,w:25,s:18,d:10},{r:1,w:8,s:14,d:14}];
 const canvas=$('c');
@@ -248,14 +249,14 @@ function buildScene(){
 }
 buildScene();
 const LOOT=[];
-const LT=[{n:'مسدس',w:0,c:0xcccccc},{n:'رشاش',w:1,c:0x4aa3ff},{n:'بندقية',w:2,c:0x66dd66},{n:'شوتجن',w:3,c:0xff8844},{n:'قناص',w:4,c:0xcc66ff},{n:'علاج',c:0xff4466,hp:55},{n:'درع',c:0x33ccff,sh:50},{n:'إمداد',c:0xffd700,drop:1},{n:'ريفولفر',w:5,c:0xffd54a},{n:'رشاش ثقيل',w:6,c:0xff4a4a}];
+const LT=[{n:'مسدس',w:0,c:0xcccccc},{n:'رشاش',w:1,c:0x4aa3ff},{n:'بندقية',w:2,c:0x66dd66},{n:'شوتجن',w:3,c:0xff8844},{n:'قناص',w:4,c:0xcc66ff},{n:'علاج',c:0xff4466,hp:55},{n:'درع',c:0x33ccff,sh:50},{n:'إمداد',c:0xffd700,drop:1},{n:'ريفولفر',w:5,c:0xffd54a},{n:'رشاش ثقيل',w:6,c:0xff4a4a},{n:'نصف آلي',w:7,c:0x40e0d0}];
 const DROPS=[];
-function genLoot(){const r=rng(555);const pick=()=>{const v=r();return v<.12?0:v<.27?1:v<.4?2:v<.5?3:v<.56?4:v<.6?8:v<.64?9:v<.82?5:6};
+function genLoot(){const r=rng(555);const pick=()=>{const v=r();return v<.12?0:v<.27?1:v<.4?2:v<.5?3:v<.56?4:v<.6?8:v<.64?9:v<.69?10:v<.84?5:6};
  const add=(x,z)=>{LOOT.push({id:LOOT.length,t:pick(),x,z,y:groundAt(x,z)+.5})};
  for(const h of houses){const k=h.big?7:4;for(let i=0;i<k;i++)add(h.x+(r()-.5)*(h.hw*2-2),h.z+(r()-.5)*(h.hd*2-2))}
  let n=0,tr=0;while(n<110&&tr<2000){tr++;const x=(r()-.5)*700,z=(r()-.5)*700;if(H(x,z)<1.2||Math.hypot(x,z)>350)continue;add(x,z);n++}
- if(BCN.piv){const ts=[4,9,2,9,4,6,5,6];ts.forEach((t,i)=>{const an=i/ts.length*6.283,x=BCN.x+Math.cos(an)*5.4,z=BCN.z+Math.sin(an)*5.4;LOOT.push({id:LOOT.length,t,x,z,y:groundAt(x,z)+.5})})}
- if(FORT.x!==undefined){const ts=[4,2,9,6,5,1,6,7];ts.forEach((t,i)=>{const an=i/ts.length*6.283+.4,rr=i%2?5:8.5,x=FORT.x+Math.cos(an)*rr,z=FORT.z+Math.sin(an)*rr;LOOT.push({id:LOOT.length,t:t===7?2:t,x,z,y:groundAt(x,z)+.5})})}
+ if(BCN.piv){const ts=[4,10,2,9,4,6,5,6];ts.forEach((t,i)=>{const an=i/ts.length*6.283,x=BCN.x+Math.cos(an)*5.4,z=BCN.z+Math.sin(an)*5.4;LOOT.push({id:LOOT.length,t,x,z,y:groundAt(x,z)+.5})})}
+ if(FORT.x!==undefined){const ts=[4,10,9,6,5,1,6,7];ts.forEach((t,i)=>{const an=i/ts.length*6.283+.4,rr=i%2?5:8.5,x=FORT.x+Math.cos(an)*rr,z=FORT.z+Math.sin(an)*rr;LOOT.push({id:LOOT.length,t:t===7?2:t,x,z,y:groundAt(x,z)+.5})})}
  for(let k=0;k<4;k++){DROPS.push(LOOT.length);LOOT.push({id:LOOT.length,t:7,x:0,z:0,y:0})}
  lootMesh=new THREE.InstancedMesh(new THREE.BoxGeometry(.7,.45,.7),new THREE.MeshLambertMaterial({color:0xffffff}),LOOT.length);
  beamMesh=new THREE.InstancedMesh(new THREE.CylinderGeometry(.12,.12,7,5),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.4}),LOOT.length);
@@ -571,7 +572,7 @@ function sbRender(){const e=$('sb');if(!sbOn||G.mode!=='play'){e.style.display='
  e.innerHTML='<b>🏁 المتصدرين</b> · عايشين '+al+' من '+all.length+'<hr style="border:0;border-top:1px solid #fff3;margin:4px 0">'+top.map((p,i)=>(p.alive?'':'💀 ')+(m&&p.id===m.id?'<b style="color:#fd4">':'<span>')+(i+1)+'. '+String(p.name).replace(/</g,'')+' · '+p.kills+(m&&p.id===m.id?'</b>':'</span>')).join('<br>');e.style.display='block'}
 setInterval(sbRender,400);
 function sbToggle(v){sbOn=v===undefined?!sbOn:v;sbRender()}
-const LICO=['🔫','🔫','🔫','🔫','🎯','💊','🛡','📦','🔫','🔫'];
+const LICO=['🔫','🔫','🔫','🔫','🎯','💊','🛡','📦','🔫','🔫','🎯'];
 setInterval(()=>{const e=$('lp');if(G.mode!=='play'||L.dead||L.para){e.style.display='none';return}let best=null,bd=6;for(const l of nearLoot(L.x,L.z,6)){if(Math.abs(l.y-L.y)>3)continue;const d=Math.hypot(l.x-L.x,l.z-L.z);if(d<bd){bd=d;best=l}}
  if(best){const t=LT[best.t];e.textContent=LICO[best.t]+' '+t.n;e.style.color='#'+t.c.toString(16).padStart(6,'0');e.style.display='block'}else e.style.display='none'},200);
 function sw(s){if(L.wpns[s]>=0){L.cur=s;L.reloadT=0;L.zoom=false}}
