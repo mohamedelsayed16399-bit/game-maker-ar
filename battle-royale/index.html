@@ -653,6 +653,7 @@ function drawMini(){const c=mini,S=130,R=S/2;c.clearRect(0,0,S,S);const sc=R/110
  c.strokeStyle='#ffe44a';c.lineWidth=2;for(const q of PINGS){c.beginPath();c.arc(q.x*sc,q.z*sc,5,0,6.3);c.stroke()}
  c.fillStyle='#3fc';for(const p of PADS){c.beginPath();c.arc(p.x*sc,p.z*sc,3,0,6.3);c.fill()}
  c.fillStyle='#f44';for(const p of G.players.values()){if(p.id===G.me||!p.alive||p.para)continue;if(Math.hypot(p.x-L.x,p.z-L.z)<60){c.beginPath();c.arc(p.x*sc,p.z*sc,2.5,0,6.3);c.fill()}}
+ for(const p of G.players.values()){if(p.boss&&p.alive&&!p.para&&Math.hypot(p.x-L.x,p.z-L.z)<110){c.fillStyle='#ffd700';c.beginPath();c.arc(p.x*sc,p.z*sc,4.5,0,6.3);c.fill();c.strokeStyle='#000';c.lineWidth=1;c.stroke()}}
  if(G.duo){const mm=G.players.get(G.me);c.fillStyle='#3f6';for(const p of G.players.values()){if(p.id===G.me||!p.alive||!mm||p.team!==mm.team)continue;c.beginPath();c.arc(p.x*sc,p.z*sc,4,0,6.3);c.fill()}}
  c.restore();c.fillStyle='#fff';c.beginPath();c.moveTo(R,R-7);c.lineTo(R-5,R+5);c.lineTo(R+5,R+5);c.fill()}
 function drawBig(){const cv=$('big');cv.style.display=bigOn?'block':'none';if(!bigOn)return;const c=cv.getContext('2d'),S=600,sc=S/900;c.clearRect(0,0,S,S);c.fillStyle='#1c4a7a';c.fillRect(0,0,S,S);c.save();c.translate(S/2,S/2);
