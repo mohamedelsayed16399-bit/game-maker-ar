@@ -351,7 +351,7 @@ function damage(t,amt,by,head,wi){
  if(t.id===G.me)flash(by?by.x:undefined,by?by.z:undefined);else if(t.human)sendTo(t.id,by?{t:'hurt',x:+by.x.toFixed(1),z:+by.z.toFixed(1)}:{t:'hurt'});
  if(by&&by.human&&by.id!==G.me)sendTo(by.id,{t:'hm',h:head,d:Math.round(amt*(head?1.8:1))});
  if(t.hp<=0)die(t,by,wi)}
-function die(t,by,wi){t.alive=false;t.hp=0;t.place=alivePlayers().length+1;if(by&&by!==t)by.kills++;
+function die(t,by,wi){t.alive=false;t.hp=0;t.place=alivePlayers().length+1;if(by&&by!==t)by.kills++;if(t.boss){addFeed('👑 سقط الملك! '+(by?by.name:''));if(by&&by!==t){by.hp=100;by.sh=100;if(by.id===G.me)setTimeout(()=>msg('👑 قتلت الملك! دم وحماية كاملين',3000),1500);else if(by.human)sendTo(by.id,{t:'boss'})}}
  const ev={t:'kill',kid:by?by.id:-1,k:by?by.name:'المنطقة',v:t.name,w:wi==null?-1:wi,id:t.id,pl:t.place,kh:by&&by!==t?Math.round(by.hp):-1};
  handleKillEv(ev);broadcast(ev);checkEnd()}
 const STREAK=['','قتلة أولى! 🔥','قتلتين! 🔥🔥','٣ قتلات! سلسلة!','٤ قتلات! وحش!','٥ قتلات! أسطورة!'];
@@ -387,6 +387,7 @@ function startMatch(){
  const mkPos=()=>{for(let i=0;i<50;i++){const a=spawnR()*6.28,r=Math.sqrt(spawnR())*280;const x=Math.cos(a)*r,z=Math.sin(a)*r;if(H(x,z)>1)return[x,z]}return[0,0]};
  for(const h of hum){const p=newPlayer(h.id,h.name,true);p.col=h.col==null?-1:h.col;const [x,z]=mkPos();p.x=x;p.z=z;p.y=150;G.players.set(p.id,p)}
  let bi=0;while(G.players.size<total){const pr=Math.random(),pers=pr<.22?'r':pr<.42?'c':'n';const p=newPlayer(id++,(pers==='r'?'🔥':pers==='c'?'🏕':'')+names[bi++%names.length]+' '+(10+Math.floor(Math.random()*89)),false);const [x,z]=mkPos();p.x=x;p.z=z;p.y=150;const [tx,tz]=mkPos();p.ai={tx,tz,wt:0,react:0,vis:0,tgt:null,stuck:0,lx:x,lz:z,sT:0,sd:1,skill:Math.min(.95,.4+Math.random()*.5+(pers==='c'?.12:0)),pers};G.players.set(p.id,p)}
+ {const bs=G.players.get(100);if(bs&&bs.ai){bs.boss=true;bs.name='👑 الملك';bs.sh=100;bs.wpns=[2,7,-1];bs.ai.pers='r';bs.ai.skill=.85;bs.gren=4}}
  {let i=0;for(const p of G.players.values()){p.team=Math.floor(i/(G.tsize||1));i++}}
  const f=G.fast?.45:1;G.zone={cx:0,cz:0,r:420,tcx:0,tcz:0,tr:420,ph:-1,t:(25+20)*f,state:'wait',scx:0,scz:0,sr:420,dur:1};
  const list=[...G.players.values()].map(p=>({id:p.id,n:p.name,h:p.human,x:p.x,z:p.z,tm:p.team,c:p.col}));
@@ -484,6 +485,7 @@ function onMsg(from,o){
   else if(o.t==='qct'){if(!G.host)showQc(o.id,o.e)}
   else if(o.t==='emt'){if(!G.host)showEmo(o.id,o.e)}
   else if(o.t==='png'){if(!G.host)showPing(o)}
+  else if(o.t==='boss')msg('👑 قتلت الملك! دم وحماية كاملين',3000);
   else if(o.t==='gadd')L.gren=(L.gren||0)+(o.n|0);
   else if(o.t==='ad')doDrop(o);
   else if(o.t==='inv'){L.wpns=o.w.slice();L.cur=o.c;for(let s=0;s<3;s++)if(L.wpns[s]>=0&&L.lastW[s]!==L.wpns[s])L.mag[s]=W[L.wpns[s]].mag;L.lastW=L.wpns.slice();beep(880,.12,.12)}
@@ -698,5 +700,5 @@ function frame(){
  else{G.t+=dt;vm.visible=false;cam.fov=75;cam.updateProjectionMatrix();cam.position.set(Math.sin(G.t*.1)*250,70,Math.cos(G.t*.1)*250);cam.lookAt(0,5,0)}
  renderer.render(scene,cam)}
 frame();
-window.__G=G;window.__L=L;showStats();$('tutok').onclick=()=>{$('tut').style.display='none';try{localStorage.setItem('brTut','1')}catch(e){}};window.__dbg={vmk:()=>vm.userData.k,POND,H,stepRain,RL,rankTitle,quickChat,QC,ENG,zoneRef:()=>__G.zone,fireworks,FORT,sbToggle,emote,showEmo,avatars,BCN,FL,setAtmos0:0,openPz,doDrop,DFX,PINGS,pingAt,QUADS,quadToggle,GR,throwG,showStats,setAtmos,PADS,fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
+window.__G=G;window.__L=L;showStats();$('tutok').onclick=()=>{$('tut').style.display='none';try{localStorage.setItem('brTut','1')}catch(e){}};window.__dbg={bossOf:()=>[...__G.players.values()].find(p=>p.boss),vmk:()=>vm.userData.k,POND,H,stepRain,RL,rankTitle,quickChat,QC,ENG,zoneRef:()=>__G.zone,fireworks,FORT,sbToggle,emote,showEmo,avatars,BCN,FL,setAtmos0:0,openPz,doDrop,DFX,PINGS,pingAt,QUADS,quadToggle,GR,throwG,showStats,setAtmos,PADS,fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
 </script></body></html>
