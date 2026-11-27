@@ -646,7 +646,7 @@ function drawMini(){const c=mini,S=130,R=S/2;c.clearRect(0,0,S,S);const sc=R/110
  c.fillStyle='#4a7a3a';c.beginPath();c.arc(0,0,R_ISL*.85*sc,0,6.3);c.fill();
  c.strokeStyle='#4af';c.lineWidth=2;c.beginPath();c.arc(z.tcx*sc,z.tcz*sc,Math.max(1,z.tr)*sc,0,6.3);c.stroke();
  c.strokeStyle='#fff';c.beginPath();c.arc(z.cx*sc,z.cz*sc,Math.max(1,z.r)*sc,0,6.3);c.stroke();
- c.fillStyle='#caa';for(const h of houses)c.fillRect((h.x-3)*sc,(h.z-3)*sc,6*sc,6*sc);if(FORT.x!==undefined){c.fillStyle='#ff9a3c';c.fillRect(FORT.x*sc-4,FORT.z*sc-4,8,8)}if(BCN.piv){c.fillStyle='#ffe066';c.beginPath();c.arc(BCN.x*sc,BCN.z*sc,4,0,6.3);c.fill()}
+ if(POND.r){c.fillStyle='#3a8fd0';c.beginPath();c.arc(POND.x*sc,POND.z*sc,POND.r*.7*sc,0,6.3);c.fill()}c.fillStyle='#caa';for(const h of houses)c.fillRect((h.x-3)*sc,(h.z-3)*sc,6*sc,6*sc);if(FORT.x!==undefined){c.fillStyle='#ff9a3c';c.fillRect(FORT.x*sc-4,FORT.z*sc-4,8,8)}if(BCN.piv){c.fillStyle='#ffe066';c.beginPath();c.arc(BCN.x*sc,BCN.z*sc,4,0,6.3);c.fill()}
  c.strokeStyle='#ffe44a';c.lineWidth=2;for(const q of PINGS){c.beginPath();c.arc(q.x*sc,q.z*sc,5,0,6.3);c.stroke()}
  c.fillStyle='#3fc';for(const p of PADS){c.beginPath();c.arc(p.x*sc,p.z*sc,3,0,6.3);c.fill()}
  c.fillStyle='#f44';for(const p of G.players.values()){if(p.id===G.me||!p.alive||p.para)continue;if(Math.hypot(p.x-L.x,p.z-L.z)<60){c.beginPath();c.arc(p.x*sc,p.z*sc,2.5,0,6.3);c.fill()}}
