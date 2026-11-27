@@ -37,10 +37,16 @@ h3{margin:14px 0 6px}
 .bar i{display:block;height:100%;background:var(--ac)}
 table{width:100%;border-collapse:collapse}td{padding:6px;border-bottom:1px solid #2a3050;text-align:right;font-size:14px}
 .f{width:100%;margin-top:6px;padding:10px;text-align:right}
+.light{--bg:#f2f4fb;--card:#fff;--card2:#e8ebf6;--tx:#1b2040;--mut:#5d6488}
+.light .m.u{color:#fff}
+.m small{display:block;opacity:.55;font-size:11px;margin-top:3px}
+.typing{opacity:.7}
+.sug{display:inline-block;background:var(--card2);border-radius:8px;padding:4px 8px;margin:4px 4px 0 0;cursor:pointer;border:1px solid #2a3050}
+header button{background:none;border:0;color:var(--tx);font-size:18px;cursor:pointer}
 </style>
 </head>
 <body>
-<header><div style="font-size:22px">🤖</div><h1>مساعدي الذكي</h1><span class="note">يعمل محليًا 100%</span></header>
+<header><div style="font-size:22px">🤖</div><h1>مساعدي الذكي</h1><span class="note">يعمل محليًا 100%</span><button id="theme" title="الوضع">🌓</button><button id="clr" title="مسح المحادثة">🗑️</button></header>
 <div class="tabs" id="tabs"></div>
 <main>
 <section class="pane on" id="p-chat">
@@ -101,7 +107,7 @@ TABS.forEach(([id,l],i)=>{const b=document.createElement('button');b.textContent
 function show(id){document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('on',p.id==='p-'+id));document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.id===id));if(id==='me')renderMe();if(id==='tasks')renderTasks()}
 let lastNum;let mem=LS.get('mem',{}),usage=LS.get('usage',{}),tasks=LS.get('tasks',[]),hist=LS.get('hist',[]);
 function bump(k){usage[k]=(usage[k]||0)+1;usage._h=usage._h||{};const h=new Date().getHours();usage._h[h]=(usage._h[h]||0)+1;LS.set('usage',usage)}
-function add(role,t,save=true){const d=document.createElement('div');d.className='m '+(role==='u'?'u':'b');d.textContent=t;$('#msgs').appendChild(d);$('#msgs').scrollTop=1e9;if(save){hist.push([role,t]);hist=hist.slice(-60);LS.set('hist',hist)}}
+function add(role,t,save=true){const d=document.createElement('div');d.className='m '+(role==='u'?'u':'b');d.textContent=t;const tm=document.createElement('small');tm.textContent=fmtT(new Date())+(role==='b'?' • اضغط للنسخ':'');d.appendChild(tm);if(role==='b')d.onclick=()=>{try{navigator.clipboard.writeText(t);tm.textContent='تم النسخ ✓'}catch(e){}};$('#msgs').appendChild(d);$('#msgs').scrollTop=1e9;if(save){hist.push([role,t]);hist=hist.slice(-60);LS.set('hist',hist)}}
 const CHIPS=['اهلا','كام الساعة','احسب 120*3.5+7','حول 5 كيلو الى باوند','بعد 45 يوم هيبقى امتى','فكرني اشتري لبن بكرا الساعة 5','اسمي محمد','انت عارف اسمي؟','نكتة','ايه اللي تعرفه عني؟','ابحث في مستنداتي عن الاجازة','عد تنازلي 5 دقايق','قسم 450 على 4','وزني 80 وطولي 175','قسط قرض 100000 بفايده 18 لمده 5 سنين','اختار بين شاي او قهوة','اقتراحات'];
 CHIPS.forEach(c=>{const b=document.createElement('button');b.className='s';b.textContent=c;b.onclick=()=>{$('#inp').value=c;go()};$('#chips').appendChild(b)});
 const days=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
@@ -162,8 +168,12 @@ function brain(raw){const q=raw.trim();const n=norm(q).toLowerCase();let m;
  if(/انت مين|انت ايه|بتعمل ايه|تعمل ايه/.test(n))return 'أنا مساعد شغال بالكامل جوه متصفحك، من غير سيرفر. بحسب وأحوّل وأرتب مهامك وأفتكر حاجات عنك وأحلل النصوص. مش نموذج لغوي كبير، فمعرفتي العامة محدودة.';
  if((m=n.match(/(?:ابحث|دور|فتش)(?: في)?(?: ملفاتي| مستنداتي)?(?: عن)?\s+(.+)/))&&/ملفاتي|مستنداتي|ابحث|دور/.test(n))return docAnswer(m[1]);
  if(/لخص|تلخيص/.test(n)){show('text');return 'روح لتبويب "تحليل نص" والصق النص.'}
- return 'مش متأكد إني فاهم. أنا مساعد مبني على قواعد (مش نموذج لغوي)، فمعرفتي العامة محدودة. جرب: حسابات، تحويل وحدات، تواريخ، تذكيرات، "اسمي ..."، أو تبويب تحليل النص.'}
+ const g=guess(n);return 'مش متأكد إني فاهم. أنا مساعد مبني على قواعد (مش نموذج لغوي)، فمعرفتي العامة محدودة.'+(g?'\nقصدك: '+g+'؟':'')+'\nجرب: حسابات، تحويل وحدات، تواريخ، تذكيرات، مؤقت، "اسمي ..."، أو تبويب تحليل النص.'}
 
+
+const CMDS=['فكرني','احسب','حول','عد تنازلي','قسم','وزني وطولي','خصم','بقشيش','عمري','اختار بين','ولد باسورد','اقتراحات','مهامي','نكتة','ايه اللي تعرفه عني','كام الساعة','اسمي','افتكر ان','ابحث في مستنداتي عن','اعكس','عدد كلمات','رقم عشوائي بين'];
+function lev(a,b){const d=[];for(let i=0;i<=a.length;i++){d[i]=[i];}for(let j=1;j<=b.length;j++)d[0][j]=j;for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return d[a.length][b.length]}
+function guess(n){const w=n.split(/\s+/);let best=null,bd=9;CMDS.forEach(c=>{const nc=norm(c);const k=nc.split(' ').length;const head=w.slice(0,k).join(' ');const dd=lev(head,nc);if(dd<bd&&dd<=Math.max(1,Math.floor(nc.length/4))){bd=dd;best=c}});return best}
 function habitTips(){const u=usage,h=u._h||{},o=[];const tot=Object.values(h).reduce((a,b)=>a+b,0);if(tot<5)return 'لسه معرفش كفاية عن عاداتك. استخدمني كام يوم وهقترح عليك.';
  const best=+Object.entries(h).sort((a,b)=>b[1]-a[1])[0][0];o.push(`أكتر وقت بتشتغل معايا فيه حوالي الساعة ${toAr(best)}. ممكن أفكرك بمهامك الأساسية قبله.`);
  const open=tasks.filter(x=>!x.done);if(open.length>5)o.push(`عندك ${toAr(open.length)} مهمة مفتوحة. اختار ٣ بس لليوم.`);
@@ -172,7 +182,7 @@ function habitTips(){const u=usage,h=u._h||{},o=[];const tot=Object.values(h).re
  if(!(u.mem))o.push('جرب "اسمي ..." و"افتكر إن ... هو ..." عشان أفتكر حاجات عنك.');
  if(docs.length===0)o.push('ضيف مستنداتك في تبويب "مستنداتي" وابحث فيها بسرعة.');
  return 'اقتراحات من استخدامك (إحصائيات محلية، مش ذكاء توليدي):\n'+o.map(x=>'• '+x).join('\n')}
-function go(){const v=$('#inp').value;if(!v.trim())return;add('u',v);$('#inp').value='';bump('msg');setTimeout(()=>{let r;try{r=brain(v)}catch(e){r='حصل خطأ: '+e.message}add('b',r)},200)}
+function go(){const v=$('#inp').value;if(!v.trim())return;add('u',v);$('#inp').value='';bump('msg');const ty=document.createElement('div');ty.className='m b typing';ty.textContent='...';$('#msgs').appendChild(ty);$('#msgs').scrollTop=1e9;setTimeout(()=>{ty.remove();let r;try{r=brain(v)}catch(e){r='حصل خطأ: '+e.message}add('b',r)},220+Math.random()*200)}
 $('#send').onclick=go;$('#inp').addEventListener('keydown',e=>{if(e.key==='Enter')go()});
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
 if(!SR)$('#mic').style.display='none';else $('#mic').onclick=()=>{const r=new SR();r.lang='ar-EG';r.onresult=e=>{$('#inp').value=e.results[0][0].transcript;go()};r.onerror=()=>add('b','تعذر الميكروفون.',false);r.start()};
@@ -227,6 +237,7 @@ $('#dask').onclick=()=>{$('#dout').textContent=docAnswer($('#dq').value)};
 $('#dq').addEventListener('keydown',e=>{if(e.key==='Enter')$('#dask').click()});
 $('#dfile').onchange=e=>{[...e.target.files].forEach(f=>{const r=new FileReader();r.onload=()=>addDoc(f.name,String(r.result));r.readAsText(f)})};
 renderDocs();
+if(LS.get('light',false))document.body.classList.add('light');$('#theme').onclick=()=>{const l=document.body.classList.toggle('light');LS.set('light',l)};$('#clr').onclick=()=>{if(confirm('تمسح المحادثة؟')){hist=[];LS.set('hist',hist);$('#msgs').innerHTML='';add('b','تم مسح المحادثة.',false)}};
 hist.forEach(([r,t])=>add(r,t,false));if(!hist.length)add('b','أهلا! أنا مساعدك الذكي. شغال كله جوه متصفحك، ومفيش بيانات بتخرج من جهازك. جرب الأزرار اللي تحت أو اكتب سؤالك.');
 </script>
 </body>
