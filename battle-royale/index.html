@@ -326,7 +326,7 @@ function colorFor(id){const p=G.players&&G.players.get(id);if(p&&p.col!=null&&p.
 let AC,NB;
 function audio(){if(AC)return;try{AC=new (window.AudioContext||window.webkitAudioContext)();NB=AC.createBuffer(1,AC.sampleRate*.4,AC.sampleRate);const d=NB.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1}catch(e){}}
 function sfx(f,vol,dur){if(!AC)return;const s=AC.createBufferSource();s.buffer=NB;const fl=AC.createBiquadFilter();fl.type='lowpass';fl.frequency.value=f*3;const g=AC.createGain();g.gain.setValueAtTime(vol*VOL,AC.currentTime);g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+(dur||.18));s.connect(fl);fl.connect(g);g.connect(AC.destination);s.start()}
-const ACH={k1:'أول دم 🎯',k5:'٥ قتلات في مباراة 💀',win:'ملك الجزيرة 🏆',boss:'قاتل الملك 👑',slide:'أول سلايد 🛷',rev:'منقذ الفريق ❤',rpg:'قتلة بالصاروخ 🚀',nv:'صياد الليل 🟢',day:'بطل التحدي اليومي 🌟',top5:'وصلت لأفضل ٥ 🥈',k10:'١٠ قتلات في مباراة 🔥'};
+const ACH={k1:'أول دم 🎯',k5:'٥ قتلات في مباراة 💀',win:'ملك الجزيرة 🏆',boss:'قاتل الملك 👑',slide:'أول سلايد 🛷',rev:'منقذ الفريق ❤',rpg:'قتلة بالصاروخ 🚀',nv:'صياد الليل 🟢',day:'بطل التحدي اليومي 🌟',top5:'وصلت لأفضل ٥ 🥈',k10:'١٠ قتلات في مباراة 🔥',hs3:'٣ هيدشوت في مباراة 🎯',wx:'نجّيت من العاصفة 🌪'};
 function achGet(){try{return JSON.parse(localStorage.getItem('brAch')||'{}')}catch(e){return{}}}
 function unlock(id){try{const a=achGet();if(a[id]||!ACH[id])return;a[id]=1;localStorage.setItem('brAch',JSON.stringify(a));setTimeout(()=>msg('🏅 إنجاز جديد: '+ACH[id],3200),id==='win'?2500:1200);if(window.__ach)window.__ach.push(id)}catch(e){}}
 let lastAnn=0;window.__ann=[];
@@ -571,7 +571,7 @@ function handleShot(o,local){if(!G.host&&o.id===G.me&&!local)return;
  const d=Math.hypot(o.o[0]-L.x,o.o[2]-L.z);if(d<170)sfx(W[o.w].snd,Math.max(.03,.35-d/400),.2)}
 let dnI=0;
 function dmgNum(d,h){const e=document.createElement('div');e.className='dn'+(h?' hd':'');e.textContent=d;e.style.left=(50+(Math.random()-.5)*10)+'%';e.style.top=(40+(dnI++%3)*3)+'%';$('hud').appendChild(e);setTimeout(()=>e.remove(),800)}
-function hitMarker(h,d){if(d>0){dmgNum(d,h);ST.h++;ST.d+=d;if(h)ST.hs++}const e=$('hit');e.style.borderColor=h?'#ff0':'#f33';e.style.opacity=1;setTimeout(()=>e.style.opacity=0,120);beep(h?1400:900,.06,.1)}
+function hitMarker(h,d){if(d>0){dmgNum(d,h);ST.h++;ST.d+=d;if(h){ST.hs++;if(ST.hs>=3)unlock('hs3')}}const e=$('hit');e.style.borderColor=h?'#ff0':'#f33';e.style.opacity=1;setTimeout(()=>e.style.opacity=0,120);beep(h?1400:900,.06,.1)}
 let pgT=0,pingEl=null;
 function showNetPing(ms){if(!pingEl){pingEl=document.createElement('div');pingEl.style.cssText='position:absolute;left:10px;top:92px;font-size:13px;background:#0008;padding:2px 8px;border-radius:10px;pointer-events:none;z-index:5';$('hud').appendChild(pingEl)}const v=Math.round(ms);window.__ping=v;pingEl.textContent='📶 '+v+'ms';pingEl.style.color=v<80?'#6f6':v<180?'#fd4':'#f66'}
 function crouch(){if(L.para||L.dead||L.quad!=null)return;if(!L.cr&&L.wasSpr&&!(L.slT>0)&&L.y<=groundAt(L.x,L.z)+.3){const l=Math.hypot(L.mdx,L.mdz)||1;L.sdx=L.mdx/l;L.sdz=L.mdz/l;L.slT=.8;L.cr=1;unlock('slide');msg('🛷 سلايد!',700);sfx(200,.25,.08);return}L.cr=L.cr?0:1;msg(L.cr?'🧎 انحنيت (دقة أعلى، بطيء)':'وقفت',900)}
@@ -605,7 +605,7 @@ var ST={s:0,h:0,d:0,hs:0};function endMatch(o){G.mode='over';if(nvOn){nvOn=false
  const won=o.wid===G.me;$('gtitle').textContent=won?'🏆 انت الملك! فزت!':(o.w==='-'?'انتهت المباراة':'الفائز: '+o.w);
  const m=me();
  $('gdet').innerHTML=o.res.map(r=>`${r.p===1?'🥇':r.p===2?'🥈':r.p===3?'🥉':'#'+r.p} ${r.n} · قتلى ${r.k}`).join('<br>')+`<hr>مركزك: ${m?(won?1:(m.place||'?')):'-'} · قتلاك: ${m?m.kills:0}`+`<br>🎖 لقبك: <b>${rankTitle(won,m?m.place:0,m?m.kills:0)}</b>`+`<br>🎯 طلقاتك ${ST.s} · إصابات ${ST.h} (${ST.s?Math.min(100,Math.round(ST.h*100/ST.s)):0}%) · رؤوس ${ST.hs} · ضرر ${Math.round(ST.d)}`+(G.t0?`<br>⏱ وقت البقاء: ${Math.floor((performance.now()-G.t0)/60000)}د ${Math.floor((performance.now()-G.t0)/1000)%60}ث`:'');
- if(won){unlock('win');fireworks();announce('مبروك! انت الملك')}$('go').classList.remove('hide');saveBest(m?m.kills:0,won)}
+ if(won){unlock('win');if(G.sand)unlock('wx');fireworks();announce('مبروك! انت الملك')}$('go').classList.remove('hide');saveBest(m?m.kills:0,won)}
 let nvOn=false;function nightVis(){if(G.mode!=='play'||L.dead)return;nvOn=!nvOn;if(nvOn)unlock('nv');const c=renderer.domElement;c.style.filter=nvOn?'brightness(1.8) contrast(1.1) sepia(1) hue-rotate(65deg) saturate(3.2)':'';msg(nvOn?'🟢 رؤية ليلية شغالة (N)':'رؤية ليلية اتقفلت',1400);beep(nvOn?900:500,.12,.1)}
 function dayKey(){const d=new Date();return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate()}
 function dailyDef(){const k=dayKey(),wi=[1,2,3,4,5,7,0,6][(k*7+3)%8],n=2+(k%3);return{wi,n,k}}
