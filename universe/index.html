@@ -292,7 +292,7 @@ function openStation(){
  h+='<h3 style="margin:10px 0 2px">🚀 حظيرة السفن</h3>';S.ships=S.ships||{};
  [['fighter','مقاتل: مدفع +٢ ودرع +٥٠',1500],['hauler','شحن: سعة +٤٠',1200],['explorer','مستكشف: وقود +٨٠ وسرعة أعلى',1000],['capital','🛸 سفينة قيادة: هيكل +١٥٠ ودرع +١٠٠ وأبراج آلية (ضخمة)',6000]].forEach(x=>{h+=`<div class="row"><span>${x[1]}</span>${S.ships[x[0]]?'<small>✅ مملوكة</small>':`<button class="btn" onclick="buyShip('${x[0]}',${x[2]})">${AR(x[2])} 💰</button>`}</div>`});
  h+='<h3 style="margin:10px 0 2px">🎨 طلاء السفينة</h3><div class="row" style="gap:6px;justify-content:flex-start">'+[['#d8e2ff','فضي'],['#ff5a5a','أحمر'],['#4cc3ff','أزرق'],['#6dff9a','أخضر'],['#ffd24c','ذهبي'],['#c070ff','بنفسجي']].map(c=>`<button class="btn" style="background:${c[0]};color:#000;padding:6px 10px;font-size:12px" onclick="paint('${c[0]}')">${c[1]}</button>`).join('')+'</div>';
- h+=`<h3 style="margin:10px 0 2px">⚔️ حلبة الموجات</h3><div class="row"><span>٥ موجات قراصنة متصاعدة<br><small>رسوم ٣٠٠ · جوايز ٤٠٠ × رقم الموجة + ٢٥٠٠ للفوز</small></span><button class="btn r" onclick="startWaves()">ابدأ</button></div>`; h+=flHtml(); h+=dqHtml(); h+=wpHtml(); h+=cityHtml(); h+=contractHtml();h+=`<div style="margin-top:10px"><button class="btn d" onclick="closeMenu()">إغلاق</button></div>`;openMenu(h)}
+ h+=`<h3 style="margin:10px 0 2px">⚔️ حلبة الموجات</h3><div class="row"><span>٥ موجات قراصنة متصاعدة<br><small>رسوم ٣٠٠ · جوايز ٤٠٠ × رقم الموجة + ٢٥٠٠ للفوز</small></span><button class="btn r" onclick="startWaves()">ابدأ</button></div>`; h+=`<h3 style="margin:10px 0 2px">🛡️ تأمين السفينة</h3><div class="row"><span>لو اتدمّرت مفيش خسارة فلوس ولا شحنة (مرة واحدة لكل تأمين)<br><small>معاك ${AR(S.ins||0)} / ٣</small></span><button class="btn" onclick="buyIns()">١٢٠٠ 💰</button></div>`; h+=flHtml(); h+=dqHtml(); h+=wpHtml(); h+=cityHtml(); h+=contractHtml();h+=`<div style="margin-top:10px"><button class="btn d" onclick="closeMenu()">إغلاق</button></div>`;openMenu(h)}
 const CITYB=[['🏪','سوق تجاري',1500,25],['🏭','مصنع',3000,60],['🔬','معمل أبحاث',5000,110],['🎡','مدينة ملاهي',8000,200]];
 function cityKey(){return S.g+':'+curStar.x+':'+curStar.y}
 function cityCollect(){S.city=S.city||{};const c=S.city[cityKey()];if(!c)return 0;const el=Math.min((Date.now()-c.t)/60000,240);let rate=0;c.b.forEach((n,i)=>rate+=n*CITYB[i][3]);return Math.floor(el*rate/10)}
@@ -727,6 +727,9 @@ if(wv.key!==S.g+':'+S.x+':'+S.y){wvEnd('⚔️ التحدي اتلغى (غادر
 const left=pirates.filter(q=>q.wave).length;wvBar.style.display='block';wvBar.textContent='⚔️ موجة '+AR(Math.max(1,wv.n))+' / '+AR(wv.max)+' · متبقي '+AR(left);
 if(left===0){if(wv.n>0&&!wv.paid){wv.paid=true;const r=400*wv.n;S.credits+=r;addRep(2);toast('🌊 خلصت الموجة '+AR(wv.n)+'! +'+AR(r)+' 💰');hud();if(wv.n>=wv.max){S.credits+=2500;S.stats.waves=(S.stats.waves||0)+1;wvEnd('🏆 كسبت تحدي الموجات! +٢٬٥٠٠ 💰 إضافية');return}wv.t=4}
 if(wv.paid||wv.n===0){wv.t-=dt;if(wv.t<=0){wv.n++;wv.paid=false;const c=2+wv.n;for(let i=0;i<c;i++){const m=makeShip(0xc04020,0xff8040);const a=(i/c)*6.28+Math.random();m.position.copy(ship.position).add(new THREE.Vector3(Math.cos(a)*700,(Math.random()-.5)*80,Math.sin(a)*700));space.add(m);pirates.push({m,kind:'gun',wave:true,hp:45+wv.n*12,max:45+wv.n*12,cd:1+Math.random()})}toast('🌊 الموجة '+AR(wv.n)+' جاية: '+AR(c)+' سفن')}}}}
+const _die0=die;die=function(){const cr=S.credits,cg=Object.assign({},S.cargo);const ins=S.ins||0;_die0();if(wv)wvEnd('💥 تدمّرت وفشلت في تحدي الموجات');if(ins>0){S.ins=ins-1;S.credits=cr;S.cargo=cg;toast('🛡️ التأمين غطّى خسارتك! فلوسك وشحنتك سليمة (متبقي '+AR(S.ins)+')');hud();save()}};
+window.buyIns=()=>{if((S.ins||0)>=3){toast('عندك ٣ تأمينات (الحد الأقصى)');return}if(S.credits<1200){toast('رصيدك مش كفاية');return}S.credits-=1200;S.ins=(S.ins||0)+1;toast('🛡️ اشتريت تأمين على السفينة');save();hud();openStation()};
+window.dieTest=()=>die();
 function nemUpdate(dt){if(mode!=='space'||!curStar||menuOpen)return;beaconUpdate(dt);waveUpdate(dt);cloakUpdate(dt);const alive=pirates.find(q=>q.nem);
 if(!alive&&curStar.danger>.4){nemT-=dt;if(nemT<=0){nemT=90;const lv=S.nem||0;const m=makeShip(0x8a1a8a,0xff40ff);m.scale.setScalar(2.4+Math.min(lv,4)*.15);const a=Math.random()*6.28;m.position.copy(ship.position).add(new THREE.Vector3(Math.cos(a)*800,40,Math.sin(a)*800));space.add(m);const nm=NEMN[lv%NEMN.length];pirates.push({m,boss:true,nem:true,nemName:nm,kind:null,hp:160+lv*70,max:160+lv*70,cd:1.2});toast('☠️ '+nm+' ظهر! (المستوى '+AR(lv+1)+')')}}
 if(!nemBar){nemBar=document.createElement('div');nemBar.style.cssText='max-width:230px;text-align:center;pointer-events:none;background:#000a;border:1px solid #ff40ff;border-radius:10px;padding:4px 10px;font-size:13px;color:#ffb0ff;direction:rtl';hudStack().appendChild(nemBar)}
@@ -750,4 +753,4 @@ window.__u={wvClear:()=>{pirates.filter(q=>q.wave).forEach(q=>__u.kill(q))},cloa
 loop();
 </script>
 </body>
-                                      </html>
+</html>
