@@ -533,7 +533,7 @@ function handleShot(o,local){if(!G.host&&o.id===G.me&&!local)return;
  const d=Math.hypot(o.o[0]-L.x,o.o[2]-L.z);if(d<170)sfx(W[o.w].snd,Math.max(.03,.35-d/400),.2)}
 let dnI=0;
 function dmgNum(d,h){const e=document.createElement('div');e.className='dn'+(h?' hd':'');e.textContent=d;e.style.left=(50+(Math.random()-.5)*10)+'%';e.style.top=(40+(dnI++%3)*3)+'%';$('hud').appendChild(e);setTimeout(()=>e.remove(),800)}
-function hitMarker(h,d){if(d>0)dmgNum(d,h);const e=$('hit');e.style.borderColor=h?'#ff0':'#f33';e.style.opacity=1;setTimeout(()=>e.style.opacity=0,120);beep(h?1400:900,.06,.1)}
+function hitMarker(h,d){if(d>0){dmgNum(d,h);ST.h++;ST.d+=d;if(h)ST.hs++}const e=$('hit');e.style.borderColor=h?'#ff0':'#f33';e.style.opacity=1;setTimeout(()=>e.style.opacity=0,120);beep(h?1400:900,.06,.1)}
 function flash(sx,sz){if(sx!==undefined){const dx=sx-L.x,dz=sz-L.z,fx=-Math.sin(L.yaw),fz=-Math.cos(L.yaw),rx=Math.cos(L.yaw),rz=-Math.sin(L.yaw);const a=Math.atan2(dx*rx+dz*rz,dx*fx+dz*fz)*180/Math.PI;const e=$('dmg');e.style.transition='none';e.style.transform='rotate('+a+'deg)';e.style.opacity=1;requestAnimationFrame(()=>{e.style.transition='opacity .8s';e.style.opacity=0})}const e=$('flash');e.style.opacity=.9;setTimeout(()=>e.style.opacity=0,180);sfx(150,.3,.15)}
 function beginLocal(list){
  G.mode='play';G.over=false;G.t=0;resetLoot();
@@ -560,13 +560,13 @@ function fireworks(){const c=document.createElement('canvas');c.width=innerWidth
   for(let i=P.length-1;i>=0;i--){const p=P[i];p.x+=p.vx;p.y+=p.vy;p.vy+=.06;p.vx*=.985;p.l-=.012;if(p.l<=0){P.splice(i,1);continue}x.fillStyle='hsla('+p.h+',100%,60%,'+p.l+')';x.fillRect(p.x,p.y,3,3)}
   requestAnimationFrame(loop)};requestAnimationFrame(loop)}
 function rankTitle(won,pl,k){if(won&&k>=5)return'👑 سفاح الجزيرة';if(won)return'🏆 ملك الجزيرة';if(k>=5)return'💀 قناص محترف';if(pl>0&&pl<=3)return'🥉 من الكبار';if(k>=2)return'⚔ مقاتل';if(k===1)return'🎯 أول دم';return'🌱 مبتدئ'}
-function endMatch(o){G.mode='over';$('hud').classList.remove('on');$('touch').classList.remove('on');$('bexit').style.display='none';if(document.pointerLockElement)document.exitPointerLock();
+var ST={s:0,h:0,d:0,hs:0};function endMatch(o){G.mode='over';$('hud').classList.remove('on');$('touch').classList.remove('on');$('bexit').style.display='none';if(document.pointerLockElement)document.exitPointerLock();
  const won=o.wid===G.me;$('gtitle').textContent=won?'🏆 انت الملك! فزت!':(o.w==='-'?'انتهت المباراة':'الفائز: '+o.w);
  const m=me();
- $('gdet').innerHTML=o.res.map(r=>`${r.p===1?'🥇':r.p===2?'🥈':r.p===3?'🥉':'#'+r.p} ${r.n} · قتلى ${r.k}`).join('<br>')+`<hr>مركزك: ${m?(won?1:(m.place||'?')):'-'} · قتلاك: ${m?m.kills:0}`+`<br>🎖 لقبك: <b>${rankTitle(won,m?m.place:0,m?m.kills:0)}</b>`+(G.t0?`<br>⏱ وقت البقاء: ${Math.floor((performance.now()-G.t0)/60000)}د ${Math.floor((performance.now()-G.t0)/1000)%60}ث`:'');
+ $('gdet').innerHTML=o.res.map(r=>`${r.p===1?'🥇':r.p===2?'🥈':r.p===3?'🥉':'#'+r.p} ${r.n} · قتلى ${r.k}`).join('<br>')+`<hr>مركزك: ${m?(won?1:(m.place||'?')):'-'} · قتلاك: ${m?m.kills:0}`+`<br>🎖 لقبك: <b>${rankTitle(won,m?m.place:0,m?m.kills:0)}</b>`+`<br>🎯 طلقاتك ${ST.s} · إصابات ${ST.h} (${ST.s?Math.min(100,Math.round(ST.h*100/ST.s)):0}%) · رؤوس ${ST.hs} · ضرر ${Math.round(ST.d)}`+(G.t0?`<br>⏱ وقت البقاء: ${Math.floor((performance.now()-G.t0)/60000)}د ${Math.floor((performance.now()-G.t0)/1000)%60}ث`:'');
  if(won)fireworks();$('go').classList.remove('hide');saveBest(m?m.kills:0,won)}
 function showStats(){try{const b=JSON.parse(localStorage.getItem('brBest')||'null');$('stats').textContent=b&&b.g?`🏆 انتصاراتك ${b.w} من ${b.g} مباراة · أعلى قتلى ${b.k}`:''}catch(e){}}
-function saveBest(k,w){G.t0=0;try{const b=JSON.parse(localStorage.getItem('brBest')||'{"k":0,"w":0,"g":0}');b.k=Math.max(b.k,k);b.g++;if(w)b.w++;localStorage.setItem('brBest',JSON.stringify(b))}catch(e){}}
+function saveBest(k,w){G.t0=0;ST.s=ST.h=ST.d=ST.hs=0;try{const b=JSON.parse(localStorage.getItem('brBest')||'{"k":0,"w":0,"g":0}');b.k=Math.max(b.k,k);b.g++;if(w)b.w++;localStorage.setItem('brBest',JSON.stringify(b))}catch(e){}}
 function setStat(t){$('mstat').textContent=t}
 function lobbyBroadcast(){const names=[G.myName||'أنا',...[...G.conns.values()].map(c=>c.pname||'...')];broadcast({t:'lobby',names});renderLobby(names)}
 function renderLobby(names){$('plist').innerHTML=names.map((n,i)=>(i===0?'👑 ':'🎮 ')+n.replace(/</g,'')).join('<br>');$('lstat').textContent=names.length+' لاعب · الباقي بوتس لحد 30'}
@@ -591,7 +591,7 @@ function joinRoom(){
   c.on('open',()=>{clearTimeout(to);c.send({t:'hello',n:G.myName,c:MYCOL});$('menu').classList.add('hide');$('lobby').classList.remove('hide');$('codebig').textContent=code;$('bstart').style.display='none';$('plist').textContent='...'});
   c.on('data',o=>onMsg(0,o));c.on('close',()=>{if(G.mode!=='over'&&G.mode!=='menu'){toMenu();setStat('الهوست فصل')}})});
  peer.on('error',e=>setStat('خطأ: '+e.type))}
-function toMenu(){G.t0=0;showStats();G.mode='menu';G.over=false;['lobby','go'].forEach(i=>$(i).classList.add('hide'));$('menu').classList.remove('hide');$('hud').classList.remove('on');$('touch').classList.remove('on');$('bexit').style.display='none';
+function toMenu(){G.t0=0;ST.s=ST.h=ST.d=ST.hs=0;showStats();G.mode='menu';G.over=false;['lobby','go'].forEach(i=>$(i).classList.add('hide'));$('menu').classList.remove('hide');$('hud').classList.remove('on');$('touch').classList.remove('on');$('bexit').style.display='none';
  try{G.peer&&G.peer.destroy()}catch(e){}G.peer=null;G.conns.clear();G.host=false;G.solo=false;if(document.pointerLockElement)document.exitPointerLock()}
 function applyLite(){const l=$('lite').checked;renderer.setPixelRatio(l?.7:Math.min(devicePixelRatio,TOUCH?1.5:2));scene.fog.far=l?260:520;scene.fog.near=l?60:120;cam.far=l?300:900;cam.updateProjectionMatrix();resize()}
 $('lite').onchange=applyLite;
@@ -666,7 +666,7 @@ function localUpdate(dt){
  if((mouseDown||fireTouch)&&!L.para&&L.quad==null&&wi>=0&&L.reloadT<=0&&L.fireT<=0&&(document.pointerLockElement||TOUCH||window.__autofire)){
   if(L.mag[L.cur]<=0){reload();L.fireT=.3}else{L.mag[L.cur]--;L.fireT=W[wi].r;
    const d=dirFrom(L.yaw,L.pitch);const o={x:L.x,y:L.y+1.65,z:L.z};
-   if(G.host){fireFrom(m,o,d,wi)}else{G.hostConn.send({t:'fire',d:[d.x,d.y,d.z]});const e=[o.x+d.x*60,o.y+d.y*60,o.z+d.z*60];handleShot({id:G.me,o:[o.x,o.y,o.z],e:[e],w:wi},true)}
+   ST.s++;   if(G.host){fireFrom(m,o,d,wi)}else{G.hostConn.send({t:'fire',d:[d.x,d.y,d.z]});const e=[o.x+d.x*60,o.y+d.y*60,o.z+d.z*60];handleShot({id:G.me,o:[o.x,o.y,o.z],e:[e],w:wi},true)}
    cam.userData.kick=.05*(1+W[wi].d/40);L.pitch=Math.min(1.5,L.pitch+.004*(wi===4?6:1))}}
  if(!G.host){netT+=dt;if(netT>.05){netT=0;G.hostConn.send({t:'st',x:+L.x.toFixed(2),y:+L.y.toFixed(2),z:+L.z.toFixed(2),yaw:+L.yaw.toFixed(3),p:+L.pitch.toFixed(3),pa:L.para?1:0,c:L.cur})}}
 }
@@ -735,5 +735,5 @@ function frame(){
  else{G.t+=dt;vm.visible=false;cam.fov=75;cam.updateProjectionMatrix();cam.position.set(Math.sin(G.t*.1)*250,70,Math.cos(G.t*.1)*250);cam.lookAt(0,5,0)}
  renderer.render(scene,cam)}
 frame();
-window.__G=G;window.__L=L;showStats();$('tutok').onclick=()=>{$('tut').style.display='none';try{localStorage.setItem('brTut','1')}catch(e){}};window.__dbg={stepSky,SMK,boom,stepFoot,BIRDS,CAMPS,campHeal,drawCmp,rainSndOn:()=>!!rainSnd,specStep,LAMPG,bossOf:()=>[...__G.players.values()].find(p=>p.boss),vmk:()=>vm.userData.k,POND,H,stepRain,RL,rankTitle,quickChat,QC,ENG,zoneRef:()=>__G.zone,fireworks,FORT,sbToggle,emote,showEmo,avatars,BCN,FL,setAtmos0:0,openPz,doDrop,DFX,PINGS,pingAt,QUADS,quadToggle,GR,throwG,showStats,setAtmos,PADS,fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
+window.__G=G;window.__L=L;showStats();$('tutok').onclick=()=>{$('tut').style.display='none';try{localStorage.setItem('brTut','1')}catch(e){}};window.__dbg={ST,endMatch,stepSky,SMK,boom,stepFoot,BIRDS,CAMPS,campHeal,drawCmp,rainSndOn:()=>!!rainSnd,specStep,LAMPG,bossOf:()=>[...__G.players.values()].find(p=>p.boss),vmk:()=>vm.userData.k,POND,H,stepRain,RL,rankTitle,quickChat,QC,ENG,zoneRef:()=>__G.zone,fireworks,FORT,sbToggle,emote,showEmo,avatars,BCN,FL,setAtmos0:0,openPz,doDrop,DFX,PINGS,pingAt,QUADS,quadToggle,GR,throwG,showStats,setAtmos,PADS,fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
 </script></body></html>
