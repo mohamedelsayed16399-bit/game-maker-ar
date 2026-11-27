@@ -23,8 +23,11 @@ input{background:#fff;color:#111;text-align:center;width:240px;user-select:text;
 #hud.on{display:block}
 #cross{position:absolute;left:50%;top:50%;width:22px;height:22px;margin:-11px;opacity:.9}
 #cross:before,#cross:after{content:"";position:absolute;background:#fff;box-shadow:0 0 3px #000}
+#cross.hm:before,#cross.hm:after{background:#f55;animation:hmk .25s}#cross.hh:before,#cross.hh:after{background:#ff0;animation:hmk .4s}@keyframes hmk{0%{transform:scale(1.8)}100%{transform:scale(1)}}
 #cross:before{left:10px;top:0;width:2px;height:22px}#cross:after{top:10px;left:0;height:2px;width:22px}
 #hit{position:absolute;left:50%;top:50%;width:34px;height:34px;margin:-17px;border:3px solid #f33;border-radius:50%;opacity:0;transition:opacity .25s}
+#lowhp{position:absolute;inset:0;pointer-events:none;opacity:0;box-shadow:inset 0 0 90px 30px #c00;transition:opacity .4s}
+#lowhp.on{animation:lh 1s infinite}@keyframes lh{0%,100%{opacity:.25}50%{opacity:.7}}
 #dmg{position:absolute;left:50%;top:50%;width:0;height:0;opacity:0;transition:opacity .6s}
 #dmg i{position:absolute;left:-30px;top:-150px;width:60px;height:28px;background:radial-gradient(ellipse at 50% 100%,#f22,#f220 70%)}
 #flash{position:absolute;inset:0;background:radial-gradient(transparent 40%,#e00a);opacity:0;transition:opacity .3s}
@@ -57,7 +60,7 @@ input{background:#fff;color:#111;text-align:center;width:240px;user-select:text;
 </style></head><body>
 <canvas id="c"></canvas>
 <div id="hud">
- <div id="scope"></div><div id="flash"></div><div id="cross"></div><div id="hit"></div><div id="dmg"><i></i></div>
+ <div id="scope"></div><div id="flash"></div><div id="cross"></div><div id="hit"></div><div id="lowhp"></div><div id="dmg"><i></i></div>
  <div id="top"><div class="chip" id="alive">👥 30</div><div class="chip" id="kills">☠ 0</div><div class="chip" id="ztime">المنطقة</div></div>
  <canvas id="mini" width="130" height="130"></canvas>
  <canvas id="big" width="600" height="600"></canvas><div id="feed"></div><div id="msg"></div>
@@ -264,9 +267,10 @@ function checkEnd(){if(G.over)return;const al=alivePlayers();const humansAlive=a
   G.over=true;const w=al.length===1?al[0]:null;if(w)w.place=1;
   const res=[...G.players.values()].sort((a,b)=>(a.place||99)-(b.place||99)).slice(0,6).map(p=>({n:p.name,k:p.kills,p:p.place||'?'}));
   const ev={t:'over',w:w?w.name:'-',wid:w?w.id:-1,res};broadcast(ev);setTimeout(()=>endMatch(ev),humansAlive===0&&!w?3500:1500)}}
+function hitMark(p,head){if(p.id!==G.me)return;const c=document.getElementById('cross');c.classList.remove('hm','hh');void c.offsetWidth;c.classList.add(head?'hh':'hm');beep(head?1500:1100,.06,.1)}
 function fireFrom(p,o,d,wi){const w=W[wi];const pend=[];
  for(let k=0;k<w.pel;k++){let dd={x:d.x+(Math.random()-.5)*2*w.spr,y:d.y+(Math.random()-.5)*2*w.spr,z:d.z+(Math.random()-.5)*2*w.spr};const l=Math.hypot(dd.x,dd.y,dd.z);dd.x/=l;dd.y/=l;dd.z/=l;
-  const h=hitscan(o,dd,w.rng,p);const dist=h.t;if(h.kind==='player')damage(h.target,w.d*(w.pel>1?Math.max(.35,1-dist/w.rng):1),p,h.head,wi);
+  const h=hitscan(o,dd,w.rng,p);const dist=h.t;if(h.kind==='player'){hitMark(p,h.head)}if(h.kind==='player')damage(h.target,w.d*(w.pel>1?Math.max(.35,1-dist/w.rng):1),p,h.head,wi);
   pend.push([o.x+dd.x*dist,o.y+dd.y*dist,o.z+dd.z*dist])}
  const ev={t:'shot',id:p.id,o:[+o.x.toFixed(1),+o.y.toFixed(1),+o.z.toFixed(1)],e:pend.slice(0,3).map(a=>a.map(v=>+v.toFixed(1))),w:wi};
  handleShot(ev);broadcast(ev)}
@@ -505,7 +509,7 @@ function updateHud(){const m=me();if(!m)return;
  const now=performance.now();G.feed=G.feed.filter(f=>f.e>now);$('feed').innerHTML=G.feed.map(f=>f.t).join('<br>');
  $('scope').style.display=(L.zoom&&wi===4)?'block':'none'}
 function frame(){
- requestAnimationFrame(frame);const dt=Math.min(.05,clock.getDelta());
+ requestAnimationFrame(frame);const dt=Math.min(.05,clock.getDelta());{const mm=G.players&&G.players.get(G.me);const lo=!!(mm&&G.mode==='play'&&!L.dead&&mm.hp<=30);if(lo!==frame._lo){frame._lo=lo;$('lowhp').classList.toggle('on',lo)}}
  if(G.mode==='play'){
   if(G.host)hostTick(dt);else G.t+=dt;
   localUpdate(dt);
