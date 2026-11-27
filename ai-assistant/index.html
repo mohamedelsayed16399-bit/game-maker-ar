@@ -72,6 +72,18 @@ header button{background:none;border:0;color:var(--tx);font-size:18px;cursor:poi
  <div class="out" id="dout">لسه مفيش نتيجة.</div>
  <h3>المستندات المحفوظة</h3><div id="dlist"></div>
 </div></section>
+<section class="pane" id="p-study"><div class="page">
+ <h3>⏱️ بومودورو</h3>
+ <div style="font-size:42px;text-align:center" id="pomo">25:00</div>
+ <div style="text-align:center"><button class="p" id="pstart">ابدأ ٢٥ دقيقة</button> <button class="s" id="pbreak">راحة ٥</button> <button class="s" id="pstop">إيقاف</button></div>
+ <p class="note" id="pinfo">جلسات مكتملة اليوم: ٠</p>
+ <h3>🃏 بطاقات من مستنداتك</h3>
+ <p class="note">بيطلع أسئلة "املأ الفراغ" من جمل مستنداتك المحفوظة (بحذف كلمة مهمة). مش توليدي، قواعد بس.</p>
+ <button class="p" id="qgo">ابدأ اختبار من مستنداتي</button>
+ <div class="out" id="qbox">ضيف مستندات الأول من تبويب "مستنداتي".</div>
+ <div id="qopts"></div>
+ <p class="note" id="qscore"></p>
+</div></section>
 <section class="pane" id="p-write"><div class="page">
  <select id="wtype" class="s f"><option value="email">إيميل رسمي</option><option value="leave">طلب إجازة</option><option value="complaint">شكوى</option><option value="thanks">رسالة شكر</option><option value="cv">نبذة شخصية</option><option value="apology">اعتذار</option></select>
  <input id="wto" class="s f" placeholder="موجّه إلى (مثال: أستاذ أحمد)">
@@ -103,7 +115,7 @@ const LS={get(k,d){try{const v=localStorage.getItem('ai_'+k);return v===null?d:J
 const AD='٠١٢٣٤٥٦٧٨٩';
 const norm=s=>String(s).replace(/[٠-٩]/g,d=>AD.indexOf(d)).replace(/٫/g,'.').replace(/،/g,',').replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه').replace(/[\u064B-\u0652\u0640]/g,'');
 const toAr=n=>String(n).replace(/\d/g,d=>AD[d]);
-const TABS=[['chat','💬 محادثة'],['text','📄 تحليل نص'],['docs','📚 مستنداتي'],['write','✍️ كتابة'],['tasks','✅ مهامي'],['me','🧠 أنا']];
+const TABS=[['chat','💬 محادثة'],['text','📄 تحليل نص'],['docs','📚 مستنداتي'],['study','🎓 مذاكرة'],['write','✍️ كتابة'],['tasks','✅ مهامي'],['me','🧠 أنا']];
 TABS.forEach(([id,l],i)=>{const b=document.createElement('button');b.textContent=l;b.dataset.id=id;if(!i)b.className='on';b.onclick=()=>show(id);$('#tabs').appendChild(b)});
 function show(id){document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('on',p.id==='p-'+id));document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.id===id));if(id==='me')renderMe();if(id==='tasks')renderTasks()}
 let lastNum;let mem=LS.get('mem',{}),usage=LS.get('usage',{}),tasks=LS.get('tasks',[]),hist=LS.get('hist',[]);
@@ -182,6 +194,7 @@ function brain(raw){const q=raw.trim();const n=norm(q).toLowerCase();let m;
  if(m=n.match(/(?:جذر|الجذر التربيعي(?: ل)?)\s*(\d+(?:\.\d+)?)/))return `√${toAr(m[1])} = ${toAr(+Math.sqrt(+m[1]).toFixed(6))}`;
  if(m=n.match(/(\d+)\s*(?:اس|اُس|اوس)\s*(\d+)/))return `${toAr(m[1])}^${toAr(m[2])} = ${toAr(Math.pow(+m[1],+m[2]))}`;
  if(m=n.match(/(?:هل|اذا كان)\s*(\d+)\s*(?:عدد )?اولي/)){const k=+m[1];let ok=k>1;for(let i=2;i*i<=k;i++)if(k%i==0){ok=false;break}return ok?`${toAr(k)} عدد أولي.`:`${toAr(k)} مش عدد أولي.`}
+ if(/بومودورو|ابدا تركيز|جلسه تركيز/.test(n)){show('study');window.__pgo(25,true);return 'بدأت جلسة تركيز ٢٥ دقيقة. هنبهك لما تخلص.'}
  if(/شكرا|تسلم|ميرسي/.test(n))return 'العفو! أنا في الخدمة.';
  if(/انت مين|انت ايه|بتعمل ايه|تعمل ايه/.test(n))return 'أنا مساعد شغال بالكامل جوه متصفحك، من غير سيرفر. بحسب وأحوّل وأرتب مهامك وأفتكر حاجات عنك وأحلل النصوص. مش نموذج لغوي كبير، فمعرفتي العامة محدودة.';
  if((m=n.match(/(?:ابحث|دور|فتش)(?: في)?(?: ملفاتي| مستنداتي)?(?: عن)?\s+(.+)/))&&/ملفاتي|مستنداتي|ابحث|دور/.test(n))return docAnswer(m[1]);
@@ -235,7 +248,7 @@ function write(){const t=$('#wtype').value,to=$('#wto').value||'السيد ال�
 $('#wgo').onclick=write;$('#wcopy').onclick=()=>{try{navigator.clipboard.writeText($('#wout').textContent)}catch(e){}};
 
 function hourChart(){const h=usage._h||{};const mx=Math.max(1,...Object.values(h));let o='<div style="display:flex;align-items:flex-end;gap:2px;height:70px;direction:ltr">';for(let i=0;i<24;i++){const v=h[i]||0;o+=`<div title="${i}:00 = ${v}" style="flex:1;background:var(--ac);opacity:${v?1:.15};height:${Math.max(3,v/mx*100)}%"></div>`}return o+'</div><div class="note" style="display:flex;justify-content:space-between;direction:ltr"><span>0</span><span>12</span><span>23</span></div>'}
-function renderMe(){const hrs=usage._h||{};const names={msg:'رسائل',calc:'حسابات',task:'مهام',text:'تحليل نصوص',write:'كتابة',mem:'حقائق محفوظة',joke:'نكت',docq:'أسئلة على مستنداتك',timer:'مؤقتات'};let h='';Object.keys(names).forEach(k=>{if(usage[k])h+=`<div>${names[k]}: ${toAr(usage[k])}</div><div class="bar"><i style="width:${Math.min(100,usage[k]*10)}%"></i></div>`});const tot=Object.values(hrs).reduce((a,b)=>a+b,0);if(tot>2){const best=Object.entries(hrs).sort((a,b)=>b[1]-a[1])[0][0];h+=`<p>أكتر وقت بتستخدمني فيه: حوالي الساعة ${toAr(best)}.</p>`}
+function renderMe(){const hrs=usage._h||{};const names={msg:'رسائل',calc:'حسابات',task:'مهام',text:'تحليل نصوص',write:'كتابة',mem:'حقائق محفوظة',joke:'نكت',docq:'أسئلة على مستنداتك',timer:'مؤقتات',pomo:'جلسات تركيز'};let h='';Object.keys(names).forEach(k=>{if(usage[k])h+=`<div>${names[k]}: ${toAr(usage[k])}</div><div class="bar"><i style="width:${Math.min(100,usage[k]*10)}%"></i></div>`});const tot=Object.values(hrs).reduce((a,b)=>a+b,0);if(tot>2){const best=Object.entries(hrs).sort((a,b)=>b[1]-a[1])[0][0];h+=`<p>أكتر وقت بتستخدمني فيه: حوالي الساعة ${toAr(best)}.</p>`}
  $('#learn').innerHTML=(Object.keys(usage._h||{}).length?'<div class="note">نشاطك على مدار اليوم (بالساعة):</div>'+hourChart():'')+(h||'لسه بتعرّف عليك. استخدمني شوية.')+'<div class="out" style="margin-top:10px">'+habitTips().replace(/</g,'&lt;')+'</div>';
  const k=Object.keys(mem);$('#mem').innerHTML=k.length?'<table>'+k.map(()=>'<tr><td></td><td></td><td><button class="s">نسيان</button></td></tr>').join('')+'</table>':'<p class="note">الذاكرة فاضية.</p>';
  document.querySelectorAll('#mem tr').forEach((tr,i)=>{tr.children[0].textContent=k[i];tr.children[1].textContent=mem[k[i]];tr.querySelector('button').onclick=()=>{delete mem[k[i]];LS.set('mem',mem);renderMe()}})}
@@ -264,6 +277,18 @@ $('#spk').onclick=()=>{speak=!speak;LS.set('speak',speak);setSpk();if(!('speechS
 function say(t){if(!speak||!('speechSynthesis' in window))return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t.replace(/[•\n]+/g,'. '));u.lang='ar-EG';speechSynthesis.speak(u)}catch(e){}}
 function quick(r){const q=[];if(/سجلت/.test(r))q.push('مهامي');if(/المؤقت/.test(r))q.push('عندي ايه النهارده');if(/مش متأكد/.test(r))q.push('اقتراحات','ملخص اليوم');if(/الكيلو|باوند/.test(r))q.push('و 10');if(/حفظت اسمك/.test(r))q.push('ايه اللي تعرفه عني؟');return q.slice(0,3)}
 if(LS.get('light',false))document.body.classList.add('light');$('#theme').onclick=()=>{const l=document.body.classList.toggle('light');LS.set('light',l)};$('#clr').onclick=()=>{if(confirm('تمسح المحادثة؟')){hist=[];LS.set('hist',hist);$('#msgs').innerHTML='';add('b','تم مسح المحادثة.',false)}};
+
+/* pomodoro */
+let pt=null,pend=0;const pd=LS.get('pomo',{d:new Date().toDateString(),n:0});if(pd.d!==new Date().toDateString()){pd.d=new Date().toDateString();pd.n=0}
+function pshow(){const r=Math.max(0,Math.round((pend-Date.now())/1000));$('#pomo').textContent=toAr(String(Math.floor(r/60)).padStart(2,'0')+':'+String(r%60).padStart(2,'0'));$('#pinfo').textContent='جلسات مكتملة اليوم: '+toAr(pd.n);return r}
+function pgo(min,focus){clearInterval(pt);pend=Date.now()+min*6e4;pshow();pt=setInterval(()=>{if(pshow()<=0){clearInterval(pt);if(focus){pd.n++;LS.set('pomo',pd);bump('pomo')}pshow();add('b',focus?'⏱️ خلصت جلسة تركيز. خد راحة 5 دقايق.':'⏱️ الراحة خلصت. نكمل؟');try{if(window.Notification&&Notification.permission==='granted')new Notification('بومودورو',{body:focus?'خلصت الجلسة':'الراحة خلصت'})}catch(e){}}},500)}
+$('#pstart').onclick=()=>pgo(25,true);$('#pbreak').onclick=()=>pgo(5,false);$('#pstop').onclick=()=>{clearInterval(pt);pend=Date.now()+25*6e4;pshow()};pend=Date.now()+25*6e4;pshow();
+window.__pgo=pgo;
+/* quiz */
+let qa=null,qc=0,qt=0;
+function mkq(){const pool=[];docs.forEach(d=>sents(d.text).forEach(x=>{const w=x.split(/\s+/);const c=w.map((z,i)=>[z,i]).filter(([z])=>norm(z).length>=4&&!STOP.has(norm(z))&&!/\d/.test(z));if(w.length>=5&&c.length)pool.push({x,w,c,d:d.name})}));if(!pool.length)return null;const p=pool[Math.floor(Math.random()*pool.length)];const [ans,idx]=p.c[Math.floor(Math.random()*p.c.length)];const allw=[...new Set(pool.flatMap(q=>q.c.map(z=>z[0])))].filter(z=>z!==ans);const opts=[ans];while(opts.length<4&&allw.length){opts.push(allw.splice(Math.floor(Math.random()*allw.length),1)[0])}opts.sort(()=>Math.random()-.5);const q=p.w.map((z,i)=>i===idx?'_____':z).join(' ');return{q,ans,opts,src:p.d}}
+function qnext(){qa=mkq();const o=$('#qopts');o.innerHTML='';if(!qa){$('#qbox').textContent='ضيف مستندات فيها جمل أطول (٥ كلمات على الأقل).';return}$('#qbox').textContent=qa.q+'\n(من: '+qa.src+')';qa.opts.forEach(x=>{const b=document.createElement('button');b.className='s';b.style.margin='4px';b.textContent=x;b.onclick=()=>{qt++;if(x===qa.ans){qc++;$('#qbox').textContent='✅ صح! '+qa.q.replace('_____',qa.ans)}else $('#qbox').textContent='❌ غلط. الصح: '+qa.ans+'\n'+qa.q.replace('_____',qa.ans);$('#qscore').textContent='النتيجة: '+toAr(qc)+' من '+toAr(qt);o.innerHTML='';const nb=document.createElement('button');nb.className='p';nb.textContent='السؤال اللي بعده';nb.onclick=qnext;o.appendChild(nb)};o.appendChild(b)})}
+$('#qgo').onclick=()=>{qc=0;qt=0;$('#qscore').textContent='';qnext()};
 hist.forEach(([r,t])=>add(r,t,false));if(!hist.length)add('b','نصايح سريعة: اكتب "ملخص اليوم" أو "فكرني ... بكرا الساعة ٥" أو "عد تنازلي ٥ دقايق". اضغط 🔊 عشان أقرا الردود بصوت، و🌓 للوضع الفاتح.',false);if(!hist.length)add('b','أهلا! أنا مساعدك الذكي. شغال كله جوه متصفحك، ومفيش بيانات بتخرج من جهازك. جرب الأزرار اللي تحت أو اكتب سؤالك.');
 if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
