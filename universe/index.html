@@ -840,11 +840,52 @@ window.doScan=function(){if(mode!=='space'||!curStar)return;if(scCd>0){toast('ا
 planets.forEach((p,i)=>{if(!S.scanned[k0+i]){S.scanned[k0+i]=1;gain+=60;nw++}});if(gain){S.credits+=gain;S.stats.scans=(S.stats.scans||0)+nw;toast('📡 مسح جديد: '+AR(nw)+' كوكب · +'+AR(gain)+' 💰');hud();save()}else toast('📡 اتمسح النظام قبل كده');
 if(!scRing){scRing=new THREE.Mesh(new THREE.RingGeometry(.92,1,64),new THREE.MeshBasicMaterial({color:0x60ffd0,transparent:true,opacity:.8,side:THREE.DoubleSide,depthWrite:false}));scRing.rotation.x=-Math.PI/2}
 scRing.userData.t=0;space.add(scRing);scRing.visible=true;try{beep(660,.3,'sine',.05)}catch(e){}};
-function scanUpdate(dt){if(!scBtn){scBtn=document.createElement('button');scBtn.className='btn d';scBtn.style.cssText='position:fixed;bottom:410px;right:10px;z-index:7;padding:8px 12px;font-size:13px';scBtn.onclick=doScan;document.body.appendChild(scBtn);scPanel=document.createElement('div');scPanel.style.cssText='max-width:230px;text-align:center;pointer-events:none;background:#002a2aaa;border:1px solid #60ffd0;border-radius:10px;padding:4px 8px;font-size:12px;color:#b0fff0;direction:rtl;display:none';hudStack().appendChild(scPanel)}
+function scanUpdate(dt){if(!scBtn){scBtn=document.createElement('button');scBtn.className='btn d';scBtn.style.cssText='position:fixed;bottom:410px;right:10px;z-index:7;padding:8px 12px;font-size:13px';scBtn.onclick=doScan;document.body.appendChild(scBtn);scPanel=document.createElement('div');scPanel.style.cssText='position:fixed;top:436px;left:6px;width:176px;z-index:6;text-align:right;pointer-events:none;background:#002a2acc;border:1px solid #60ffd0;border-radius:8px;padding:3px 6px;font-size:10.5px;line-height:1.4;color:#b0fff0;direction:rtl;display:none';document.body.appendChild(scPanel)}
 const inS=mode==='space'&&curStar;scBtn.style.display=inS&&!menuOpen?'block':'none';if(scCd>0)scCd-=dt;scBtn.textContent=scCd>0?'📡 '+AR(Math.ceil(scCd)):'📡 مسح';
 if(scRing&&scRing.visible){scRing.userData.t+=dt;const t=scRing.userData.t;scRing.position.copy(ship.position);scRing.scale.setScalar(20+t*2500);scRing.material.opacity=Math.max(0,.8-t*.3);if(t>2.6){scRing.visible=false;space.remove(scRing)}}
-if(scShow>0&&inS){scShow-=dt;const L=planets.map(p=>({n:p.name||'كوكب',t:(p.type&&p.type.n)||'',d:p.mesh?p.mesh.position.distanceTo(ship.position):0})).sort((a,b)=>a.d-b.d).slice(0,4);scPanel.style.display='block';scPanel.innerHTML=L.map(x=>x.n+' · '+x.t+' · '+AR(Math.round(x.d))+' م').join('<br>')}else scPanel.style.display='none'}
-function nemUpdate(dt){try{scanUpdate(dt)}catch(e){console.log('sc',e)}try{flareUpdate(dt)}catch(e){console.log('fl',e)}try{photoUpd()}catch(e){console.log('ph',e)}try{crewUpdate(dt)}catch(e){console.log('crw',e)}try{moodUpdate(dt)}catch(e){}empUpdate(dt);devourUpdate(dt);asrUpdate(dt);freighterUpdate(dt);turretUpdate(dt);dreadUpdate(dt);wormUpdate(dt);if(mode!=='space'||!curStar||menuOpen)return;beaconUpdate(dt);waveUpdate(dt);cloakUpdate(dt);const alive=pirates.find(q=>q.nem);
+if(scShow>0&&inS){scShow-=dt;const L=planets.map(p=>({n:p.name||'كوكب',t:(p.type&&p.type.n)||'',d:p.mesh?p.mesh.position.distanceTo(ship.position):0})).sort((a,b)=>a.d-b.d).slice(0,3);scPanel.style.display='block';scPanel.innerHTML=L.map(x=>x.n+' · '+x.t+' · '+AR(Math.round(x.d))+' م').join('<br>')}else scPanel.style.display='none'}
+const CMP=[
+{t:'الإشارة',sp:'🛰️ القيادة',k:'scans',n:3,o:'اعمل مسح لـ ٣ كواكب (زرار 📡 مسح)',r:500,x:40,
+ i:'وصلتنا إشارة غريبة من أعماق المجرّة يا قبطان. مش عارفين مصدرها ولا مين باعتها. قبل ما نتحرك لازم نفهم الكواكب اللي حوالينا.',
+ e:'البيانات اتحللت. الإشارة بتتكرر كل ٧ ثواني بنفس النمط... ده مش صدفة.'},
+{t:'الحراس الصامتون',sp:'👽 صوت مجهول',k:'kills',n:8,o:'دمّر ٨ قراصنة',r:1200,x:70,
+ i:'اللي بعت الإشارة محتاج مساعدة. بس القراصنة اتجمعوا حوالين مسار الإشارة. اكسر طوقهم وافتح الطريق.',
+ e:'الطريق اتفتح. القراصنة كانوا بيحرسوا حاجة... أو بيهربوا من حاجة.'},
+{t:'خريطة النجوم',sp:'🛰️ القيادة',k:'worms',n:1,o:'ادخل ثقب دودي',r:2000,x:100,
+ i:'الإشارة جاية من منطقة مفيش ليها مسار عادي. الطريق الوحيد من خلال ثقب دودي. دوّر على واحد وادخله.',
+ e:'عبرت الثقب! الخرايط القديمة بقت واضحة. فيه حاجة ضخمة نايمة في قلب المجرّة.'},
+{t:'اختبار الشجاعة',sp:'👴 العجوز الحكيم',k:'waves',n:1,o:'اكسب حلبة الموجات من أي محطة',r:3000,x:150,
+ i:'سمعت عنك يا قبطان. بس اللي نايم هناك مش قرصان عادي. اثبت إنك تستاهل: اكسب حلبة الموجات من أي محطة.',
+ e:'تستاهل فعلاً. باقي حاجة واحدة قبل المواجهة: بقايا الحضارة القديمة.'},
+{t:'ذاكرة الأطلال',sp:'👴 العجوز الحكيم',k:'relics',n:2,o:'اجمع ٢ قطعة أثرية (اختراق الأطلال على الكواكب)',r:5000,x:250,
+ i:'الحضارة القديمة سجنت الملتهم بمفتاح مقسوم لقطع أثرية. لازم تجمع قطعتين من الأطلال على الكواكب علشان تفتح ذاكرتها.',
+ e:'الذاكرة اتفتحت: الملتهم مش بيتهزم بالقوة بس... لازم تصبر وتستخدم الـ EMP في الوقت الصح.'},
+{t:'المواجهة الأخيرة',sp:'🌌 الملتهم',k:'devourers',n:1,o:'اهزم الملتهم (استدعيه من المحطة: مستوى خبرة ٥ و٢٠٠٠ 💰)',r:15000,x:500,
+ i:'أنا أقدم من النجوم يا بشري... وجودك هنا غلطة. تعالى وواجهني لو بتقدر.',
+ e:'الملتهم سكت للأبد. المجرّة كلها بتهتف باسمك. 🌌 لقب جديد: منقذ المجرّة!'}];
+function cmpCur(){const c=S.camp;if(!c||c.ch>=CMP.length)return 0;const d=CMP[c.ch];const v=d.k==='relics'?(S.relics||0):((S.stats||{})[d.k]||0);return Math.max(0,v-(c.base||0))}
+function cmpBase(){const c=S.camp;const d=CMP[c.ch];if(!d)return;c.base=d.k==='relics'?(S.relics||0):((S.stats||{})[d.k]||0)}
+let cmpDlg=null,cmpQ=[],cmpTy=null,cmpBar=null,cmpBtn=null,cmpT=0,cmpBoot=6;
+function cmpSay(sp,text,cb){cmpQ.push({sp,text,cb});if(!cmpDlg)cmpNext()}
+function cmpNext(){const it=cmpQ.shift();if(!it){if(cmpDlg){cmpDlg.remove();cmpDlg=null}return}
+if(!cmpDlg){cmpDlg=document.createElement('div');cmpDlg.style.cssText='position:fixed;inset:0;z-index:55;background:rgba(0,0,12,.86);display:flex;align-items:flex-end;justify-content:center;padding:14px;direction:rtl';document.body.appendChild(cmpDlg)}
+cmpDlg.innerHTML=`<div style="background:#0b1430;border:2px solid #4cc3ff;border-radius:16px;padding:14px;width:100%;max-width:420px;margin-bottom:60px"><div style="font-size:30px">${it.sp.split(' ')[0]}</div><div style="color:#8fd8ff;font-weight:bold;margin-bottom:6px">${it.sp.split(' ').slice(1).join(' ')}</div><div id="cmpTx" style="min-height:92px;font-size:15px;line-height:1.7;color:#fff"></div><button class="btn g" id="cmpGo" style="width:100%;margin-top:10px">متابعة ◀</button></div>`;
+const tx=document.getElementById('cmpTx');let i=0;clearInterval(cmpTy);cmpTy=setInterval(()=>{i+=2;tx.textContent=it.text.slice(0,i);if(i>=it.text.length)clearInterval(cmpTy)},28);
+document.getElementById('cmpGo').onclick=()=>{if(i<it.text.length){i=it.text.length;tx.textContent=it.text;clearInterval(cmpTy);return}clearInterval(cmpTy);if(it.cb)it.cb();cmpNext()}}
+function cmpStart(){const c=S.camp;const d=CMP[c.ch];if(!d)return;cmpBase();cmpSay(d.sp,d.i,()=>{c.seen=c.ch;save()});save()}
+function cmpDone(){const c=S.camp;const d=CMP[c.ch];S.credits+=d.r;S.xp=(S.xp||0)+d.x;hud();const last=c.ch>=CMP.length-1;
+cmpSay('🛰️ القيادة','✅ أنهيت فصل «'+d.t+'». '+d.e+'  (+'+AR(d.r)+' 💰 · +'+AR(d.x)+' خبرة)',()=>{c.ch++;if(last){c.title='منقذ المجرّة';c.done=1;S.credits+=10000;toast('👑 أنهيت الحملة! +١٠٬٠٠٠ 💰');save()}else{cmpStart()}save()});save()}
+window.openCamp=function(){const c=S.camp||{ch:0};let h='<h2>📖 الحملة: لغز الملتهم</h2>';if(c.title)h+=`<div class="row"><b style="color:#ffd24c">👑 لقبك: ${c.title}</b></div>`;
+CMP.forEach((d,i)=>{const st=i<c.ch?'✅':i===c.ch?'▶️':'🔒';h+=`<div class="row"><span>${st} ${i+1}. ${d.t}${i===c.ch&&!c.done?'<br><small>'+d.o+' · '+AR(Math.min(cmpCur(),d.n))+' / '+AR(d.n)+'</small>':''}</span><small>${AR(d.r)} 💰</small></div>`});
+h+='<button class="btn d" onclick="closeMenu()" style="margin-top:10px">إغلاق</button>';openMenu(h)};
+function campUpdate(dt){if(!cmpBtn){cmpBtn=document.createElement('button');cmpBtn.className='btn d';cmpBtn.textContent='📖 الحملة';cmpBtn.style.cssText='position:fixed;top:398px;left:6px;z-index:7;padding:6px 10px;font-size:12px';cmpBtn.onclick=openCamp;document.body.appendChild(cmpBtn);cmpBar=document.createElement('div');cmpBar.style.cssText='max-width:230px;text-align:center;pointer-events:none;background:#0a1030cc;border:1px solid #ffd24c;border-radius:10px;padding:3px 8px;font-size:11px;color:#ffe8a0;direction:rtl;display:none';hudStack().appendChild(cmpBar)}
+const inS=mode==='space'&&!menuOpen&&!cmpDlg;cmpBtn.style.display=inS?'block':'none';
+if(!S.camp){if(inS){cmpBoot-=dt;if(cmpBoot<=0){S.camp={ch:0,base:0,seen:-1};cmpStart()}}return}
+const c=S.camp;if(c.done||c.ch>=CMP.length){cmpBar.style.display='none';return}
+if(c.seen<c.ch&&inS&&!cmpDlg&&cmpQ.length===0){cmpStart();return}
+cmpT-=dt;if(cmpT<=0){cmpT=.7;const d=CMP[c.ch];const v=cmpCur();cmpBar.style.display=inS?'block':'none';cmpBar.textContent='📖 '+d.t+' · '+AR(Math.min(v,d.n))+'/'+AR(d.n);if(v>=d.n&&!cmpDlg&&cmpQ.length===0&&inS)cmpDone()}}
+window.cmpState=()=>({camp:S.camp,cur:cmpCur(),dlg:!!cmpDlg});
+function nemUpdate(dt){try{campUpdate(dt)}catch(e){console.log('camp',e)}try{scanUpdate(dt)}catch(e){console.log('sc',e)}try{flareUpdate(dt)}catch(e){console.log('fl',e)}try{photoUpd()}catch(e){console.log('ph',e)}try{crewUpdate(dt)}catch(e){console.log('crw',e)}try{moodUpdate(dt)}catch(e){}empUpdate(dt);devourUpdate(dt);asrUpdate(dt);freighterUpdate(dt);turretUpdate(dt);dreadUpdate(dt);wormUpdate(dt);if(mode!=='space'||!curStar||menuOpen)return;beaconUpdate(dt);waveUpdate(dt);cloakUpdate(dt);const alive=pirates.find(q=>q.nem);
 if(!alive&&curStar.danger>.4){nemT-=dt;if(nemT<=0){nemT=90;const lv=S.nem||0;const m=makeShip(0x8a1a8a,0xff40ff);m.scale.setScalar(2.4+Math.min(lv,4)*.15);const a=Math.random()*6.28;m.position.copy(ship.position).add(new THREE.Vector3(Math.cos(a)*800,40,Math.sin(a)*800));space.add(m);const nm=NEMN[lv%NEMN.length];pirates.push({m,boss:true,nem:true,nemName:nm,kind:null,hp:160+lv*70,max:160+lv*70,cd:1.2});toast('☠️ '+nm+' ظهر! (المستوى '+AR(lv+1)+')')}}
 if(!nemBar){nemBar=document.createElement('div');nemBar.style.cssText='max-width:230px;text-align:center;pointer-events:none;background:#000a;border:1px solid #ff40ff;border-radius:10px;padding:4px 10px;font-size:13px;color:#ffb0ff;direction:rtl';hudStack().appendChild(nemBar)}
 if(alive){nemBar.style.display='block';nemBar.textContent='☠️ '+alive.nemName+': '+AR(Math.max(0,Math.round(alive.hp/alive.max*100)))+'٪'}else nemBar.style.display='none'}
