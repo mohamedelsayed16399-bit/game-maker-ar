@@ -53,7 +53,7 @@ header button{background:none;border:0;color:var(--tx);font-size:18px;cursor:poi
 <section class="pane on" id="p-chat">
  <div id="msgs"></div>
  <div class="chips" id="chips"></div>
- <div class="row"><input id="inp" placeholder="اكتب سؤالك..." autocomplete="off"><button class="p" id="send">إرسال</button><button class="s" id="mic">🎤</button></div>
+ <div class="row"><input id="inp" aria-label="اكتب رسالتك" placeholder="اكتب سؤالك..." autocomplete="off"><button class="p" id="send" aria-label="إرسال">إرسال</button><button class="s" id="mic">🎤</button></div>
 </section>
 <section class="pane" id="p-text"><div class="page">
  <textarea class="big" id="txt" placeholder="الصق أي نص أو ارفع ملف .txt / .md / .csv / .json"></textarea>
@@ -137,7 +137,7 @@ function brain(raw){const q=raw.trim();const n=norm(q).toLowerCase();let m;
  if(/ايه اللي (تعرفه|عارفه) عني|ماذا تعرف عني|بتعرف ايه عني/.test(n)){const k=Object.keys(mem);return k.length?'اللي أعرفه عنك:\n'+k.map(x=>`• ${x}: ${mem[x]}`).join('\n'):'لسه معرفش حاجة. قولي "اسمي ..." أو "افتكر إن ... هو ..."'}
  if(/انسى كل|امسح الذاكره/.test(n)){mem={};LS.set('mem',mem);return 'مسحت الذاكرة كلها.'}
  if(/كام الساعه|الساعه كام|الوقت كام/.test(n))return 'الساعة '+fmtT(new Date());
- if(/(النهارده|انهارده|التاريخ|اليوم) (ايه|كام)|تاريخ (النهارده|اليوم)/.test(n))return 'النهاردة '+fmtD(new Date());
+ if(!/\d/.test(n)&&(/(النهارده|انهارده|التاريخ|اليوم) (ايه|كام)|تاريخ (النهارده|اليوم)/.test(n)))return 'النهاردة '+fmtD(new Date());
  if((m=n.match(/بعد (\d+) (يوم|ايام|اسبوع|اسابيع|شهر|شهور)/))&&/امتي|هيبقي|ايه/.test(n)){const d=new Date(),k=+m[1];if(/يوم|ايام/.test(m[2]))d.setDate(d.getDate()+k);else if(/اسبوع|اسابيع/.test(m[2]))d.setDate(d.getDate()+7*k);else d.setMonth(d.getMonth()+k);return fmtD(d)}
  if(m=n.match(/كام يوم (?:باقي )?(?:علي|على|لحد)\s*(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{4}))?/)){const t=new Date(+(m[3]||new Date().getFullYear()),+m[2]-1,+m[1]);const df=Math.ceil((t-new Date())/864e5);return `باقي ${toAr(df)} يوم (${fmtD(t)})`}
  if(m=n.match(/حول\s*([\d.]+)\s*(\S+)\s*(?:الي|الى|ل|لـ)\s*(\S+)/)){const a=UNITS[m[2]],b=UNITS[m[3]];if(a&&b&&a[0]===b[0]){const f=m[2],t=m[3];lastIntent=mm=>{const A=UNITS[f];const B=UNITS[t];return `${toAr(mm[1])} ${f} = ${toAr(+(+mm[1]*A[1]/B[1]).toFixed(4))} ${t}`};return `${toAr(m[1])} ${m[2]} = ${toAr(+(+m[1]*a[1]/b[1]).toFixed(4))} ${m[3]}`}return 'مش عارف أحول بين الوحدتين دول.'}
@@ -168,11 +168,20 @@ function brain(raw){const q=raw.trim();const n=norm(q).toLowerCase();let m;
  if(/اقتراح|نصيحه|انصحني/.test(n))return habitTips();
 
  if(/^(ملخص اليوم|صباح الفل|briefing|ابدا يومي|خطه اليوم)$/.test(n)||/ملخص (اليوم|يومي)/.test(n)){const t=new Date(),o=tasks.filter(x=>!x.done),td=o.filter(x=>x.w&&new Date(x.w).toDateString()===t.toDateString()),od=o.filter(x=>x.w&&x.w<Date.now());return `ملخص ${fmtD(t)}:\n• مهام مفتوحة: ${toAr(o.length)}\n• مواعيد النهاردة: ${toAr(td.length)}${td.length?'\n'+td.map(x=>'   - '+fmtT(new Date(x.w))+' '+x.t).join('\n'):''}\n• متأخرة: ${toAr(od.length)}\n• ملاحظاتك: ${toAr((LS.get('notes','')||'').split(/\n/).filter(Boolean).length)} سطر\n• حقائق محفوظة عنك: ${toAr(Object.keys(mem).length)}`}
+ if(/^(?:وسوم|تاجات|tags)$/.test(n)){const t=(LS.get('notes','').match(/#[\S]+/g)||[]);const f={};t.forEach(x=>f[x]=(f[x]||0)+1);const e=Object.entries(f);return e.length?'الوسوم في ملاحظاتك:\n'+e.map(([k,v])=>`${k} ×${toAr(v)}`).join('\n'):'مفيش وسوم. اكتب #كلمة في ملاحظاتك.'}
  if(m=n.match(/(?:دور|ابحث) في (?:ملاحظاتي|مفكرتي)\s*(?:عن)?\s*(.+)/)){const L=(LS.get('notes','')||'').split(/\n/).filter(x=>norm(x).includes(m[1].trim()));return L.length?'لقيت في ملاحظاتك:\n'+L.map(x=>'• '+x).join('\n'):'مالقيتش في ملاحظاتك.'}
  if(/^(ضيف للملاحظات|دون|سجل ملاحظه)\s+(.+)/.test(n)){m=n.match(/^(?:ضيف للملاحظات|دون|سجل ملاحظه)\s+(.+)/);const orig=q.replace(/^\S+(\s+\S+)?\s/,'');const cur=LS.get('notes','');LS.set('notes',(cur?cur+'\n':'')+m[1]);$('#notes').value=LS.get('notes','');return 'اتضافت للملاحظات.'}
  if(lastIntent&&(m=n.match(/^(?:و|طب و|وب)\s*(\d+(?:\.\d+)?)\s*(\S+)?$/))){return lastIntent(m)}
  if((m=n.match(/(\d+(?:\.\d+)?)\s*(?:دولار|\$)\s*(?:بكام|كام)?\s*(?:جنيه)?/))&&/جنيه|بكام|كام/.test(n)){const r=LS.get('usd',null);if(r)lastIntent=mm=>`${toAr(mm[1])} دولار ≈ ${toAr((mm[1]*r).toFixed(2))} جنيه`;return `${toAr(m[1])} دولار ≈ ${toAr((m[1]*r).toFixed(2))} جنيه (بسعر ${toAr(r)} اللي انت سجلته)`;return 'مفيش سعر صرف محفوظ. قولي "سعر الدولار 50" وأنا هحفظه (مفيش إنترنت هنا فمش بجيب أسعار حية).'}
  if(m=n.match(/سعر (?:ال)?دولار\s*(\d+(?:\.\d+)?)/)){LS.set('usd',+m[1]);return `تمام. سجلت سعر الدولار ${toAr(m[1])} جنيه.`}
+
+ if(m=n.match(/(?:اليوم|يوم)\s*(?:ايه|كام)\s*(?:في|ف)?\s*(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/)){return fmtD(new Date(+m[3],+m[2]-1,+m[1]))}
+ if(/(?:اخر|اخره) (?:يوم )?(?:في )?(?:ال)?شهر/.test(n)){const t=new Date();return fmtD(new Date(t.getFullYear(),t.getMonth()+1,0))}
+ if(m=n.match(/(?:اضف|زود)\s*(\d+)\s*(يوم|ايام|اسبوع|اسابيع|شهر|شهور)\s*(?:علي|على|ل)\s*(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/)){const d=new Date(+m[5],+m[4]-1,+m[3]),k=+m[1];if(/يوم|ايام/.test(m[2]))d.setDate(d.getDate()+k);else if(/اسبوع|اسابيع/.test(m[2]))d.setDate(d.getDate()+7*k);else d.setMonth(d.getMonth()+k);return fmtD(d)}
+ if(m=n.match(/(?:حول|حوّل)\s*([\d.]+)\s*(?:ساعه|ساعات)\s*(?:الي|الى|ل)\s*(?:دقايق|دقائق|دقيقه)/))return `${toAr(+m[1]*60)} دقيقة`;
+ if(m=n.match(/(?:جذر|الجذر التربيعي(?: ل)?)\s*(\d+(?:\.\d+)?)/))return `√${toAr(m[1])} = ${toAr(+Math.sqrt(+m[1]).toFixed(6))}`;
+ if(m=n.match(/(\d+)\s*(?:اس|اُس|اوس)\s*(\d+)/))return `${toAr(m[1])}^${toAr(m[2])} = ${toAr(Math.pow(+m[1],+m[2]))}`;
+ if(m=n.match(/(?:هل|اذا كان)\s*(\d+)\s*(?:عدد )?اولي/)){const k=+m[1];let ok=k>1;for(let i=2;i*i<=k;i++)if(k%i==0){ok=false;break}return ok?`${toAr(k)} عدد أولي.`:`${toAr(k)} مش عدد أولي.`}
  if(/شكرا|تسلم|ميرسي/.test(n))return 'العفو! أنا في الخدمة.';
  if(/انت مين|انت ايه|بتعمل ايه|تعمل ايه/.test(n))return 'أنا مساعد شغال بالكامل جوه متصفحك، من غير سيرفر. بحسب وأحوّل وأرتب مهامك وأفتكر حاجات عنك وأحلل النصوص. مش نموذج لغوي كبير، فمعرفتي العامة محدودة.';
  if((m=n.match(/(?:ابحث|دور|فتش)(?: في)?(?: ملفاتي| مستنداتي)?(?: عن)?\s+(.+)/))&&/ملفاتي|مستنداتي|ابحث|دور/.test(n))return docAnswer(m[1]);
@@ -224,8 +233,10 @@ function write(){const t=$('#wtype').value,to=$('#wto').value||'السيد ال�
  apology:`عزيزي ${to}،\n\nأعتذر لك بصدق عن ${sub}. أتحمل مسؤولية ما حدث، وأعدك بتجنب تكراره.\n\nمع خالص الاعتذار،\n${me}`};
  $('#wout').textContent=T[t]}
 $('#wgo').onclick=write;$('#wcopy').onclick=()=>{try{navigator.clipboard.writeText($('#wout').textContent)}catch(e){}};
+
+function hourChart(){const h=usage._h||{};const mx=Math.max(1,...Object.values(h));let o='<div style="display:flex;align-items:flex-end;gap:2px;height:70px;direction:ltr">';for(let i=0;i<24;i++){const v=h[i]||0;o+=`<div title="${i}:00 = ${v}" style="flex:1;background:var(--ac);opacity:${v?1:.15};height:${Math.max(3,v/mx*100)}%"></div>`}return o+'</div><div class="note" style="display:flex;justify-content:space-between;direction:ltr"><span>0</span><span>12</span><span>23</span></div>'}
 function renderMe(){const hrs=usage._h||{};const names={msg:'رسائل',calc:'حسابات',task:'مهام',text:'تحليل نصوص',write:'كتابة',mem:'حقائق محفوظة',joke:'نكت',docq:'أسئلة على مستنداتك',timer:'مؤقتات'};let h='';Object.keys(names).forEach(k=>{if(usage[k])h+=`<div>${names[k]}: ${toAr(usage[k])}</div><div class="bar"><i style="width:${Math.min(100,usage[k]*10)}%"></i></div>`});const tot=Object.values(hrs).reduce((a,b)=>a+b,0);if(tot>2){const best=Object.entries(hrs).sort((a,b)=>b[1]-a[1])[0][0];h+=`<p>أكتر وقت بتستخدمني فيه: حوالي الساعة ${toAr(best)}.</p>`}
- $('#learn').innerHTML=(h||'لسه بتعرّف عليك. استخدمني شوية.')+'<div class="out" style="margin-top:10px">'+habitTips().replace(/</g,'&lt;')+'</div>';
+ $('#learn').innerHTML=(Object.keys(usage._h||{}).length?'<div class="note">نشاطك على مدار اليوم (بالساعة):</div>'+hourChart():'')+(h||'لسه بتعرّف عليك. استخدمني شوية.')+'<div class="out" style="margin-top:10px">'+habitTips().replace(/</g,'&lt;')+'</div>';
  const k=Object.keys(mem);$('#mem').innerHTML=k.length?'<table>'+k.map(()=>'<tr><td></td><td></td><td><button class="s">نسيان</button></td></tr>').join('')+'</table>':'<p class="note">الذاكرة فاضية.</p>';
  document.querySelectorAll('#mem tr').forEach((tr,i)=>{tr.children[0].textContent=k[i];tr.children[1].textContent=mem[k[i]];tr.querySelector('button').onclick=()=>{delete mem[k[i]];LS.set('mem',mem);renderMe()}})}
 $('#export').onclick=()=>{const b=new Blob([JSON.stringify({mem,usage,tasks,docs,notes:LS.get('notes','')},null,1)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='my-assistant-data.json';a.click()};
