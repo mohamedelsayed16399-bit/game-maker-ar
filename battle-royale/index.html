@@ -537,7 +537,7 @@ function handleShot(o,local){if(!G.host&&o.id===G.me&&!local)return;
 let dnI=0;
 function dmgNum(d,h){const e=document.createElement('div');e.className='dn'+(h?' hd':'');e.textContent=d;e.style.left=(50+(Math.random()-.5)*10)+'%';e.style.top=(40+(dnI++%3)*3)+'%';$('hud').appendChild(e);setTimeout(()=>e.remove(),800)}
 function hitMarker(h,d){if(d>0){dmgNum(d,h);ST.h++;ST.d+=d;if(h)ST.hs++}const e=$('hit');e.style.borderColor=h?'#ff0':'#f33';e.style.opacity=1;setTimeout(()=>e.style.opacity=0,120);beep(h?1400:900,.06,.1)}
-function crouch(){if(L.para||L.dead||L.quad!=null)return;L.cr=L.cr?0:1;msg(L.cr?'🧎 انحنيت (دقة أعلى، بطيء)':'وقفت',900)}
+function crouch(){if(L.para||L.dead||L.quad!=null)return;if(!L.cr&&L.wasSpr&&!(L.slT>0)&&L.y<=groundAt(L.x,L.z)+.3){const l=Math.hypot(L.mdx,L.mdz)||1;L.sdx=L.mdx/l;L.sdz=L.mdz/l;L.slT=.8;L.cr=1;msg('🛷 سلايد!',700);sfx(200,.25,.08);return}L.cr=L.cr?0:1;msg(L.cr?'🧎 انحنيت (دقة أعلى، بطيء)':'وقفت',900)}
 function flash(sx,sz){if(sx!==undefined){const dx=sx-L.x,dz=sz-L.z,fx=-Math.sin(L.yaw),fz=-Math.cos(L.yaw),rx=Math.cos(L.yaw),rz=-Math.sin(L.yaw);const a=Math.atan2(dx*rx+dz*rz,dx*fx+dz*fz)*180/Math.PI;const e=$('dmg');e.style.transition='none';e.style.transform='rotate('+a+'deg)';e.style.opacity=1;requestAnimationFrame(()=>{e.style.transition='opacity .8s';e.style.opacity=0})}const e=$('flash');e.style.opacity=.9;setTimeout(()=>e.style.opacity=0,180);sfx(150,.3,.15)}
 function beginLocal(list){
  G.mode='play';G.over=false;G.t=0;resetLoot();
@@ -650,15 +650,15 @@ function localUpdate(dt){
  const m=me();if(!m||L.dead)return;
  let fwd=0,str=0;if(!TOUCH){fwd=(keys.KeyW||keys.ArrowUp?1:0)-(keys.KeyS||keys.ArrowDown?1:0);str=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0)}
  else{fwd=-joyV.y;str=joyV.x}
- if(L.para||L.quad!=null||L.dead)L.cr=0;L.crk=(L.crk||0)+((L.cr?1:0)-(L.crk||0))*Math.min(1,dt*10);const sprint=(keys.ShiftLeft||keys.ShiftRight||L.spr)&&!L.cr;
+ if(L.para||L.quad!=null||L.dead)L.cr=0;L.crk=(L.crk||0)+((L.slT>0?1.25:(L.cr?1:0))-(L.crk||0))*Math.min(1,dt*10);const sprint=(keys.ShiftLeft||keys.ShiftRight||L.spr)&&!L.cr;
  const l=Math.hypot(fwd,str);if(l>1){fwd/=l;str/=l}
- const sy=Math.sin(L.yaw),cy=Math.cos(L.yaw);
+ const sy=Math.sin(L.yaw),cy=Math.cos(L.yaw);L.mdx=-sy*fwd+cy*str;L.mdz=-cy*fwd-sy*str;L.wasSpr=sprint&&(Math.abs(fwd)+Math.abs(str))>.2;
  if(L.para){L.y-=(fwd>0.5&&L.pitch<-0.6?5:9)*dt;L.x+=(-sy*fwd+cy*str)*14*dt;L.z+=(-cy*fwd-sy*str)*14*dt;
   const g=groundAt(L.x,L.z);if(L.y<=g+.05){L.y=g;L.para=false;L.vy=0;msg('هبطت! دوّر على سلاح',2000)}}
  else{let sp=sprint?8.2:5.6;if(groundAt(L.x,L.z)<-.3)sp*=.5;if(L.zoom)sp*=.6;if(L.cr)sp*=.55;
   stepT-=dt;if(stepT<=0&&(Math.abs(fwd)+Math.abs(str))>.2&&L.y<=groundAt(L.x,L.z)+.2){stepT=sprint?.27:.4;sfx(380,.05,.06)}
   const glide=(keys.Space||L.jump)&&L.vy<0&&L.y>groundAt(L.x,L.z)+2.5;L.gliding=glide;if(glide)sp=11;if(L.quad!=null)sp=sprint?20:14;
-  const nx=L.x+(-sy*fwd+cy*str)*sp*dt,nz=L.z+(-cy*fwd-sy*str)*sp*dt;
+  let nx=L.x+(-sy*fwd+cy*str)*sp*dt,nz=L.z+(-cy*fwd-sy*str)*sp*dt;if(L.slT>0){const k=5+8*(L.slT/.8);nx=L.x+L.sdx*k*dt;nz=L.z+L.sdz*k*dt;L.slT-=dt;if(L.y>groundAt(L.x,L.z)+.6)L.slT=0}
   const gn=groundAt(nx,nz);if(gn-L.y<1.1||L.y>gn){L.x=nx;L.z=nz}
   const lim=R_ISL*1.05;const d=Math.hypot(L.x,L.z);if(d>lim){L.x*=lim/d;L.z*=lim/d}
   resolve(L,.4);
