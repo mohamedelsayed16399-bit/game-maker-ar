@@ -624,7 +624,7 @@ function loadLevel(){
     else if(o.t==="player")P.player={x:r.x+8,y:r.y+4,w:T-16,h:T-6,vx:0,vy:0,on:false,face:1,coy:0,buf:0,sx:r.x+8,sy:r.y+4,onM:null,inv:0};
   }
   if(!P.player)P.player={x:60,y:60,w:T-16,h:T-6,vx:0,vy:0,on:false,face:1,coy:0,buf:0,sx:60,sy:60,onM:null,inv:0};
-  P.total=P.coins.length;P.state="run";P.cam={x:0,y:0};P.msg=lv.title?lv.title:(G.levels.length>1?"مرحلة "+(P.lvl+1):"");P.msgT=P.msg?2.6:0;
+  P.total=P.coins.length;P.ld=0;P.state="run";P.cam={x:0,y:0};P.msg=lv.title?lv.title:(G.levels.length>1?"مرحلة "+(P.lvl+1):"");P.msgT=P.msg?2.6:0;
   centerCam(true);
 }
 const keys={};
@@ -666,7 +666,7 @@ function moveBox(b,dx,dy,res){
 }
 function puff(x,y,col,n){for(let i=0;i<n;i++)P.particles.push({x,y,vx:(Math.random()-.5)*300,vy:-Math.random()*300,l:.6+Math.random()*.4,c:col})}
 function say(s){P.msg=s;P.msgT=2.2}
-function die(){
+function die(){P.ld=(P.ld||0)+1;
   if(P.state!=="run")return;
   P.state="dead";P.deadT=0.9;P.lives--;SFX.die();puff(P.player.x+P.player.w/2,P.player.y+P.player.h/2,G.col,26);P.shake=.3;
 }
@@ -796,8 +796,10 @@ function stepPlay(dt){
 }
 function levelDone(){
   SFX.win();P.score+=100;
-  if(P.lvl+1<G.levels.length){P.state="win";puff(P.player.x,P.player.y,"#fff",20);say("أحسنت! المرحلة الجاية");
-    setTimeout(()=>{if(!P)return;P.lvl++;loadLevel()},800)}
+  const st=1+(P.coins.length===0?1:0)+((P.ld||0)===0?1:0);P.starTot=(P.starTot||0)+st;P.starMax=(P.starMax||0)+3;P.score+=st*20;
+  const stS="★".repeat(st)+"☆".repeat(3-st);P.starShow=2.2;P.starTxt=stS;
+  if(P.lvl+1<G.levels.length){P.state="win";puff(P.player.x,P.player.y,"#fff",20);say("أحسنت! "+stS);
+    setTimeout(()=>{if(!P)return;P.lvl++;loadLevel()},1800)}
   else endGame(true);
 }
 function endGame(win){
@@ -806,7 +808,7 @@ function endGame(win){
   let best=0;try{const k="gm_best_"+(G.title||"")+"_"+G.levels.length;best=+localStorage.getItem(k)||0;if(win&&P.score>best){best=P.score;localStorage.setItem(k,best)}}catch(e){}
   P.best=best;
   $("overT").textContent=win?"كسبت! 🎉":"خسرت";
-  $("overS").textContent="النقاط: "+P.score+" · الوقت: "+Math.round(P.time)+" ثانية"+(P.best?" · أفضل نتيجة: "+P.best:"");
+  $("overS").textContent=(P.starMax?"النجوم: "+P.starTot+"/"+P.starMax+" ★ · ":"")+"النقاط: "+P.score+" · الوقت: "+Math.round(P.time)+" ثانية"+(P.best?" · أفضل نتيجة: "+P.best:"");
   $("overA").textContent="العب تاني";$("over").classList.add("show");
 }
 function centerCam(snapNow){
