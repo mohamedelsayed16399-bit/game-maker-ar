@@ -78,6 +78,7 @@ input{background:#fff;color:#111;text-align:center;width:240px;user-select:text;
  <button id="bhost" class="sec">إنشاء غرفة أونلاين</button>
  <div class="row"><input id="jc" maxlength="5" placeholder="كود الغرفة" style="width:150px;direction:ltr;text-transform:uppercase"><button id="bjoin" class="sec" style="min-width:80px">دخول</button></div>
  <div class="row sub"><label>الحساسية <input type="range" id="sens" min="40" max="220" value="100" style="width:110px;padding:0"></label><label>الصوت <input type="range" id="vol" min="0" max="100" value="80" style="width:110px;padding:0"></label></div>
+ <label class="sub"><input type="checkbox" id="duo" style="width:auto"> وضع ثنائي (فريق من 2 - مفيش ضرر على صاحبك)</label>
  <label class="sub"><input type="checkbox" id="lite" style="width:auto"> وضع خفيف للموبايل الضعيف</label>
  <label class="sub"><input type="checkbox" id="fast" style="width:auto"> مباراة سريعة (المنطقة بتضيق أسرع)</label>
  <div class="sub" id="mstat"></div>
@@ -252,7 +253,7 @@ function broadcast(o){for(const c of G.conns.values())if(c.open)c.send(o)}
 function sendTo(id,o){const c=G.conns.get(id);if(c&&c.open)c.send(o)}
 function alivePlayers(){return[...G.players.values()].filter(p=>p.alive)}
 function damage(t,amt,by,head,wi){
- if(!t.alive||t.invT>0)return;if(t.para&&G.t<25)return;
+ if(!t.alive||t.invT>0)return;if(t.para&&G.t<25)return;if(G.duo&&by&&by!==t&&by.team===t.team)return;
  let a=amt;if(head)a*=1.8;
  if(t.sh>0){const s=Math.min(t.sh,a);t.sh-=s;a-=s}t.hp-=a;
  if(by&&by.id===G.me&&by!==t)hitMarker(head);
@@ -265,8 +266,9 @@ function die(t,by,wi){t.alive=false;t.hp=0;t.place=alivePlayers().length+1;if(by
 const STREAK=['','قتلة أولى! 🔥','قتلتين! 🔥🔥','٣ قتلات! سلسلة!','٤ قتلات! وحش!','٥ قتلات! أسطورة!'];
 function handleKillEv(ev){if(ev.kid===G.me&&ev.id!==G.me){const m=me();const k=(m?m.kills:0)+(G.host?0:1);msg(STREAK[Math.min(5,Math.max(1,k))]||'مستمر!',2200);beep(1100,.15,.12)}addFeed((ev.w>=0?'🔫 ':'☠ ')+ev.k+' ← '+ev.v);const p=G.players.get(ev.id);if(p)p.place=ev.pl;if(ev.id===G.me)onMyDeath(ev)}
 function checkEnd(){if(G.over)return;const al=alivePlayers();const humansAlive=al.filter(p=>p.human).length;
- if(al.length<=1||humansAlive===0){
-  G.over=true;const w=al.length===1?al[0]:null;if(w)w.place=1;
+ const oneTeam=G.duo&&al.length>0&&al.every(p=>p.team===al[0].team);
+ if(al.length<=1||humansAlive===0||oneTeam){
+  G.over=true;const w=(al.length===1||oneTeam)?al[0]:null;if(w)w.place=1;
   const res=[...G.players.values()].sort((a,b)=>(a.place||99)-(b.place||99)).slice(0,6).map(p=>({n:p.name,k:p.kills,p:p.place||'?'}));
   const ev={t:'over',w:w?w.name:'-',wid:w?w.id:-1,res};broadcast(ev);setTimeout(()=>endMatch(ev),humansAlive===0&&!w?3500:1500)}}
 function hitMark(p,head){if(p.id!==G.me)return;const c=document.getElementById('cross');c.classList.remove('hm','hh');void c.offsetWidth;c.classList.add(head?'hh':'hm');beep(head?1500:1100,.06,.1)}
@@ -289,14 +291,15 @@ function pickupFor(p,l){const it=LT[l.t];let ok=false;
 function startMatch(){
  G.over=false;G.players.clear();resetLoot();G.t=0;
  const spawnR=rng(Date.now()&0xffff);
- const hum=[{id:0,name:G.myName||'أنا'}];for(const [id,c] of G.conns)hum.push({id,name:c.pname||('لاعب'+id)});
+ G.duo=!!$('duo').checked;const hum=[{id:0,name:G.myName||'أنا'}];for(const [id,c] of G.conns)hum.push({id,name:c.pname||('لاعب'+id)});
  let id=100;const total=30;const names=NAMES.slice().sort(()=>Math.random()-.5);
  const mkPos=()=>{for(let i=0;i<50;i++){const a=spawnR()*6.28,r=Math.sqrt(spawnR())*280;const x=Math.cos(a)*r,z=Math.sin(a)*r;if(H(x,z)>1)return[x,z]}return[0,0]};
  for(const h of hum){const p=newPlayer(h.id,h.name,true);const [x,z]=mkPos();p.x=x;p.z=z;p.y=150;G.players.set(p.id,p)}
  let bi=0;while(G.players.size<total){const p=newPlayer(id++,names[bi++%names.length]+' '+(10+Math.floor(Math.random()*89)),false);const [x,z]=mkPos();p.x=x;p.z=z;p.y=150;const [tx,tz]=mkPos();p.ai={tx,tz,wt:0,react:0,vis:0,tgt:null,stuck:0,lx:x,lz:z,sT:0,sd:1,skill:.4+Math.random()*.5};G.players.set(p.id,p)}
+ {let i=0;for(const p of G.players.values()){p.team=G.duo?(i>>1):i;i++}}
  const f=G.fast?.45:1;G.zone={cx:0,cz:0,r:420,tcx:0,tcz:0,tr:420,ph:-1,t:(25+20)*f,state:'wait',scx:0,scz:0,sr:420,dur:1};
- const list=[...G.players.values()].map(p=>({id:p.id,n:p.name,h:p.human,x:p.x,z:p.z}));
- for(const [cid] of G.conns)sendTo(cid,{t:'start',list,fast:G.fast,me:cid});
+ const list=[...G.players.values()].map(p=>({id:p.id,n:p.name,h:p.human,x:p.x,z:p.z,tm:p.team}));
+ for(const [cid] of G.conns)sendTo(cid,{t:'start',list,fast:G.fast,me:cid,duo:G.duo});
  beginLocal(list)}
 function spawnDrop(z){const id=DROPS.find(i=>taken.has(i)&&!LOOT[i].on);if(id===undefined)return;for(let k=0;k<40;k++){const a=Math.random()*6.28,r=Math.sqrt(Math.random())*z.tr*.7;const x=z.tcx+Math.cos(a)*r,zz=z.tcz+Math.sin(a)*r;if(H(x,zz)>1.5&&!houseAt(x,zz)){const o={t:'ad',i:id,x:+x.toFixed(1),z:+zz.toFixed(1)};doDrop(o);broadcast(o);return}}}
 function doDrop(o){const l=LOOT[o.i];l.x=o.x;l.z=o.z;l.y=groundAt(o.x,o.z)+.5;l.on=true;setTaken(o.i,false);addFeed('📦 نزل صندوق إمداد على الخريطة (دور على الشعاع الدهبي)');msg('📦 صندوق إمداد نزل!',3000);beep(600,.3,.12)}
@@ -313,7 +316,7 @@ function botStep(b,dt){const ai=b.ai;if(!b.alive)return;
  ai.vis-=dt;ai.wt-=dt;b.fireT-=dt;
  const z=G.zone;const inZ=Math.hypot(b.x-z.tcx,b.z-z.tcz)<(z.state==='shrink'?z.tr:z.r)-8;
  if(ai.vis<=0){ai.vis=.3+Math.random()*.2;let best=null,bd=1e9;
-  for(const p of G.players.values()){if(!p.alive||p===b||p.para)continue;const d=Math.hypot(p.x-b.x,p.z-b.z);if(d<95&&d<bd){const o={x:b.x,y:b.y+1.6,z:b.z},dir={x:p.x-b.x,y:p.y+1.2-(b.y+1.6),z:p.z-b.z};const l=Math.hypot(dir.x,dir.y,dir.z);dir.x/=l;dir.y/=l;dir.z/=l;
+  for(const p of G.players.values()){if(!p.alive||p===b||p.para||(G.duo&&p.team===b.team))continue;const d=Math.hypot(p.x-b.x,p.z-b.z);if(d<95&&d<bd){const o={x:b.x,y:b.y+1.6,z:b.z},dir={x:p.x-b.x,y:p.y+1.2-(b.y+1.6),z:p.z-b.z};const l=Math.hypot(dir.x,dir.y,dir.z);dir.x/=l;dir.y/=l;dir.z/=l;
     const h=hitscan(o,dir,l+1,b);if(h.kind==='player'&&h.target===p){best=p;bd=d}}}
   if(best&&ai.tgt!==best.id){ai.react=.35+Math.random()*.5}ai.tgt=best?best.id:null}
  const tg=ai.tgt!=null?G.players.get(ai.tgt):null;
@@ -363,7 +366,7 @@ function onMsg(from,o){
     const d=o.d;const l=Math.hypot(d[0],d[1],d[2])||1;fireFrom(p,{x:p.x,y:p.y+1.65,z:p.z},{x:d[0]/l,y:d[1]/l,z:d[2]/l},wi)}
  }else{
   if(o.t==='snap')applySnap(o);
-  else if(o.t==='start'){G.me=o.me;G.fast=o.fast;beginLocal(o.list)}
+  else if(o.t==='start'){G.me=o.me;G.fast=o.fast;G.duo=!!o.duo;beginLocal(o.list)}
   else if(o.t==='tk')setTaken(o.i,true);
   else if(o.t==='ad')doDrop(o);
   else if(o.t==='inv'){L.wpns=o.w.slice();L.cur=o.c;for(let s=0;s<3;s++)if(L.wpns[s]>=0&&L.lastW[s]!==L.wpns[s])L.mag[s]=W[L.wpns[s]].mag;L.lastW=L.wpns.slice();beep(880,.12,.12)}
@@ -387,7 +390,7 @@ function flash(sx,sz){if(sx!==undefined){const dx=sx-L.x,dz=sz-L.z,fx=-Math.sin(
 function beginLocal(list){
  G.mode='play';G.over=false;G.t=0;resetLoot();
  for(const a of avatars.values())scene.remove(a);avatars.clear();
- if(!G.host){G.players.clear();for(const a of list){const p=newPlayer(a.id,a.n,a.h);G.players.set(a.id,p)}}
+ if(!G.host){G.players.clear();for(const a of list){const p=newPlayer(a.id,a.n,a.h);p.team=a.tm;G.players.set(a.id,p)}}
  const my=list.find(a=>a.id===G.me);L.x=my.x;L.z=my.z;L.y=150;L.vy=0;L.para=true;L.wpns=[0,-1,-1];L.cur=0;L.mag=[12,0,0];L.lastW=[0,-1,-1];L.reloadT=0;L.yaw=Math.random()*6.28;L.pitch=-.3;L.dead=false;L.zoom=false;
  ['menu','lobby','go'].forEach(i=>$(i).classList.add('hide'));$('hud').classList.add('on');$('bexit').style.display='none';if(TOUCH)$('touch').classList.add('on');
  if(!TOUCH)requestLock();
@@ -494,6 +497,7 @@ function drawMini(){const c=mini,S=130,R=S/2;c.clearRect(0,0,S,S);const sc=R/110
  c.strokeStyle='#fff';c.beginPath();c.arc(z.cx*sc,z.cz*sc,Math.max(1,z.r)*sc,0,6.3);c.stroke();
  c.fillStyle='#caa';for(const h of houses)c.fillRect((h.x-3)*sc,(h.z-3)*sc,6*sc,6*sc);
  c.fillStyle='#f44';for(const p of G.players.values()){if(p.id===G.me||!p.alive||p.para)continue;if(Math.hypot(p.x-L.x,p.z-L.z)<60){c.beginPath();c.arc(p.x*sc,p.z*sc,2.5,0,6.3);c.fill()}}
+ if(G.duo){const mm=G.players.get(G.me);c.fillStyle='#3f6';for(const p of G.players.values()){if(p.id===G.me||!p.alive||!mm||p.team!==mm.team)continue;c.beginPath();c.arc(p.x*sc,p.z*sc,4,0,6.3);c.fill()}}
  c.restore();c.fillStyle='#fff';c.beginPath();c.moveTo(R,R-7);c.lineTo(R-5,R+5);c.lineTo(R+5,R+5);c.fill()}
 function drawBig(){const cv=$('big');cv.style.display=bigOn?'block':'none';if(!bigOn)return;const c=cv.getContext('2d'),S=600,sc=S/900;c.clearRect(0,0,S,S);c.fillStyle='#1c4a7a';c.fillRect(0,0,S,S);c.save();c.translate(S/2,S/2);
  c.fillStyle='#4a7a3a';c.beginPath();c.arc(0,0,R_ISL*.85*sc,0,6.3);c.fill();c.fillStyle='#35602a';for(const t of trees)c.fillRect(t.x*sc,t.z*sc,1.5,1.5);
@@ -519,7 +523,7 @@ function frame(){
    if(!G.host&&p.tx!==undefined){const k=1-Math.pow(.0001,dt);p.x+=(p.tx-p.x)*k;p.y+=(p.ty-p.y)*k;p.z+=(p.tz-p.z)*k;let dy=p.tyaw-p.yaw;while(dy>3.14)dy-=6.283;while(dy<-3.14)dy+=6.283;p.yaw+=dy*k}}
   for(const p of G.players.values()){let a=avatars.get(p.id);if(p.id===G.me){if(a)a.visible=false;continue}
    if(!p.alive){if(a&&!p.deadT){p.deadT=1;a.rotation.set(0,p.yaw,0);a.rotation.x=-1.45;a.position.set(p.x,groundAt(p.x,p.z)+.3,p.z);a.userData.chute.visible=false}continue}
-   if(!a){a=makeAvatar(colorFor(p.id),p.name);avatars.set(p.id,a)}
+   if(!a){a=makeAvatar(colorFor(p.id),(G.duo&&p.id!==G.me&&me()&&p.team===me().team)?'🟢 '+p.name:p.name);avatars.set(p.id,a)}
    a.visible=true;a.position.set(p.x,p.y,p.z);a.rotation.set(0,p.yaw,0);const sw=p.para?0:Math.sin(G.t*9+p.id)*.5;a.userData.l1.rotation.x=sw;a.userData.l2.rotation.x=-sw;
    a.userData.chute.visible=!!p.para;a.userData.tag.visible=Math.hypot(p.x-L.x,p.z-L.z)<70;
    const wi=G.host?p.wpns[p.cur]:p.wcur;if(wi>=0)a.userData.gun.material.color.setHex(W[wi].col)}
