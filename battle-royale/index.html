@@ -178,6 +178,7 @@ function buildScene(){
  for(let i=0;i<pos.count;i++){const x=pos.getX(i),z=pos.getZ(i);const h=H(x,z);pos.setY(i,h);
   let c;const nz=hash(Math.floor(x/3),Math.floor(z/3))*.08;
   if(h<-1)c=[.76,.7,.5];else if(h<1.6)c=[.88,.82,.58];else if(h<9)c=[.3+nz,.58+nz,.22];else if(h<15)c=[.42+nz,.5+nz,.28];else if(h<20)c=[.5,.47,.43];else c=[.93,.95,.98];
+  if(h>=1.6&&h<15){const bq=fbm(x/240+50,z/240-30);if(bq>.58){const k=Math.min(1,(bq-.58)*8);c=[c[0]+(.8-c[0])*k,c[1]+(.7-c[1])*k,c[2]+(.42-c[2])*k]}else if(bq<.4){const k=Math.min(1,(.4-bq)*8);c=[c[0]*(1-.4*k),c[1]*(1-.3*k),c[2]*(1-.4*k)]}}
   col[i*3]=c[0];col[i*3+1]=c[1];col[i*3+2]=c[2]}
  geo.setAttribute('color',new THREE.BufferAttribute(col,3));geo.computeVertexNormals();
  scene.add(new THREE.Mesh(geo,new THREE.MeshLambertMaterial({vertexColors:true})));
@@ -330,7 +331,10 @@ function botStep(b,dt){const ai=b.ai;if(!b.alive)return;
    const dir={x:tg.x-b.x+(Math.random()-.5)*e*d*2,y:tg.y+1.1-(b.y+1.6)+(Math.random()-.5)*e*d,z:tg.z-b.z+(Math.random()-.5)*e*d*2};const l=Math.hypot(dir.x,dir.y,dir.z);dir.x/=l;dir.y/=l;dir.z/=l;
    fireFrom(b,o,dir,wi)}}
  else{
+  const mt=G.duo?[...G.players.values()].find(p=>p!==b&&p.human&&p.alive&&!p.para&&p.team===b.team):null;
   if(!inZ){ai.tx=z.tcx+(Math.random()-.5)*10;ai.tz=z.tcz+(Math.random()-.5)*10}
+  else if(mt&&Math.hypot(mt.x-b.x,mt.z-b.z)>16){ai.tx=mt.x+(Math.random()-.5)*8;ai.tz=mt.z+(Math.random()-.5)*8;ai.wt=1.5}
+  else if(mt){if(ai.wt<=0){ai.wt=3+Math.random()*3;let bl=null,bd=20;for(const l of LOOT){if(taken.has(l.id))continue;const d=Math.hypot(l.x-b.x,l.z-b.z);if(d<bd&&Math.hypot(l.x-mt.x,l.z-mt.z)<24&&(!LT[l.t].hp||b.hp<90)){bd=d;bl=l}}if(bl){ai.tx=bl.x;ai.tz=bl.z}else{ai.tx=b.x;ai.tz=b.z}}}
   else if(ai.wt<=0||Math.hypot(ai.tx-b.x,ai.tz-b.z)<2.5){ai.wt=6+Math.random()*6;
    let bl=null,bd=90;for(const l of LOOT){if(taken.has(l.id))continue;const d=Math.hypot(l.x-b.x,l.z-b.z);if(d<bd&&(!LT[l.t].hp||b.hp<90)){bd=d;bl=l}}
    if(bl&&Math.random()<.85){ai.tx=bl.x;ai.tz=bl.z}else{const a=Math.random()*6.28,r=Math.random()*Math.max(10,z.r*.8);ai.tx=z.cx+Math.cos(a)*r;ai.tz=z.cz+Math.sin(a)*r}}
@@ -541,5 +545,5 @@ function frame(){
  else{G.t+=dt;vm.visible=false;cam.fov=75;cam.updateProjectionMatrix();cam.position.set(Math.sin(G.t*.1)*250,70,Math.cos(G.t*.1)*250);cam.lookAt(0,5,0)}
  renderer.render(scene,cam)}
 frame();
-window.__G=G;window.__L=L;window.__dbg={scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
+window.__G=G;window.__L=L;window.__dbg={fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
 </script></body></html>
