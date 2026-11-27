@@ -347,6 +347,7 @@ function botStep(b,dt){const ai=b.ai;if(!b.alive)return;
   const wi=b.wpns[b.cur];const w=W[wi];ai.sT-=dt;if(ai.sT<=0){ai.sT=1+Math.random()*1.5;ai.sd=Math.random()<.5?-1:1}
   wx=-dz/d*ai.sd*.6;wz=dx/d*ai.sd*.6;if(d>w.rng*.5||!inZ){wx+=dx/d;wz+=dz/d}else if(d<12){wx-=dx/d;wz-=dz/d}
   ai.react-=dt;
+  ai.gt=(ai.gt==null?5+Math.random()*8:ai.gt)-dt;if(ai.gt<=0&&b.gren>0&&d>12&&d<26&&!G.over){ai.gt=7+Math.random()*8;if(Math.random()<.6){b.gren--;const hx=dx/d,hz=dz/d;let y=.45;const l=Math.hypot(1,y);const sp=22*Math.sqrt(Math.min(1,d/26));hostThrow(b,[b.x+hx*.8,b.y+1.6,b.z+hz*.8],[hx/l*sp,y/l*sp,hz/l*sp])}}
   if(ai.react<=0&&b.fireT<=0&&d<w.rng){b.fireT=w.r*(1.6+(1-ai.skill)*1.6);
    const o={x:b.x,y:b.y+1.6,z:b.z};const e=.02+(1-ai.skill)*.05+d*.0006;
    const dir={x:tg.x-b.x+(Math.random()-.5)*e*d*2,y:tg.y+1.1-(b.y+1.6)+(Math.random()-.5)*e*d,z:tg.z-b.z+(Math.random()-.5)*e*d*2};const l=Math.hypot(dir.x,dir.y,dir.z);dir.x/=l;dir.y/=l;dir.z/=l;
