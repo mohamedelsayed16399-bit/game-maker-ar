@@ -346,7 +346,7 @@ function damage(t,amt,by,head,wi){
  if(by&&by.human&&by.id!==G.me)sendTo(by.id,{t:'hm',h:head,d:Math.round(amt*(head?1.8:1))});
  if(t.hp<=0)die(t,by,wi)}
 function die(t,by,wi){t.alive=false;t.hp=0;t.place=alivePlayers().length+1;if(by&&by!==t)by.kills++;
- const ev={t:'kill',kid:by?by.id:-1,k:by?by.name:'المنطقة',v:t.name,w:wi==null?-1:wi,id:t.id,pl:t.place};
+ const ev={t:'kill',kid:by?by.id:-1,k:by?by.name:'المنطقة',v:t.name,w:wi==null?-1:wi,id:t.id,pl:t.place,kh:by&&by!==t?Math.round(by.hp):-1};
  handleKillEv(ev);broadcast(ev);checkEnd()}
 const STREAK=['','قتلة أولى! 🔥','قتلتين! 🔥🔥','٣ قتلات! سلسلة!','٤ قتلات! وحش!','٥ قتلات! أسطورة!'];
 function handleKillEv(ev){if(ev.kid===G.me&&ev.id!==G.me){const m=me();const k=(m?m.kills:0)+(G.host?0:1);msg(STREAK[Math.min(5,Math.max(1,k))]||'مستمر!',2200);beep(1100,.15,.12)}addFeed((ev.w>=0?'🔫 ':'☠ ')+ev.k+' ← '+ev.v);const p=G.players.get(ev.id);if(p)p.place=ev.pl;if(ev.id===G.me)onMyDeath(ev)}
@@ -516,7 +516,7 @@ function specNext(){const al=alivePlayers().filter(p=>p.id!==G.me);if(!al.length
 addEventListener('keydown',e=>{if(L.dead&&(e.code==='ArrowRight'||e.code==='Tab')){e.preventDefault();specNext()}});
 addEventListener('touchstart',e=>{if(L.dead&&G.mode==='play'&&e.target===canvas)specNext()},{passive:true});
 function mateAlive(){const m=me();if(!G.duo||!m)return null;return alivePlayers().find(p=>p.id!==G.me&&p.team===m.team)||null}
-function onMyDeath(ev){L.dead=true;{const k=G.players.get(ev.kid);if(k&&k.alive&&k.id!==G.me)G.spec=k;const mt=mateAlive();if(mt)G.spec=mt}msg('اتقتلت بواسطة '+ev.k+' · المركز '+(ev.pl||'?'),6000);$('bexit').style.display='block';if(document.pointerLockElement)document.exitPointerLock()}
+function onMyDeath(ev){L.dead=true;{const k=G.players.get(ev.kid);if(k&&k.alive&&k.id!==G.me)G.spec=k;const mt=mateAlive();if(mt)G.spec=mt}msg('اتقتلت بواسطة '+ev.k+(ev.w>=0&&W[ev.w]?' ('+W[ev.w].n+')':'')+(ev.kh>0?' · باقي له '+ev.kh+' ❤':'')+' · المركز '+(ev.pl||'?'),6000);$('bexit').style.display='block';if(document.pointerLockElement)document.exitPointerLock()}
 function fireworks(){const c=document.createElement('canvas');c.width=innerWidth;c.height=innerHeight;c.style.cssText='position:fixed;inset:0;z-index:99999;pointer-events:none';document.body.appendChild(c);const x=c.getContext('2d');const P=[];let t0=performance.now(),last=0;
  const burst=()=>{const cx=c.width*(.15+Math.random()*.7),cy=c.height*(.15+Math.random()*.4),hue=Math.random()*360;for(let i=0;i<46;i++){const a=Math.random()*6.283,v=1.5+Math.random()*4.5;P.push({x:cx,y:cy,vx:Math.cos(a)*v,vy:Math.sin(a)*v,l:1,h:hue+Math.random()*40})}};
  const loop=now=>{const el=now-t0;if(el>7000){c.remove();return}if(now-last>520&&el<5500){last=now;burst();beep(300+Math.random()*400,.18,.08)}
