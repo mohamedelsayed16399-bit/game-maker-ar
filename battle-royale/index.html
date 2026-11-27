@@ -493,11 +493,17 @@ function specNext(){const al=alivePlayers().filter(p=>p.id!==G.me);if(!al.length
 addEventListener('keydown',e=>{if(L.dead&&(e.code==='ArrowRight'||e.code==='Tab')){e.preventDefault();specNext()}});
 addEventListener('touchstart',e=>{if(L.dead&&G.mode==='play'&&e.target===canvas)specNext()},{passive:true});
 function onMyDeath(ev){L.dead=true;{const k=G.players.get(ev.kid);if(k&&k.alive&&k.id!==G.me)G.spec=k}msg('اتقتلت بواسطة '+ev.k+' · المركز '+(ev.pl||'?'),6000);$('bexit').style.display='block';if(document.pointerLockElement)document.exitPointerLock()}
+function fireworks(){const c=document.createElement('canvas');c.width=innerWidth;c.height=innerHeight;c.style.cssText='position:fixed;inset:0;z-index:99999;pointer-events:none';document.body.appendChild(c);const x=c.getContext('2d');const P=[];let t0=performance.now(),last=0;
+ const burst=()=>{const cx=c.width*(.15+Math.random()*.7),cy=c.height*(.15+Math.random()*.4),hue=Math.random()*360;for(let i=0;i<46;i++){const a=Math.random()*6.283,v=1.5+Math.random()*4.5;P.push({x:cx,y:cy,vx:Math.cos(a)*v,vy:Math.sin(a)*v,l:1,h:hue+Math.random()*40})}};
+ const loop=now=>{const el=now-t0;if(el>7000){c.remove();return}if(now-last>520&&el<5500){last=now;burst();beep(300+Math.random()*400,.18,.08)}
+  x.globalCompositeOperation='destination-out';x.fillStyle='rgba(0,0,0,.18)';x.fillRect(0,0,c.width,c.height);x.globalCompositeOperation='lighter';
+  for(let i=P.length-1;i>=0;i--){const p=P[i];p.x+=p.vx;p.y+=p.vy;p.vy+=.06;p.vx*=.985;p.l-=.012;if(p.l<=0){P.splice(i,1);continue}x.fillStyle='hsla('+p.h+',100%,60%,'+p.l+')';x.fillRect(p.x,p.y,3,3)}
+  requestAnimationFrame(loop)};requestAnimationFrame(loop)}
 function endMatch(o){G.mode='over';$('hud').classList.remove('on');$('touch').classList.remove('on');$('bexit').style.display='none';if(document.pointerLockElement)document.exitPointerLock();
  const won=o.wid===G.me;$('gtitle').textContent=won?'🏆 انت الملك! فزت!':(o.w==='-'?'انتهت المباراة':'الفائز: '+o.w);
  const m=me();
  $('gdet').innerHTML=o.res.map(r=>`${r.p===1?'🥇':r.p===2?'🥈':r.p===3?'🥉':'#'+r.p} ${r.n} · قتلى ${r.k}`).join('<br>')+`<hr>مركزك: ${m?(won?1:(m.place||'?')):'-'} · قتلاك: ${m?m.kills:0}`+(G.t0?`<br>⏱ وقت البقاء: ${Math.floor((performance.now()-G.t0)/60000)}د ${Math.floor((performance.now()-G.t0)/1000)%60}ث`:'');
- $('go').classList.remove('hide');saveBest(m?m.kills:0,won)}
+ if(won)fireworks();$('go').classList.remove('hide');saveBest(m?m.kills:0,won)}
 function showStats(){try{const b=JSON.parse(localStorage.getItem('brBest')||'null');$('stats').textContent=b&&b.g?`🏆 انتصاراتك ${b.w} من ${b.g} مباراة · أعلى قتلى ${b.k}`:''}catch(e){}}
 function saveBest(k,w){G.t0=0;try{const b=JSON.parse(localStorage.getItem('brBest')||'{"k":0,"w":0,"g":0}');b.k=Math.max(b.k,k);b.g++;if(w)b.w++;localStorage.setItem('brBest',JSON.stringify(b))}catch(e){}}
 function setStat(t){$('mstat').textContent=t}
@@ -659,5 +665,5 @@ function frame(){
  else{G.t+=dt;vm.visible=false;cam.fov=75;cam.updateProjectionMatrix();cam.position.set(Math.sin(G.t*.1)*250,70,Math.cos(G.t*.1)*250);cam.lookAt(0,5,0)}
  renderer.render(scene,cam)}
 frame();
-window.__G=G;window.__L=L;showStats();$('tutok').onclick=()=>{$('tut').style.display='none';try{localStorage.setItem('brTut','1')}catch(e){}};window.__dbg={FORT,sbToggle,emote,showEmo,avatars,BCN,FL,setAtmos0:0,openPz,doDrop,DFX,PINGS,pingAt,QUADS,quadToggle,GR,throwG,showStats,setAtmos,PADS,fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
+window.__G=G;window.__L=L;showStats();$('tutok').onclick=()=>{$('tut').style.display='none';try{localStorage.setItem('brTut','1')}catch(e){}};window.__dbg={fireworks,FORT,sbToggle,emote,showEmo,avatars,BCN,FL,setAtmos0:0,openPz,doDrop,DFX,PINGS,pingAt,QUADS,quadToggle,GR,throwG,showStats,setAtmos,PADS,fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
 </script></body></html>
