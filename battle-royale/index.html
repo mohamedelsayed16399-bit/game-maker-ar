@@ -74,11 +74,13 @@ input{background:#fff;color:#111;text-align:center;width:240px;user-select:text;
 
 <div class="scr" id="menu">
  <h1>👑 ملك الجزيرة</h1><div class="sub">باتل رويال ثلاثي الأبعاد · 30 لاعب · نزول بالباراشوت · منطقة بتضيق</div>
+ <div class="sub" id="stats" style="color:#ffd54a"></div>
  <input id="nm" maxlength="14" placeholder="اسمك">
  <button id="bsolo">لعب فردي ضد 29 بوت</button>
  <button id="bhost" class="sec">إنشاء غرفة أونلاين</button>
  <div class="row"><input id="jc" maxlength="5" placeholder="كود الغرفة" style="width:150px;direction:ltr;text-transform:uppercase"><button id="bjoin" class="sec" style="min-width:80px">دخول</button></div>
  <div class="row sub"><label>الحساسية <input type="range" id="sens" min="40" max="220" value="100" style="width:110px;padding:0"></label><label>الصوت <input type="range" id="vol" min="0" max="100" value="80" style="width:110px;padding:0"></label></div>
+ <label class="sub"><input type="checkbox" id="squad" style="width:auto"> وضع فرق من 4 (مفيش ضرر على فريقك)</label>
  <label class="sub"><input type="checkbox" id="duo" style="width:auto"> وضع ثنائي (فريق من 2 - مفيش ضرر على صاحبك)</label>
  <label class="sub"><input type="checkbox" id="lite" style="width:auto"> وضع خفيف للموبايل الضعيف</label>
  <label class="sub"><input type="checkbox" id="fast" style="width:auto"> مباراة سريعة (المنطقة بتضيق أسرع)</label>
@@ -298,12 +300,12 @@ function pickupFor(p,l){const it=LT[l.t];let ok=false;
 function startMatch(){
  G.over=false;G.players.clear();resetLoot();G.t=0;
  const spawnR=rng(Date.now()&0xffff);
- G.duo=!!$('duo').checked;const hum=[{id:0,name:G.myName||'أنا'}];for(const [id,c] of G.conns)hum.push({id,name:c.pname||('لاعب'+id)});
+ G.tsize=$('squad').checked?4:($('duo').checked?2:1);G.duo=G.tsize>1;const hum=[{id:0,name:G.myName||'أنا'}];for(const [id,c] of G.conns)hum.push({id,name:c.pname||('لاعب'+id)});
  let id=100;const total=30;const names=NAMES.slice().sort(()=>Math.random()-.5);
  const mkPos=()=>{for(let i=0;i<50;i++){const a=spawnR()*6.28,r=Math.sqrt(spawnR())*280;const x=Math.cos(a)*r,z=Math.sin(a)*r;if(H(x,z)>1)return[x,z]}return[0,0]};
  for(const h of hum){const p=newPlayer(h.id,h.name,true);const [x,z]=mkPos();p.x=x;p.z=z;p.y=150;G.players.set(p.id,p)}
  let bi=0;while(G.players.size<total){const p=newPlayer(id++,names[bi++%names.length]+' '+(10+Math.floor(Math.random()*89)),false);const [x,z]=mkPos();p.x=x;p.z=z;p.y=150;const [tx,tz]=mkPos();p.ai={tx,tz,wt:0,react:0,vis:0,tgt:null,stuck:0,lx:x,lz:z,sT:0,sd:1,skill:.4+Math.random()*.5};G.players.set(p.id,p)}
- {let i=0;for(const p of G.players.values()){p.team=G.duo?(i>>1):i;i++}}
+ {let i=0;for(const p of G.players.values()){p.team=Math.floor(i/(G.tsize||1));i++}}
  const f=G.fast?.45:1;G.zone={cx:0,cz:0,r:420,tcx:0,tcz:0,tr:420,ph:-1,t:(25+20)*f,state:'wait',scx:0,scz:0,sr:420,dur:1};
  const list=[...G.players.values()].map(p=>({id:p.id,n:p.name,h:p.human,x:p.x,z:p.z,tm:p.team}));
  for(const [cid] of G.conns)sendTo(cid,{t:'start',list,fast:G.fast,me:cid,duo:G.duo});
@@ -416,6 +418,7 @@ function endMatch(o){G.mode='over';$('hud').classList.remove('on');$('touch').cl
  const m=me();
  $('gdet').innerHTML=o.res.map(r=>`${r.p===1?'🥇':r.p===2?'🥈':r.p===3?'🥉':'#'+r.p} ${r.n} · قتلى ${r.k}`).join('<br>')+`<hr>مركزك: ${m?(won?1:(m.place||'?')):'-'} · قتلاك: ${m?m.kills:0}`;
  $('go').classList.remove('hide');saveBest(m?m.kills:0,won)}
+function showStats(){try{const b=JSON.parse(localStorage.getItem('brBest')||'null');$('stats').textContent=b&&b.g?`🏆 انتصاراتك ${b.w} من ${b.g} مباراة · أعلى قتلى ${b.k}`:''}catch(e){}}
 function saveBest(k,w){try{const b=JSON.parse(localStorage.getItem('brBest')||'{"k":0,"w":0,"g":0}');b.k=Math.max(b.k,k);b.g++;if(w)b.w++;localStorage.setItem('brBest',JSON.stringify(b))}catch(e){}}
 function setStat(t){$('mstat').textContent=t}
 function lobbyBroadcast(){const names=[G.myName||'أنا',...[...G.conns.values()].map(c=>c.pname||'...')];broadcast({t:'lobby',names});renderLobby(names)}
@@ -441,7 +444,7 @@ function joinRoom(){
   c.on('open',()=>{clearTimeout(to);c.send({t:'hello',n:G.myName});$('menu').classList.add('hide');$('lobby').classList.remove('hide');$('codebig').textContent=code;$('bstart').style.display='none';$('plist').textContent='...'});
   c.on('data',o=>onMsg(0,o));c.on('close',()=>{if(G.mode!=='over'&&G.mode!=='menu'){toMenu();setStat('الهوست فصل')}})});
  peer.on('error',e=>setStat('خطأ: '+e.type))}
-function toMenu(){G.mode='menu';G.over=false;['lobby','go'].forEach(i=>$(i).classList.add('hide'));$('menu').classList.remove('hide');$('hud').classList.remove('on');$('touch').classList.remove('on');$('bexit').style.display='none';
+function toMenu(){showStats();G.mode='menu';G.over=false;['lobby','go'].forEach(i=>$(i).classList.add('hide'));$('menu').classList.remove('hide');$('hud').classList.remove('on');$('touch').classList.remove('on');$('bexit').style.display='none';
  try{G.peer&&G.peer.destroy()}catch(e){}G.peer=null;G.conns.clear();G.host=false;G.solo=false;if(document.pointerLockElement)document.exitPointerLock()}
 function applyLite(){const l=$('lite').checked;renderer.setPixelRatio(l?.7:Math.min(devicePixelRatio,TOUCH?1.5:2));scene.fog.far=l?260:520;scene.fog.near=l?60:120;cam.far=l?300:900;cam.updateProjectionMatrix();resize()}
 $('lite').onchange=applyLite;
@@ -560,5 +563,5 @@ function frame(){
  else{G.t+=dt;vm.visible=false;cam.fov=75;cam.updateProjectionMatrix();cam.position.set(Math.sin(G.t*.1)*250,70,Math.cos(G.t*.1)*250);cam.lookAt(0,5,0)}
  renderer.render(scene,cam)}
 frame();
-window.__G=G;window.__L=L;window.__dbg={setAtmos,PADS,fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
+window.__G=G;window.__L=L;showStats();window.__dbg={showStats,setAtmos,PADS,fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
 </script></body></html>
