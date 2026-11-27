@@ -30,6 +30,8 @@ input{background:#fff;color:#111;text-align:center;width:240px;user-select:text;
 #lowhp{position:absolute;inset:0;pointer-events:none;opacity:0;box-shadow:inset 0 0 90px 30px #c00;transition:opacity .4s}
 #heal{position:absolute;inset:0;pointer-events:none;opacity:0;box-shadow:inset 0 0 110px 40px #2e7;transition:opacity .9s}#heal.on{opacity:.8;transition:none}#hpop{position:absolute;left:50%;top:38%;transform:translateX(-50%);font-size:34px;font-weight:bold;color:#7f9;text-shadow:0 2px 6px #000;pointer-events:none;opacity:0}#hpop.on{animation:hp 1.2s ease-out}@keyframes hp{0%{opacity:1;top:42%}100%{opacity:0;top:30%}}
 @media(max-width:700px){#cmp{width:190px!important;height:17px!important;left:38%!important;top:50px!important}}
+@keyframes kbA{0%{opacity:0;transform:translate(-50%,0) scale(1.6)}15%{opacity:1;transform:translate(-50%,0) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-14px) scale(1)}}
+.kb{position:absolute;left:50%;top:62%;transform:translateX(-50%);font-size:24px;font-weight:bold;color:#ff5a5a;text-shadow:0 2px 8px #000;pointer-events:none;animation:kbA 1.4s forwards;white-space:nowrap}
 #wet{position:absolute;inset:0;pointer-events:none;background:#1e6fb8;opacity:0;transition:opacity .25s}#wet.on{opacity:.32}
 #lowhp.on{animation:lh 1s infinite}@keyframes lh{0%,100%{opacity:.25}50%{opacity:.7}}
 #hud .dn{position:absolute;color:#fff;font-size:22px;font-weight:bold;text-shadow:0 2px 4px #000;pointer-events:none;animation:dn .8s ease-out forwards}#hud .dn.hd{color:#ff0;font-size:30px}@keyframes dn{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-50px)}}
@@ -371,7 +373,8 @@ function die(t,by,wi){t.alive=false;t.hp=0;t.place=alivePlayers().length+1;if(by
  const ev={t:'kill',kid:by?by.id:-1,k:by?by.name:'المنطقة',v:t.name,w:wi==null?-1:wi,id:t.id,pl:t.place,kh:by&&by!==t?Math.round(by.hp):-1};
  handleKillEv(ev);broadcast(ev);checkEnd()}
 const STREAK=['','قتلة أولى! 🔥','قتلتين! 🔥🔥','٣ قتلات! سلسلة!','٤ قتلات! وحش!','٥ قتلات! أسطورة!'];
-function handleKillEv(ev){if(ev.kid===G.me&&ev.id!==G.me){const m=me();const k=(m?m.kills:0)+(G.host?0:1);msg(STREAK[Math.min(5,Math.max(1,k))]||'مستمر!',2200);beep(1100,.15,.12)}addFeed((ev.w>=0?'🔫 ':'☠ ')+ev.k+(ev.w>=0&&W[ev.w]?' ['+W[ev.w].n+']':'')+' ← '+ev.v);const p=G.players.get(ev.id);if(p)p.place=ev.pl;if(ev.id===G.me)onMyDeath(ev)}
+function killBanner(n){const e=document.createElement('div');e.className='kb';e.textContent='☠ '+n;$('hud').appendChild(e);setTimeout(()=>e.remove(),1400)}
+function handleKillEv(ev){if(ev.kid===G.me&&ev.id!==G.me){killBanner(ev.v);const m=me();const k=(m?m.kills:0)+(G.host?0:1);msg(STREAK[Math.min(5,Math.max(1,k))]||'مستمر!',2200);beep(1100,.15,.12)}addFeed((ev.w>=0?'🔫 ':'☠ ')+ev.k+(ev.w>=0&&W[ev.w]?' ['+W[ev.w].n+']':'')+' ← '+ev.v);const p=G.players.get(ev.id);if(p)p.place=ev.pl;if(ev.id===G.me)onMyDeath(ev)}
 function checkEnd(){if(G.over)return;const al=alivePlayers();const humansAlive=al.filter(p=>p.human).length;
  const oneTeam=G.duo&&al.length>0&&al.every(p=>p.team===al[0].team);
  if(al.length<=1||humansAlive===0||oneTeam){
