@@ -356,7 +356,7 @@ function damage(t,amt,by,head,wi){
  if(t.id===G.me)flash(by?by.x:undefined,by?by.z:undefined);else if(t.human)sendTo(t.id,by?{t:'hurt',x:+by.x.toFixed(1),z:+by.z.toFixed(1)}:{t:'hurt'});
  if(by&&by.human&&by.id!==G.me)sendTo(by.id,{t:'hm',h:head,d:Math.round(amt*(head?1.8:1))});
  if(t.hp<=0)die(t,by,wi)}
-function die(t,by,wi){t.alive=false;t.hp=0;t.place=alivePlayers().length+1;if(by&&by!==t)by.kills++;if(t.boss){addFeed('👑 سقط الملك! '+(by?by.name:''));if(by&&by!==t){by.hp=100;by.sh=100;if(by.id===G.me)setTimeout(()=>msg('👑 قتلت الملك! دم وحماية كاملين',3000),1500);else if(by.human)sendTo(by.id,{t:'boss'})}}
+function die(t,by,wi){t.alive=false;t.hp=0;t.place=alivePlayers().length+1;if(by&&by!==t)by.kills++;if(by&&by!==t&&(by.kills===3||by.kills===5)){const r3=by.kills===3;if(r3)by.sh=Math.min(100,(by.sh||0)+50);else{by.hp=100;by.sh=100;by.gren=(by.gren||0)+2;if(by.human&&by.id!==G.me)sendTo(by.id,{t:'gadd',n:2});if(by.id===G.me)L.gren=(L.gren||0)+2}if(by.id===G.me)setTimeout(()=>msg(r3?'🎁 مكافأة ٣ قتلات: +٥٠ درع':'🎁 مكافأة ٥ قتلات: دم+درع كاملين +٢ قنبلة',2600),900);else if(by.human)sendTo(by.id,{t:'rew',k:by.kills})}if(t.boss){addFeed('👑 سقط الملك! '+(by?by.name:''));if(by&&by!==t){by.hp=100;by.sh=100;if(by.id===G.me)setTimeout(()=>msg('👑 قتلت الملك! دم وحماية كاملين',3000),1500);else if(by.human)sendTo(by.id,{t:'boss'})}}
  const ev={t:'kill',kid:by?by.id:-1,k:by?by.name:'المنطقة',v:t.name,w:wi==null?-1:wi,id:t.id,pl:t.place,kh:by&&by!==t?Math.round(by.hp):-1};
  handleKillEv(ev);broadcast(ev);checkEnd()}
 const STREAK=['','قتلة أولى! 🔥','قتلتين! 🔥🔥','٣ قتلات! سلسلة!','٤ قتلات! وحش!','٥ قتلات! أسطورة!'];
@@ -490,6 +490,7 @@ function onMsg(from,o){
   else if(o.t==='qct'){if(!G.host)showQc(o.id,o.e)}
   else if(o.t==='emt'){if(!G.host)showEmo(o.id,o.e)}
   else if(o.t==='png'){if(!G.host)showPing(o)}
+  else if(o.t==='rew')msg(o.k===3?'🎁 مكافأة ٣ قتلات: +٥٠ درع':'🎁 مكافأة ٥ قتلات: دم+درع كاملين +٢ قنبلة',2600);
   else if(o.t==='boss')msg('👑 قتلت الملك! دم وحماية كاملين',3000);
   else if(o.t==='gadd')L.gren=(L.gren||0)+(o.n|0);
   else if(o.t==='ad')doDrop(o);
