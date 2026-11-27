@@ -29,6 +29,7 @@ input{background:#fff;color:#111;text-align:center;width:240px;user-select:text;
 #outz{position:absolute;inset:0;pointer-events:none;opacity:0;box-shadow:inset 0 0 100px 35px #26f;transition:opacity .4s}#outz.on{animation:oz 1.1s infinite}@keyframes oz{0%,100%{opacity:.2}50%{opacity:.65}}
 #lowhp{position:absolute;inset:0;pointer-events:none;opacity:0;box-shadow:inset 0 0 90px 30px #c00;transition:opacity .4s}
 #heal{position:absolute;inset:0;pointer-events:none;opacity:0;box-shadow:inset 0 0 110px 40px #2e7;transition:opacity .9s}#heal.on{opacity:.8;transition:none}#hpop{position:absolute;left:50%;top:38%;transform:translateX(-50%);font-size:34px;font-weight:bold;color:#7f9;text-shadow:0 2px 6px #000;pointer-events:none;opacity:0}#hpop.on{animation:hp 1.2s ease-out}@keyframes hp{0%{opacity:1;top:42%}100%{opacity:0;top:30%}}
+@media(max-width:700px){#cmp{width:190px!important;height:17px!important;left:38%!important;top:50px!important}}
 #wet{position:absolute;inset:0;pointer-events:none;background:#1e6fb8;opacity:0;transition:opacity .25s}#wet.on{opacity:.32}
 #lowhp.on{animation:lh 1s infinite}@keyframes lh{0%,100%{opacity:.25}50%{opacity:.7}}
 #hud .dn{position:absolute;color:#fff;font-size:22px;font-weight:bold;text-shadow:0 2px 4px #000;pointer-events:none;animation:dn .8s ease-out forwards}#hud .dn.hd{color:#ff0;font-size:30px}@keyframes dn{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-50px)}}
@@ -73,7 +74,7 @@ input{background:#fff;color:#111;text-align:center;width:240px;user-select:text;
  <div id="sb" style="position:absolute;left:50%;top:90px;transform:translateX(-50%);min-width:230px;max-width:86%;background:#000c;border-radius:14px;padding:10px 16px;line-height:1.8;font-size:15px;display:none;z-index:50;pointer-events:none"></div><div id="lp" style="position:absolute;left:50%;top:62%;transform:translateX(-50%);background:#000a;padding:5px 16px;border-radius:16px;font-size:18px;display:none;pointer-events:none;white-space:nowrap"></div><div id="scope"></div><div id="flash"></div><div id="cross"></div><div id="hit"></div><div id="lowhp"></div><div id="wet"></div><div id="outz"></div><div id="heal"></div><div id="hpop"></div><div id="dmg"><i></i></div>
  <div id="top"><div class="chip" id="alive">👥 30</div><div class="chip" id="kills">☠ 0</div><div class="chip" id="ztime">المنطقة</div></div>
  <canvas id="mini" width="130" height="130"></canvas>
- <canvas id="big" width="600" height="600"></canvas><div id="feed"></div><div id="msg"></div>
+ <canvas id="cmp" width="300" height="26" style="position:absolute;left:50%;top:46px;transform:translateX(-50%);pointer-events:none;background:#0007;border-radius:8px"></canvas><canvas id="big" width="600" height="600"></canvas><div id="feed"></div><div id="msg"></div>
  <div id="bars"><div class="bar"><i id="shb"></i></div><div class="bar"><i id="hpb"></i></div></div>
  <div id="ammo"></div><div id="wslots"></div>
 </div>
@@ -648,6 +649,12 @@ function localUpdate(dt){
  if(!G.host){netT+=dt;if(netT>.05){netT=0;G.hostConn.send({t:'st',x:+L.x.toFixed(2),y:+L.y.toFixed(2),z:+L.z.toFixed(2),yaw:+L.yaw.toFixed(3),p:+L.pitch.toFixed(3),pa:L.para?1:0,c:L.cur})}}
 }
 const mini=$('mini').getContext('2d');
+function drawCmp(){const cv=$('cmp');if(!cv)return;const show=G.mode==='play'&&!L.dead&&!L.para;cv.style.display=show?'block':'none';if(!show)return;const c=cv.getContext('2d'),W=300,Hh=26;c.clearRect(0,0,W,Hh);const hd=-L.yaw;const X=b=>{let r=b-hd;r=Math.atan2(Math.sin(r),Math.cos(r));return W/2+r/(Math.PI/2)*(W/2)};
+ c.textAlign='center';c.font='bold 13px Tahoma,Arial';
+ for(let d=0;d<360;d+=15){const x=X(d*Math.PI/180);if(x<4||x>W-4)continue;c.fillStyle='#fff8';c.fillRect(x,d%45?19:15,1,d%45?5:9)}
+ for(const [n,d] of [['شمال',0],['شرق',90],['جنوب',180],['غرب',270]]){const x=X(d*Math.PI/180);if(x<14||x>W-14)continue;c.fillStyle=d===0?'#ff6b6b':'#fff';c.fillText(n,x,13)}
+ const mk=(wx,wz,col,t)=>{const b=Math.atan2(wx-L.x,-(wz-L.z));const x=Math.max(8,Math.min(W-8,X(b)));c.fillStyle=col;c.fillText(t,x,24)};
+ if(G.zone)mk(G.zone.cx,G.zone.cz,'#4df','◎');if(BCN.piv)mk(BCN.x,BCN.z,'#ffe066','🗼');for(const q of PINGS){if(q.x!==undefined)mk(q.x,q.z,'#6f6','📍')}}
 function drawMini(){const c=mini,S=130,R=S/2;c.clearRect(0,0,S,S);const sc=R/110;const z=G.zone;
  c.save();c.beginPath();c.arc(R,R,R,0,6.3);c.clip();c.fillStyle='#1c4a7a';c.fillRect(0,0,S,S);
  c.translate(R,R);c.rotate(L.yaw);c.translate(-L.x*sc,-L.z*sc);
@@ -702,9 +709,9 @@ function frame(){
   zoneMesh.position.set(G.zone.cx,100,G.zone.cz);zoneMesh.scale.set(Math.max(1,G.zone.r),1,Math.max(1,G.zone.r));
   stepRain(dt);{const k=vm.userData.k||0;vm.userData.k=Math.max(0,k-dt*9);vm.position.z=-.4+.05*k;vm.rotation.x=.14*k}flashT-=dt;flashM.visible=flashT>0&&vm.visible;for(let i=fxs.length-1;i>=0;i--){const f=fxs[i];f.t-=dt;if(f.big){f.m.scale.setScalar(1+(.45-f.t)*18);f.m.material.opacity=Math.max(0,f.t*1.8)}else{f.m.scale.setScalar(1+(.25-f.t)*8);f.m.material.opacity=Math.max(0,f.t*4)}if(f.t<=0){scene.remove(f.m);f.m.material.dispose();fxs.splice(i,1)}}
   for(let i=tracers.length-1;i>=0;i--){tracers[i].t-=dt;if(tracers[i].t<=0){scene.remove(tracers[i].l);tracers[i].l.geometry.dispose();tracers.splice(i,1)}}
-  updateHud();drawMini();drawBig()}
+  updateHud();drawMini();drawBig();drawCmp()}
  else{G.t+=dt;vm.visible=false;cam.fov=75;cam.updateProjectionMatrix();cam.position.set(Math.sin(G.t*.1)*250,70,Math.cos(G.t*.1)*250);cam.lookAt(0,5,0)}
  renderer.render(scene,cam)}
 frame();
-window.__G=G;window.__L=L;showStats();$('tutok').onclick=()=>{$('tut').style.display='none';try{localStorage.setItem('brTut','1')}catch(e){}};window.__dbg={rainSndOn:()=>!!rainSnd,specStep,LAMPG,bossOf:()=>[...__G.players.values()].find(p=>p.boss),vmk:()=>vm.userData.k,POND,H,stepRain,RL,rankTitle,quickChat,QC,ENG,zoneRef:()=>__G.zone,fireworks,FORT,sbToggle,emote,showEmo,avatars,BCN,FL,setAtmos0:0,openPz,doDrop,DFX,PINGS,pingAt,QUADS,quadToggle,GR,throwG,showStats,setAtmos,PADS,fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
+window.__G=G;window.__L=L;showStats();$('tutok').onclick=()=>{$('tut').style.display='none';try{localStorage.setItem('brTut','1')}catch(e){}};window.__dbg={drawCmp,rainSndOn:()=>!!rainSnd,specStep,LAMPG,bossOf:()=>[...__G.players.values()].find(p=>p.boss),vmk:()=>vm.userData.k,POND,H,stepRain,RL,rankTitle,quickChat,QC,ENG,zoneRef:()=>__G.zone,fireworks,FORT,sbToggle,emote,showEmo,avatars,BCN,FL,setAtmos0:0,openPz,doDrop,DFX,PINGS,pingAt,QUADS,quadToggle,GR,throwG,showStats,setAtmos,PADS,fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
 </script></body></html>
