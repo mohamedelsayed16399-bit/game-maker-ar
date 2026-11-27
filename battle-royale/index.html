@@ -213,7 +213,12 @@ function buildQuads(){const r=rng(888);let tries=0;const mat=new THREE.MeshLambe
 function quadToggle(){if(G.mode!=='play'||L.dead||L.para)return;
  if(L.quad!=null){const q=QUADS[L.quad];q.x=L.x;q.z=L.z;q.y=groundAt(L.x,L.z);q.g.position.set(q.x,q.y,q.z);L.quad=null;msg('نزلت من الكواد',1200);return}
  let bi=-1,bd=4.5;QUADS.forEach((q,i)=>{const d=Math.hypot(q.x-L.x,q.z-L.z);if(d<bd){bd=d;bi=i}});if(bi>=0){L.quad=bi;msg('🏍 ركبت الكواد · E للنزول · مفيش تصويب وانت راكب',2200);beep(180,.3,.12)}}
-function quadStep(){if(L.dead||L.para)L.quad=null;if(L.quad!=null){const q=QUADS[L.quad];q.x=L.x;q.z=L.z;q.y=L.y;q.g.position.set(L.x,L.y,L.z);q.g.rotation.y=L.yaw+Math.PI}
+const ENG={o:null};let engLast=null;
+function engineTick(){if(!AC)return;const now=performance.now();let spd=0;if(L.quad!=null&&!L.dead){if(engLast){const dt=(now-engLast.t)/1000;if(dt>0)spd=Math.min(22,Math.hypot(L.x-engLast.x,L.z-engLast.z)/dt)}engLast={x:L.x,z:L.z,t:now}}else engLast=null;
+ const riding=L.quad!=null&&!L.dead&&G.mode==='play';
+ if(riding&&!ENG.o){const o=AC.createOscillator(),f=AC.createBiquadFilter(),g=AC.createGain();o.type='sawtooth';f.type='lowpass';f.frequency.value=420;g.gain.value=0;o.connect(f);f.connect(g);g.connect(AC.destination);o.start();ENG.o=o;ENG.g=g;ENG.f=f}
+ if(ENG.o){const t=AC.currentTime;ENG.o.frequency.setTargetAtTime(38+spd*4.2,t,.08);ENG.f.frequency.setTargetAtTime(300+spd*40,t,.08);ENG.g.gain.setTargetAtTime(riding?(.05+Math.min(.07,spd*.004))*VOL:0,t,.1)}}
+function quadStep(){engineTick();if(L.dead||L.para)L.quad=null;if(L.quad!=null){const q=QUADS[L.quad];q.x=L.x;q.z=L.z;q.y=L.y;q.g.position.set(L.x,L.y,L.z);q.g.rotation.y=L.yaw+Math.PI}
  else if(G.mode==='play'&&!L.dead&&!L.para&&performance.now()>(quadStep.h||0)){for(const q of QUADS)if(Math.hypot(q.x-L.x,q.z-L.z)<4.5){msg('🏍 اضغط E (أو زرار الكواد) عشان تركب',1800);quadStep.h=performance.now()+6000;break}}}
 function buildScene(){
  buildWorld();buildPads();buildQuads();buildBeacon();buildFort();
@@ -665,5 +670,5 @@ function frame(){
  else{G.t+=dt;vm.visible=false;cam.fov=75;cam.updateProjectionMatrix();cam.position.set(Math.sin(G.t*.1)*250,70,Math.cos(G.t*.1)*250);cam.lookAt(0,5,0)}
  renderer.render(scene,cam)}
 frame();
-window.__G=G;window.__L=L;showStats();$('tutok').onclick=()=>{$('tut').style.display='none';try{localStorage.setItem('brTut','1')}catch(e){}};window.__dbg={fireworks,FORT,sbToggle,emote,showEmo,avatars,BCN,FL,setAtmos0:0,openPz,doDrop,DFX,PINGS,pingAt,QUADS,quadToggle,GR,throwG,showStats,setAtmos,PADS,fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
+window.__G=G;window.__L=L;showStats();$('tutok').onclick=()=>{$('tut').style.display='none';try{localStorage.setItem('brTut','1')}catch(e){}};window.__dbg={ENG,fireworks,FORT,sbToggle,emote,showEmo,avatars,BCN,FL,setAtmos0:0,openPz,doDrop,DFX,PINGS,pingAt,QUADS,quadToggle,GR,throwG,showStats,setAtmos,PADS,fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
 </script></body></html>
