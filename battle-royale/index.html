@@ -196,6 +196,14 @@ function buildBeacon(){const r=rng(4242);let x=0,z=0,h=0,ok=false;for(let t=0;t<
  const beam=new THREE.Mesh(new THREE.CylinderGeometry(.3,5,60,10,1,true),new THREE.MeshBasicMaterial({color:0xfff2a0,transparent:true,opacity:.28,side:THREE.DoubleSide,depthWrite:false}));beam.geometry.translate(0,30,0);beam.rotation.z=Math.PI/2-.05;
  const piv=new THREE.Group();piv.position.y=37;piv.add(beam);g.add(piv);
  g.position.set(x,h,z);scene.add(g);addCircle(x,z,2.8,h-1,h+40);BCN.x=x;BCN.z=z;BCN.piv=piv;BCN.lamp=lamp}
+const FORT={};
+function buildFort(){const r=rng(5151);let x=0,z=0,h=0,ok=false;for(let t=0;t<1500&&!ok;t++){const a=r()*6.28,d=140+r()*110;x=Math.cos(a)*d;z=Math.sin(a)*d;h=H(x,z);if(h<3||h>9)continue;let flat=true;for(const [dx,dz] of [[-14,-14],[14,-14],[-14,14],[14,14]])if(Math.abs(H(x+dx,z+dz)-h)>2.2)flat=false;if(!flat)continue;if(houses.some(q=>Math.abs(q.x-x)<q.hw+20&&Math.abs(q.z-z)<q.hd+20))continue;if(Math.hypot(x-BCN.x,z-BCN.z)<40)continue;ok=true}
+ if(!ok)return;const S=12,T=.6,y0=h-3.5,y1=h+3.2,g=3.2;
+ const W=(a,b,c,d)=>addBox(a,y0,b,c,y1,d,true);
+ for(const sg of [-1,1]){W(x-S,z+sg*S-T,x-g,z+sg*S+T);W(x+g,z+sg*S-T,x+S,z+sg*S+T);W(x+sg*S-T,z-S,x+sg*S+T,z-g);W(x+sg*S-T,z+g,x+sg*S+T,z+S)}
+ for(const sx of [-1,1])for(const sz of [-1,1])addBox(x+sx*S-1.2,y0,z+sz*S-1.2,x+sx*S+1.2,y1+2.5,z+sz*S+1.2,true);
+ addBox(x-1.3,y0,z-1.3,x+1.3,h+1.1,z+1.3,true);
+ FORT.x=x;FORT.z=z;FORT.h=h}
 const QUADS=[];
 function buildQuads(){const r=rng(888);let tries=0;const mat=new THREE.MeshLambertMaterial({color:0xd8402a}),dk=new THREE.MeshLambertMaterial({color:0x222222});
  while(QUADS.length<9&&tries++<500){const a=r()*6.28,d=Math.sqrt(r())*290;const x=Math.cos(a)*d,z=Math.sin(a)*d;const h=H(x,z);if(h<2||h>10)continue;if(houses.some(q=>Math.abs(q.x-x)<q.hw+5&&Math.abs(q.z-z)<q.hd+5))continue;if(QUADS.some(p=>Math.hypot(p.x-x,p.z-z)<50))continue;
@@ -208,7 +216,7 @@ function quadToggle(){if(G.mode!=='play'||L.dead||L.para)return;
 function quadStep(){if(L.dead||L.para)L.quad=null;if(L.quad!=null){const q=QUADS[L.quad];q.x=L.x;q.z=L.z;q.y=L.y;q.g.position.set(L.x,L.y,L.z);q.g.rotation.y=L.yaw+Math.PI}
  else if(G.mode==='play'&&!L.dead&&!L.para&&performance.now()>(quadStep.h||0)){for(const q of QUADS)if(Math.hypot(q.x-L.x,q.z-L.z)<4.5){msg('🏍 اضغط E (أو زرار الكواد) عشان تركب',1800);quadStep.h=performance.now()+6000;break}}}
 function buildScene(){
- buildWorld();buildPads();buildQuads();buildBeacon();
+ buildWorld();buildPads();buildQuads();buildBeacon();buildFort();
  const SEG=220,SZ=900;const geo=new THREE.PlaneGeometry(SZ,SZ,SEG,SEG);geo.rotateX(-Math.PI/2);
  const pos=geo.attributes.position,col=new Float32Array(pos.count*3);
  for(let i=0;i<pos.count;i++){const x=pos.getX(i),z=pos.getZ(i);const h=H(x,z);pos.setY(i,h);
@@ -241,6 +249,7 @@ function genLoot(){const r=rng(555);const pick=()=>{const v=r();return v<.12?0:v
  for(const h of houses){const k=h.big?7:4;for(let i=0;i<k;i++)add(h.x+(r()-.5)*(h.hw*2-2),h.z+(r()-.5)*(h.hd*2-2))}
  let n=0,tr=0;while(n<110&&tr<2000){tr++;const x=(r()-.5)*700,z=(r()-.5)*700;if(H(x,z)<1.2||Math.hypot(x,z)>350)continue;add(x,z);n++}
  if(BCN.piv){const ts=[4,9,2,9,4,6,5,6];ts.forEach((t,i)=>{const an=i/ts.length*6.283,x=BCN.x+Math.cos(an)*5.4,z=BCN.z+Math.sin(an)*5.4;LOOT.push({id:LOOT.length,t,x,z,y:groundAt(x,z)+.5})})}
+ if(FORT.x!==undefined){const ts=[4,2,9,6,5,1,6,7];ts.forEach((t,i)=>{const an=i/ts.length*6.283+.4,rr=i%2?5:8.5,x=FORT.x+Math.cos(an)*rr,z=FORT.z+Math.sin(an)*rr;LOOT.push({id:LOOT.length,t:t===7?2:t,x,z,y:groundAt(x,z)+.5})})}
  for(let k=0;k<4;k++){DROPS.push(LOOT.length);LOOT.push({id:LOOT.length,t:7,x:0,z:0,y:0})}
  lootMesh=new THREE.InstancedMesh(new THREE.BoxGeometry(.7,.45,.7),new THREE.MeshLambertMaterial({color:0xffffff}),LOOT.length);
  beamMesh=new THREE.InstancedMesh(new THREE.CylinderGeometry(.12,.12,7,5),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.4}),LOOT.length);
@@ -598,7 +607,7 @@ function drawMini(){const c=mini,S=130,R=S/2;c.clearRect(0,0,S,S);const sc=R/110
  c.fillStyle='#4a7a3a';c.beginPath();c.arc(0,0,R_ISL*.85*sc,0,6.3);c.fill();
  c.strokeStyle='#4af';c.lineWidth=2;c.beginPath();c.arc(z.tcx*sc,z.tcz*sc,Math.max(1,z.tr)*sc,0,6.3);c.stroke();
  c.strokeStyle='#fff';c.beginPath();c.arc(z.cx*sc,z.cz*sc,Math.max(1,z.r)*sc,0,6.3);c.stroke();
- c.fillStyle='#caa';for(const h of houses)c.fillRect((h.x-3)*sc,(h.z-3)*sc,6*sc,6*sc);if(BCN.piv){c.fillStyle='#ffe066';c.beginPath();c.arc(BCN.x*sc,BCN.z*sc,4,0,6.3);c.fill()}
+ c.fillStyle='#caa';for(const h of houses)c.fillRect((h.x-3)*sc,(h.z-3)*sc,6*sc,6*sc);if(FORT.x!==undefined){c.fillStyle='#ff9a3c';c.fillRect(FORT.x*sc-4,FORT.z*sc-4,8,8)}if(BCN.piv){c.fillStyle='#ffe066';c.beginPath();c.arc(BCN.x*sc,BCN.z*sc,4,0,6.3);c.fill()}
  c.strokeStyle='#ffe44a';c.lineWidth=2;for(const q of PINGS){c.beginPath();c.arc(q.x*sc,q.z*sc,5,0,6.3);c.stroke()}
  c.fillStyle='#3fc';for(const p of PADS){c.beginPath();c.arc(p.x*sc,p.z*sc,3,0,6.3);c.fill()}
  c.fillStyle='#f44';for(const p of G.players.values()){if(p.id===G.me||!p.alive||p.para)continue;if(Math.hypot(p.x-L.x,p.z-L.z)<60){c.beginPath();c.arc(p.x*sc,p.z*sc,2.5,0,6.3);c.fill()}}
@@ -647,5 +656,5 @@ function frame(){
  else{G.t+=dt;vm.visible=false;cam.fov=75;cam.updateProjectionMatrix();cam.position.set(Math.sin(G.t*.1)*250,70,Math.cos(G.t*.1)*250);cam.lookAt(0,5,0)}
  renderer.render(scene,cam)}
 frame();
-window.__G=G;window.__L=L;showStats();$('tutok').onclick=()=>{$('tut').style.display='none';try{localStorage.setItem('brTut','1')}catch(e){}};window.__dbg={sbToggle,emote,showEmo,avatars,BCN,FL,setAtmos0:0,openPz,doDrop,DFX,PINGS,pingAt,QUADS,quadToggle,GR,throwG,showStats,setAtmos,PADS,fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
+window.__G=G;window.__L=L;showStats();$('tutok').onclick=()=>{$('tut').style.display='none';try{localStorage.setItem('brTut','1')}catch(e){}};window.__dbg={FORT,sbToggle,emote,showEmo,avatars,BCN,FL,setAtmos0:0,openPz,doDrop,DFX,PINGS,pingAt,QUADS,quadToggle,GR,throwG,showStats,setAtmos,PADS,fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
 </script></body></html>
