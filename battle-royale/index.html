@@ -113,8 +113,11 @@ function vnoise(x,z){const ix=Math.floor(x),iz=Math.floor(z),fx=sm(x-ix),fz=sm(z
  const a=hash(ix,iz),b=hash(ix+1,iz),c=hash(ix,iz+1),d=hash(ix+1,iz+1);return a+(b-a)*fx+(c-a)*fz+(a-b-c+d)*fx*fz}
 function fbm(x,z){return vnoise(x,z)*.55+vnoise(x*2.1,z*2.1)*.28+vnoise(x*4.3,z*4.3)*.17}
 const R_ISL=400;
-function H(x,z){const n=fbm(x/110,z/110);const d=Math.hypot(x,z)/R_ISL;const m=1-Math.min(1,Math.max(0,(d-.6)/.4));const mm=m*m*(3-2*m);
+const POND={x:0,z:0,r:0};
+function H(x,z){let b=0;if(POND.r){const d=Math.hypot(x-POND.x,z-POND.z)/POND.r;if(d<1){const q=1-d;b=13*q*q*(3-2*q)}}return H0(x,z)-b}
+function H0(x,z){const n=fbm(x/110,z/110);const d=Math.hypot(x,z)/R_ISL;const m=1-Math.min(1,Math.max(0,(d-.6)/.4));const mm=m*m*(3-2*m);
  return (n*30-9)*mm-(1-mm)*16}
+{const r=rng(777);for(let t=0;t<3000;t++){const a=r()*6.28,d=50+r()*150,x=Math.cos(a)*d,z=Math.sin(a)*d;const hs=[H0(x,z),H0(x-20,z),H0(x+20,z),H0(x,z-20),H0(x,z+20)];if(Math.min(...hs)<5||Math.max(...hs)>11)continue;POND.x=x;POND.z=z;POND.r=20;break}}
 const circles=[],boxes=[],houses=[],grid=new Map();
 const CELL=24;
 function gadd(kind,i,x0,z0,x1,z1){for(let x=Math.floor(x0/CELL);x<=Math.floor(x1/CELL);x++)for(let z=Math.floor(z0/CELL);z<=Math.floor(z1/CELL);z++){const k=x+','+z;let g=grid.get(k);if(!g){g={c:[],b:[]};grid.set(k,g)}g[kind].push(i)}}
@@ -694,5 +697,5 @@ function frame(){
  else{G.t+=dt;vm.visible=false;cam.fov=75;cam.updateProjectionMatrix();cam.position.set(Math.sin(G.t*.1)*250,70,Math.cos(G.t*.1)*250);cam.lookAt(0,5,0)}
  renderer.render(scene,cam)}
 frame();
-window.__G=G;window.__L=L;showStats();$('tutok').onclick=()=>{$('tut').style.display='none';try{localStorage.setItem('brTut','1')}catch(e){}};window.__dbg={stepRain,RL,rankTitle,quickChat,QC,ENG,zoneRef:()=>__G.zone,fireworks,FORT,sbToggle,emote,showEmo,avatars,BCN,FL,setAtmos0:0,openPz,doDrop,DFX,PINGS,pingAt,QUADS,quadToggle,GR,throwG,showStats,setAtmos,PADS,fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
+window.__G=G;window.__L=L;showStats();$('tutok').onclick=()=>{$('tut').style.display='none';try{localStorage.setItem('brTut','1')}catch(e){}};window.__dbg={POND,H,stepRain,RL,rankTitle,quickChat,QC,ENG,zoneRef:()=>__G.zone,fireworks,FORT,sbToggle,emote,showEmo,avatars,BCN,FL,setAtmos0:0,openPz,doDrop,DFX,PINGS,pingAt,QUADS,quadToggle,GR,throwG,showStats,setAtmos,PADS,fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
 </script></body></html>
