@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="manifest" href="manifest.json"><meta name="theme-color" content="#6c8cff">
 <title>مساعدي الذكي - يشتغل في المتصفح بدون سيرفر</title>
 <style>
 :root{--bg:#0f1220;--card:#181c30;--card2:#20253d;--tx:#eef0fa;--mut:#8b91b3;--ac:#6c8cff}
@@ -89,7 +90,7 @@ header button{background:none;border:0;color:var(--tx);font-size:18px;cursor:poi
  <h3>اللي اتعلمته عنك</h3><div id="learn" class="note"></div>
  <h3>الذاكرة</h3><div id="mem"></div>
  <h3>الإعدادات</h3>
- <button class="s" id="export">تصدير بياناتي</button> <button class="s" id="wipe">مسح كل حاجة</button>
+ <button class="s" id="export">تصدير بياناتي</button> <button class="s" id="wipe">مسح كل حاجة</button> <input type="file" id="imp" accept=".json" class="s">
  <p class="note">كل بياناتك محفوظة في المتصفح عندك (localStorage) ومبتتبعتش لأي مكان. "التعلم" هنا = إحصائيات استخدام وذاكرة حقائق مش تدريب نموذج.</p>
  <h3>حدود صريحة</h3>
  <p class="note">المساعد قائم على قواعد وكلمات مفتاحية للعربي المصري والفصحى، مش نموذج لغوي. بيجاوب كويس على: حسابات، تواريخ، تحويلات، مهام، تذكيرات، ذاكرة، تلخيص وتحليل نصوص. أي سؤال معرفة عامة خارج كده هيقولك إنه مش عارف.</p>
@@ -219,7 +220,8 @@ function renderMe(){const hrs=usage._h||{};const names={msg:'رسائل',calc:'�
  $('#learn').innerHTML=(h||'لسه بتعرّف عليك. استخدمني شوية.')+'<div class="out" style="margin-top:10px">'+habitTips().replace(/</g,'&lt;')+'</div>';
  const k=Object.keys(mem);$('#mem').innerHTML=k.length?'<table>'+k.map(()=>'<tr><td></td><td></td><td><button class="s">نسيان</button></td></tr>').join('')+'</table>':'<p class="note">الذاكرة فاضية.</p>';
  document.querySelectorAll('#mem tr').forEach((tr,i)=>{tr.children[0].textContent=k[i];tr.children[1].textContent=mem[k[i]];tr.querySelector('button').onclick=()=>{delete mem[k[i]];LS.set('mem',mem);renderMe()}})}
-$('#export').onclick=()=>{const b=new Blob([JSON.stringify({mem,usage,tasks,notes:LS.get('notes','')},null,1)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='my-assistant-data.json';a.click()};
+$('#export').onclick=()=>{const b=new Blob([JSON.stringify({mem,usage,tasks,docs,notes:LS.get('notes','')},null,1)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='my-assistant-data.json';a.click()};
+$('#imp').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(d.mem)LS.set('mem',d.mem);if(d.usage)LS.set('usage',d.usage);if(d.tasks)LS.set('tasks',d.tasks);if(d.notes!==undefined)LS.set('notes',d.notes);if(d.docs)LS.set('docs',d.docs);location.reload()}catch(x){alert('ملف غير صالح')}};r.readAsText(f)};
 $('#wipe').onclick=()=>{if(confirm('تمسح كل بياناتك؟')){Object.keys(localStorage).filter(k=>k.startsWith('ai_')).forEach(k=>localStorage.removeItem(k));location.reload()}};
 
 /* docs: BM25 search */
@@ -239,6 +241,7 @@ $('#dfile').onchange=e=>{[...e.target.files].forEach(f=>{const r=new FileReader(
 renderDocs();
 if(LS.get('light',false))document.body.classList.add('light');$('#theme').onclick=()=>{const l=document.body.classList.toggle('light');LS.set('light',l)};$('#clr').onclick=()=>{if(confirm('تمسح المحادثة؟')){hist=[];LS.set('hist',hist);$('#msgs').innerHTML='';add('b','تم مسح المحادثة.',false)}};
 hist.forEach(([r,t])=>add(r,t,false));if(!hist.length)add('b','أهلا! أنا مساعدك الذكي. شغال كله جوه متصفحك، ومفيش بيانات بتخرج من جهازك. جرب الأزرار اللي تحت أو اكتب سؤالك.');
+if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body>
 </html>
