@@ -178,7 +178,7 @@ const COLS=["#ffb020","#ff4d6d","#38d27a","#49a6ff","#b06cff","#f5f5f5"];
 const PAL=[
  {t:"player",n:"اللاعب",w:1,h:1},{t:"block",n:"منصة",w:3,h:1},{t:"mover",n:"منصة متحركة",w:3,h:1},
  {t:"coin",n:"عملة",w:1,h:1},{t:"enemy",n:"عدو",w:1,h:1},{t:"flyer",n:"طائر",w:1,h:1},
- {t:"spike",n:"شوك",w:1,h:1},{t:"spring",n:"نابض",w:1,h:1},{t:"goal",n:"العلم",w:1,h:1},{t:"sign",n:"لافتة",w:1,h:1},{t:"chaser",n:"عدو مطارد",w:1,h:1},{t:"turret",n:"مدفع",w:1,h:1},{t:"boss",n:"زعيم",w:3,h:3},{t:"heart",n:"قلب",w:1,h:1},{t:"star",n:"نجمة قوة",w:1,h:1},{t:"portal",n:"بوابة سحرية",w:1,h:2},{t:"saw",n:"منشار متحرك",w:1,h:1},{t:"hopper",n:"عدو نطّاط",w:1,h:1},{t:"ice",n:"جليد زلق",w:2,h:1},{t:"belt",n:"سير متحرك",w:3,h:1},{t:"key",n:"مفتاح",w:1,h:1},{t:"door",n:"باب",w:1,h:3},{t:"check",n:"نقطة حفظ",w:1,h:1}
+ {t:"spike",n:"شوك",w:1,h:1},{t:"spring",n:"نابض",w:1,h:1},{t:"goal",n:"العلم",w:1,h:1},{t:"sign",n:"لافتة",w:1,h:1},{t:"chaser",n:"عدو مطارد",w:1,h:1},{t:"turret",n:"مدفع",w:1,h:1},{t:"boss",n:"زعيم",w:3,h:3},{t:"heart",n:"قلب",w:1,h:1},{t:"star",n:"نجمة قوة",w:1,h:1},{t:"wings",n:"أجنحة (قفزة مزدوجة)",w:1,h:1},{t:"portal",n:"بوابة سحرية",w:1,h:2},{t:"saw",n:"منشار متحرك",w:1,h:1},{t:"hopper",n:"عدو نطّاط",w:1,h:1},{t:"ice",n:"جليد زلق",w:2,h:1},{t:"belt",n:"سير متحرك",w:3,h:1},{t:"key",n:"مفتاح",w:1,h:1},{t:"door",n:"باب",w:1,h:3},{t:"check",n:"نقطة حفظ",w:1,h:1}
 ];
 const PINFO={}; PAL.forEach(p=>PINFO[p.t]=p);
 const RESIZE={block:1,mover:1,door:1};
@@ -284,6 +284,7 @@ function drawObj(c,o,px,py,pw,ph,th,t){
   case"belt":{c.fillStyle="#495057";c.fillRect(px,py,pw,ph);c.fillStyle="#ffd43b";const off=(t*40)%T;for(let xx=-T;xx<pw;xx+=T){const x0=px+xx+off;if(x0<px-4||x0>px+pw-14)continue;c.beginPath();c.moveTo(x0,py+10);c.lineTo(x0+14,py+ph/2);c.lineTo(x0,py+ph-10);c.lineTo(x0+5,py+ph/2);c.fill()}c.strokeStyle="#212529";c.lineWidth=3;c.strokeRect(px+1.5,py+1.5,pw-3,ph-3);break}
   case"saw":{const hx=px+s/2,hy=py+s/2,R=17;c.save();c.translate(hx,hy);c.rotate(t*9+o.x);c.fillStyle="#ced4da";c.beginPath();for(let i=0;i<16;i++){const a=i*Math.PI/8,r=i%2?R*0.75:R;c.lineTo(Math.cos(a)*r,Math.sin(a)*r)}c.closePath();c.fill();c.strokeStyle="#495057";c.lineWidth=2;c.stroke();c.fillStyle="#e03131";c.beginPath();c.arc(0,0,5,0,7);c.fill();c.restore();break}
   case"portal":{const hx=px+s/2,hy=py+ph/2,rr0=Math.min(pw,ph)/2+6;for(let k=0;k<4;k++){c.strokeStyle=["#9775fa","#74c0fc","#da77f2","#fff"][k];c.lineWidth=3;c.beginPath();c.ellipse(hx,hy,(rr0-k*4)*0.62,(ph/2-2-k*5),t*(k%2?-2:2),0,Math.PI*1.5);c.stroke()}c.fillStyle="#9775fa44";c.beginPath();c.ellipse(hx,hy,rr0*0.6,ph/2-3,0,0,7);c.fill();break}
+  case"wings":{const b=Math.sin(t*5+o.x)*3,hx=px+s/2,hy=py+s/2+b;c.fillStyle="#fff";c.strokeStyle="#74c0fc";c.lineWidth=2;for(const d of[-1,1]){c.beginPath();c.moveTo(hx,hy+4);c.quadraticCurveTo(hx+d*22,hy-22,hx+d*20,hy-2);c.quadraticCurveTo(hx+d*14,hy+4,hx+d*6,hy+8);c.closePath();c.fill();c.stroke()}break}
   case"star":{const b=Math.sin(t*5+o.x)*3,hx=px+s/2,hy=py+s/2+b;c.fillStyle="#ffd43b";c.beginPath();for(let i=0;i<10;i++){const r=i%2?8:19,a=-Math.PI/2+i*Math.PI/5;c.lineTo(hx+Math.cos(a)*r,hy+Math.sin(a)*r)}c.closePath();c.fill();c.strokeStyle="#f08c00";c.lineWidth=2;c.stroke();break}
   case"heart":{const b=Math.sin(t*4+o.x)*2;c.fillStyle="#ff4d6d";const hx=px+s/2,hy=py+s/2+b;c.beginPath();c.moveTo(hx,hy+10);c.bezierCurveTo(hx-22,hy-4,hx-10,hy-18,hx,hy-6);c.bezierCurveTo(hx+10,hy-18,hx+22,hy-4,hx,hy+10);c.fill();c.fillStyle="#fff8";c.beginPath();c.arc(hx-6,hy-6,3,0,7);c.fill();break}
   case"boss":{const w=pw||T*3,h=ph||T*3,k=w/120,hurt=o.inv>0&&Math.floor(t*20)%2;
@@ -586,12 +587,17 @@ function spice(lv,seed,o2){
     else if(o2.belt&&R()<o2.belt&&b.w>=6){const idx=lv.o.indexOf(b);lv.o[idx]={t:"belt",x:b.x,y:b.y,w:b.w,h:b.h,r:4,v:R()<.5?1:0}}});
   if(o2.boss){const gl=lv.o.find(q=>q.t==="goal");if(gl){lv.o.push({t:"boss",x:gl.x-10,y:gl.y-2,w:3,h:3});lv.o.push({t:"heart",x:gl.x-14,y:gl.y,w:1,h:1})}}
   return lv}
+let TPL_VERIFY=false;
 const TEMPLATES=[
  {n:"مغامرة القفز",d:"منصات وعملات وأعداء",mk:()=>{const g=newGame("مغامرة القفز");g.levels=[genLevel("plat",70,18,7,1),genLevel("plat",90,18,21,2),genLevel("plat",110,18,99,3)];return g}},
  {n:"متاهة الكنز",d:"اجمع العملات وتفادى الأعداء",mk:()=>{const g=newGame("متاهة الكنز");g.mode="top";g.theme="cave";g.char="ghost";g.col=COLS[3];g.req=true;g.levels=[genLevel("top",36,22,5,1),genLevel("top",44,26,8,2)];return g}},
  {n:"ليل الفضاء",d:"لعبة منصات في الفضاء",mk:()=>{const g=newGame("ليل الفضاء");g.theme="space";g.char="robot";g.col=COLS[5];g.lives=5;g.levels=[genLevel("plat",80,18,33,2),genLevel("plat",100,18,77,3)];return g}},
  {n:"تحدي الجبل",d:"أعداء نطّاطة ومناشير وزعيم في الآخر",mk:()=>{const g=newGame("تحدي الجبل");g.theme="forest";g.char="robot";g.col=COLS[2];g.lives=5;g.levels=[spice(genLevel("plat",80,18,41,1.5),41,{hop:.3,saw:.15,heart:.1,star:.05}),spice(genLevel("plat",90,18,52,2),52,{hop:.3,saw:.25,heart:.1,star:.1}),spice(genLevel("plat",100,18,63,2.5),63,{hop:.3,saw:.25,heart:.1,star:.1,boss:1})];g.levels[2].title="الزعيم الأخير";return g}},
  {n:"مدينة الجليد",d:"أرض زلقة وسيور متحركة",mk:()=>{const g=newGame("مدينة الجليد");g.theme="ice";g.char="blob";g.col=COLS[4];g.lives=6;g.levels=[spice(genLevel("plat",80,18,73,1.2),73,{hop:.15,saw:.1,heart:.1,star:.05,ice:.3,belt:.2}),spice(genLevel("plat",90,18,82,1.8),82,{hop:.2,saw:.15,heart:.1,star:.1,ice:.3,belt:.2})];return g}},
+ {n:"🎲 مفاجأة عشوائية",d:"لعبة جديدة كل مرة بشكل مختلف",mk:()=>{const sd0=Math.floor(Math.random()*9000)+100,ths=["day","night","space","candy","forest","ice","desert"],chs=Object.keys(CHARS),th=ths[sd0%ths.length];const g=newGame("مفاجأة "+sd0);g.theme=THEMES[th]?th:"day";g.char=chs[sd0%chs.length];g.col=COLS[sd0%COLS.length];g.lives=5;
+  const cfg=[[0.8,{hop:.2,saw:.1,heart:.1,star:.08}],[1.1,{hop:.25,saw:.1,heart:.1,star:.08}],[1.4,{hop:.25,saw:.1,heart:.1,star:.1,boss:1}]];g.levels=[];
+  cfg.forEach((c,i)=>{let lv=null;for(let t=0;t<(TPL_VERIFY?10:1);t++){const sd=sd0+i*7+t*131;lv=spice(genLevel("plat",80+i*10,18,sd,c[0]),sd,c[1]);if(!TPL_VERIFY)break;g.levels[i]=lv;const sv=G;G=g;let ok=false;try{ok=autoTest(i).ok}catch(e){}G=sv;if(ok)break}g.levels[i]=lv});
+  g.levels[2].title="الزعيم";return g}},
  {n:"عالم الحلويات",d:"سهلة ولطيفة للأطفال",mk:()=>{const g=newGame("عالم الحلويات");g.theme="candy";g.char="blob";g.col=COLS[1];g.lives=9;g.levels=[genLevel("plat",60,16,12,0.4),genLevel("plat",70,16,44,0.6)];return g}}
 ];
 
@@ -628,7 +634,7 @@ function startPlay(fromLevel,full){
 function loadLevel(){
   const lv=G.levels[P.lvl];
   P.w=lv.w*T;P.h=lv.h*T;
-  P.bul=[];P.turrets=[];P.hearts=[];P.stars=[];P.portals=[];P.saws=[];P.icez=[];P.belts=[];P.pcd=0;P.power=0;P.boss=null;P.solids=[];P.doors=[];P.keys=[];P.checks=[];P.movers=[];P.coins=[];P.enemies=[];P.hazards=[];P.springs=[];P.signs=[];P.goal=null;P.got=0;P.player=null;
+  P.bul=[];P.turrets=[];P.hearts=[];P.stars=[];P.wings=[];P.djT=0;P.portals=[];P.saws=[];P.icez=[];P.belts=[];P.pcd=0;P.power=0;P.boss=null;P.solids=[];P.doors=[];P.keys=[];P.checks=[];P.movers=[];P.coins=[];P.enemies=[];P.hazards=[];P.springs=[];P.signs=[];P.goal=null;P.got=0;P.player=null;
   for(const o of lv.o){
     const r={x:o.x*T,y:o.y*T,w:o.w*T,h:o.h*T};
     if(o.t==="ice"){r.k="ice";P.solids.push(r);P.icez.push(r)}
@@ -643,6 +649,7 @@ function loadLevel(){
     else if(o.t==="enemy")P.enemies.push({k:"e",x:r.x+4,y:r.y+6,w:T-8,h:T-8,vx:(Math.random()<.5?-1:1)*70,vy:0,dir:1,ch:0,alive:true,sx:r.x,sy:r.y});
     else if(o.t==="saw")P.saws.push({x:r.x,y:r.y,bx:r.x,by:r.y,w:T-10,h:T-10,o,rng:T*(o.r||4)});
     else if(o.t==="portal")P.portals.push({x:r.x,y:r.y,w:T,h:T*2,o});
+    else if(o.t==="wings")P.wings.push({x:r.x,y:r.y,w:T,h:T,o});
     else if(o.t==="star")P.stars.push({x:r.x,y:r.y,w:T,h:T,o});
     else if(o.t==="heart")P.hearts.push({x:r.x,y:r.y,w:T,h:T,o});
     else if(o.t==="boss"&&G.mode==="plat")P.boss={x:r.x,y:r.y,w:T*3,h:T*3,hp:6,max:6,vx:90,inv:0,cd:2,bx:r.x,rng:T*5,dead:false,o:{t:"boss",inv:0}};
@@ -740,7 +747,9 @@ function stepPlay(dt){
     if(jk&&!pl.jh){pl.buf=.12}
     pl.jh=jk;
     if(pl.on)pl.coy=.1;
-    if(pl.buf>0&&pl.coy>0){pl.vy=-PH.jv;pl.on=false;pl.coy=0;pl.buf=0;SFX.jump()}
+    if(pl.buf>0&&pl.coy>0){pl.vy=-PH.jv;pl.on=false;pl.coy=0;pl.buf=0;pl.dj=0;SFX.jump()}
+    else if(pl.buf>0&&P.djT>0&&!pl.on&&!pl.dj){pl.vy=-PH.jv*0.9;pl.dj=1;pl.buf=0;SFX.jump();puff(pl.x+pl.w/2,pl.y+pl.h,"#74c0fc",8)}
+    if(pl.on)pl.dj=0;
     if(!jk&&pl.vy<-250)pl.vy+=3600*dt;
     pl.vy=Math.min(900,pl.vy+PH.g*dt);
     const r=moveBox(pl,pl.vx*dt,pl.vy*dt,true);
@@ -811,6 +820,8 @@ function stepPlay(dt){
     }
   }
   P.pcd=Math.max(0,P.pcd-dt);if(P.portals.length>1&&P.pcd<=0){for(let i=0;i<P.portals.length;i++){const q=P.portals[i];if(overlap(pl,q)){const n=P.portals[(i+1)%P.portals.length];pl.x=n.x+(T-pl.w)/2;pl.y=n.y+n.h-pl.h-2;pl.vx=0;pl.vy=0;P.pcd=0.8;SFX.coin();puff(q.x+20,q.y+40,"#9775fa",16);puff(n.x+20,n.y+40,"#74c0fc",16);break}}}
+  for(let i=P.wings.length-1;i>=0;i--){const h=P.wings[i];if(overlap(pl,h)){P.wings.splice(i,1);P.djT=12;SFX.coin();say("أجنحة! اقفز مرتين في الهوا (12 ثانية)");puff(h.x+20,h.y+20,"#74c0fc",14)}}
+  if(P.djT>0)P.djT-=dt;
   for(let i=P.stars.length-1;i>=0;i--){const h=P.stars[i];if(overlap(pl,h)){P.stars.splice(i,1);P.power=6;SFX.coin();say("نجمة! محدش يقدر يأذيك 6 ثواني");puff(h.x+20,h.y+20,"#ffd43b",12)}}
   if(P.power>0){P.power-=dt;pl.inv=Math.max(pl.inv||0,0.2)}
   for(let i=P.hearts.length-1;i>=0;i--){const h=P.hearts[i];if(overlap(pl,h)){P.hearts.splice(i,1);P.lives=Math.min(9,P.lives+1);SFX.coin();say("قلب! +1 روح");puff(h.x+20,h.y+20,"#ff4d6d",10)}}
@@ -838,7 +849,7 @@ function levelDone(){
   const st=1+(P.coins.length===0?1:0)+((P.ld||0)===0?1:0);P.starTot=(P.starTot||0)+st;P.starMax=(P.starMax||0)+3;P.score+=st*20;
   const stS="★".repeat(st)+"☆".repeat(3-st);try{const k="gm_st_"+(G.title||"")+"_"+G.levels.length+"_"+P.lvl;if(st>(+localStorage.getItem(k)||0))localStorage.setItem(k,st)}catch(e){}P.starShow=2.2;P.starTxt=stS;
   if(P.lvl+1<G.levels.length){P.state="win";puff(P.player.x,P.player.y,"#fff",20);say("أحسنت! "+stS);
-    setTimeout(()=>{if(!P)return;P.lvl++;loadLevel()},1800)}
+    const PP=P;setTimeout(()=>{if(!P||P!==PP||P.state!=="win"||P.testing||P.lvl+1>=G.levels.length)return;P.lvl++;loadLevel()},1800)}
   else endGame(true);
 }
 function endGame(win){
@@ -884,6 +895,7 @@ function renderPlay(){
   for(const c of P.coins)drawObj(cx,{t:"coin",x:c.o.x},c.x-T/2,c.y-T/2,0,0,th,t);
   for(const sw of P.saws)drawObj(cx,{t:"saw",x:sw.o.x},sw.x,sw.y,0,0,th,t);
   for(const h of P.portals)drawObj(cx,{t:"portal",x:h.o.x},h.x,h.y,h.w,h.h,th,t);
+  for(const h of P.wings)drawObj(cx,{t:"wings",x:h.o.x},h.x,h.y,0,0,th,t);
   for(const h of P.stars)drawObj(cx,{t:"star",x:h.o.x},h.x,h.y,0,0,th,t);
   for(const h of P.hearts)drawObj(cx,{t:"heart",x:h.o.x},h.x,h.y,0,0,th,t);
   if(P.boss&&!P.boss.dead){const B=P.boss;drawObj(cx,B.o,B.x,B.y,B.w,B.h,th,t);cx.fillStyle="#000a";cx.fillRect(B.x+10,B.y-16,B.w-20,10);cx.fillStyle="#ff4d6d";cx.fillRect(B.x+11,B.y-15,(B.w-22)*B.hp/B.max,8)}
@@ -1062,7 +1074,7 @@ function openGames(){
     const x=document.createElement("button");x.className="btn";x.textContent="مسح";x.onclick=()=>{if(!confirm("تمسح لعبة «"+g.title+"»؟"))return;const a=loadAll().filter(q=>q.id!==g.id);localStorage.setItem("gm_games",JSON.stringify(a));if(g.id===G.id){G=newGame();refreshAll()}openGames()};
     d.appendChild(o);d.appendChild(x);l.appendChild(d)});
   const t=$("tplList");t.innerHTML="";
-  TEMPLATES.forEach(tp=>{const b=document.createElement("button");{const gg=tp.mk();b.innerHTML="<img style=\"width:100%;border-radius:8px;margin-bottom:4px\" src=\""+thumb(gg.levels[0],gg.theme)+"\">"+tp.n+"<small>"+tp.d+"</small>"}b.onclick=()=>{G=tp.mk();cur=0;undoS=[];redoS=[];sel=null;cam.x=cam.y=0;saveCur();$("mGames").classList.remove("show");refreshAll();toast("اتحمّل القالب، عدّل عليه زي ما تحب")};t.appendChild(b)});
+  TEMPLATES.forEach(tp=>{const b=document.createElement("button");{const gg=tp.mk();b.innerHTML="<img style=\"width:100%;border-radius:8px;margin-bottom:4px\" src=\""+thumb(gg.levels[0],gg.theme)+"\">"+tp.n+"<small>"+tp.d+"</small>"}b.onclick=()=>{TPL_VERIFY=true;try{G=tp.mk()}finally{TPL_VERIFY=false}cur=0;undoS=[];redoS=[];sel=null;cam.x=cam.y=0;saveCur();$("mGames").classList.remove("show");refreshAll();toast("اتحمّل القالب، عدّل عليه زي ما تحب")};t.appendChild(b)});
   $("mGames").classList.add("show");
 }
 $("bHelp").onclick=()=>$("mHelp").classList.add("show");$("helpOk").onclick=()=>$("mHelp").classList.remove("show");
