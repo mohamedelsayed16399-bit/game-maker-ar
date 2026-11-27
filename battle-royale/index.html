@@ -175,11 +175,11 @@ try{renderer=new THREE.WebGLRenderer({canvas,antialias:!TOUCH,powerPreference:'h
 const PR0=Math.min(devicePixelRatio,TOUCH?1.5:2);let PR=PR0,fAcc=0,fN=0;renderer.setPixelRatio(PR);
 function adaptRes(dt){fAcc+=dt;fN++;if(fAcc>=2){const fps=fN/fAcc;fAcc=0;fN=0;let np=PR;if(fps<28)np=Math.max(.5,PR-.2);else if(fps>56)np=Math.min(PR0,PR+.1);if(np!==PR){PR=np;renderer.setPixelRatio(PR);resize();window.__fps=Math.round(fps)}}}
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x9fd0f5);scene.fog=new THREE.Fog(0x9fd0f5,120,520);
-const cam=new THREE.PerspectiveCamera(75,1,.1,900);cam.rotation.order='YXZ';scene.add(cam);
+const cam=new THREE.PerspectiveCamera(75,1,.1,900);cam.rotation.order='YXZ';scene.add(cam);const FL=new THREE.SpotLight(0xfff4d6,0,90,.55,.55,1.2);FL.position.set(.2,-.1,0);FL.target.position.set(0,0,-8);cam.add(FL);cam.add(FL.target);
 const hemi=new THREE.HemisphereLight(0xdff0ff,0x4a5a3a,1.0);scene.add(hemi);
 const sun=new THREE.DirectionalLight(0xfff0d0,1.4);sun.position.set(150,250,100);scene.add(sun);
-const ATM=[{n:'نهار صافي',sky:0x9fd0f5,fn:120,ff:520,sun:0xfff0d0,si:1.4,hi:1.0},{n:'غروب',sky:0xf2a46b,fn:90,ff:430,sun:0xff9a55,si:1.25,hi:.85},{n:'غيم وضباب',sky:0xaab4bd,fn:40,ff:300,sun:0xdde4ea,si:.8,hi:1.15},{n:'فجر',sky:0xc9a6d9,fn:80,ff:400,sun:0xffd0e0,si:1.0,hi:.9}];
-function setAtmos(i){const a=ATM[i%ATM.length];scene.background.setHex(a.sky);scene.fog.color.setHex(a.sky);scene.fog.near=a.fn;scene.fog.far=a.ff;sun.color.setHex(a.sun);sun.intensity=a.si;hemi.intensity=a.hi;G.atm=a.n;return a.n}
+const ATM=[{n:'نهار صافي',sky:0x9fd0f5,fn:120,ff:520,sun:0xfff0d0,si:1.4,hi:1.0},{n:'غروب',sky:0xf2a46b,fn:90,ff:430,sun:0xff9a55,si:1.25,hi:.85},{n:'غيم وضباب',sky:0xaab4bd,fn:40,ff:300,sun:0xdde4ea,si:.8,hi:1.15},{n:'فجر',sky:0xc9a6d9,fn:80,ff:400,sun:0xffd0e0,si:1.0,hi:.9},{n:'ليل (معاك كشاف)',sky:0x070b22,fn:30,ff:240,sun:0x8899ff,si:.3,hi:.38,l:1}];
+function setAtmos(i){const a=ATM[i%ATM.length];scene.background.setHex(a.sky);scene.fog.color.setHex(a.sky);scene.fog.near=a.fn;scene.fog.far=a.ff;sun.color.setHex(a.sun);sun.intensity=a.si;hemi.intensity=a.hi;G.atm=a.n;FL.intensity=a.l?3.2:0;return a.n}
 function resize(){renderer.setSize(innerWidth,innerHeight,false);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix()}
 addEventListener('resize',resize);resize();
 let lootMesh,beamMesh,zoneMesh;
@@ -635,5 +635,5 @@ function frame(){
  else{G.t+=dt;vm.visible=false;cam.fov=75;cam.updateProjectionMatrix();cam.position.set(Math.sin(G.t*.1)*250,70,Math.cos(G.t*.1)*250);cam.lookAt(0,5,0)}
  renderer.render(scene,cam)}
 frame();
-window.__G=G;window.__L=L;showStats();$('tutok').onclick=()=>{$('tut').style.display='none';try{localStorage.setItem('brTut','1')}catch(e){}};window.__dbg={BCN,openPz,doDrop,DFX,PINGS,pingAt,QUADS,quadToggle,GR,throwG,showStats,setAtmos,PADS,fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
+window.__G=G;window.__L=L;showStats();$('tutok').onclick=()=>{$('tut').style.display='none';try{localStorage.setItem('brTut','1')}catch(e){}};window.__dbg={BCN,FL,setAtmos0:0,openPz,doDrop,DFX,PINGS,pingAt,QUADS,quadToggle,GR,throwG,showStats,setAtmos,PADS,fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
 </script></body></html>
