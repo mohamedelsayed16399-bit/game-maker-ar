@@ -175,7 +175,7 @@ const COLS=["#ffb020","#ff4d6d","#38d27a","#49a6ff","#b06cff","#f5f5f5"];
 const PAL=[
  {t:"player",n:"اللاعب",w:1,h:1},{t:"block",n:"منصة",w:3,h:1},{t:"mover",n:"منصة متحركة",w:3,h:1},
  {t:"coin",n:"عملة",w:1,h:1},{t:"enemy",n:"عدو",w:1,h:1},{t:"flyer",n:"طائر",w:1,h:1},
- {t:"spike",n:"شوك",w:1,h:1},{t:"spring",n:"نابض",w:1,h:1},{t:"goal",n:"العلم",w:1,h:1},{t:"sign",n:"لافتة",w:1,h:1},{t:"chaser",n:"عدو مطارد",w:1,h:1},{t:"turret",n:"مدفع",w:1,h:1},{t:"boss",n:"زعيم",w:3,h:3},{t:"heart",n:"قلب",w:1,h:1},{t:"star",n:"نجمة قوة",w:1,h:1},{t:"key",n:"مفتاح",w:1,h:1},{t:"door",n:"باب",w:1,h:3},{t:"check",n:"نقطة حفظ",w:1,h:1}
+ {t:"spike",n:"شوك",w:1,h:1},{t:"spring",n:"نابض",w:1,h:1},{t:"goal",n:"العلم",w:1,h:1},{t:"sign",n:"لافتة",w:1,h:1},{t:"chaser",n:"عدو مطارد",w:1,h:1},{t:"turret",n:"مدفع",w:1,h:1},{t:"boss",n:"زعيم",w:3,h:3},{t:"heart",n:"قلب",w:1,h:1},{t:"star",n:"نجمة قوة",w:1,h:1},{t:"portal",n:"بوابة سحرية",w:1,h:2},{t:"key",n:"مفتاح",w:1,h:1},{t:"door",n:"باب",w:1,h:3},{t:"check",n:"نقطة حفظ",w:1,h:1}
 ];
 const PINFO={}; PAL.forEach(p=>PINFO[p.t]=p);
 const RESIZE={block:1,mover:1,door:1};
@@ -276,6 +276,7 @@ function drawObj(c,o,px,py,pw,ph,th,t){
   case"coin":{
     const k=Math.abs(Math.cos(t*3+o.x));c.fillStyle="#ffcc00";c.beginPath();c.ellipse(px+s/2,py+s/2,s*0.28*(0.35+0.65*k),s*0.3,0,0,7);c.fill();
     c.strokeStyle="#b8860b";c.lineWidth=2;c.stroke();break}
+  case"portal":{const hx=px+s/2,hy=py+ph/2,rr0=Math.min(pw,ph)/2+6;for(let k=0;k<4;k++){c.strokeStyle=["#9775fa","#74c0fc","#da77f2","#fff"][k];c.lineWidth=3;c.beginPath();c.ellipse(hx,hy,(rr0-k*4)*0.62,(ph/2-2-k*5),t*(k%2?-2:2),0,Math.PI*1.5);c.stroke()}c.fillStyle="#9775fa44";c.beginPath();c.ellipse(hx,hy,rr0*0.6,ph/2-3,0,0,7);c.fill();break}
   case"star":{const b=Math.sin(t*5+o.x)*3,hx=px+s/2,hy=py+s/2+b;c.fillStyle="#ffd43b";c.beginPath();for(let i=0;i<10;i++){const r=i%2?8:19,a=-Math.PI/2+i*Math.PI/5;c.lineTo(hx+Math.cos(a)*r,hy+Math.sin(a)*r)}c.closePath();c.fill();c.strokeStyle="#f08c00";c.lineWidth=2;c.stroke();break}
   case"heart":{const b=Math.sin(t*4+o.x)*2;c.fillStyle="#ff4d6d";const hx=px+s/2,hy=py+s/2+b;c.beginPath();c.moveTo(hx,hy+10);c.bezierCurveTo(hx-22,hy-4,hx-10,hy-18,hx,hy-6);c.bezierCurveTo(hx+10,hy-18,hx+22,hy-4,hx,hy+10);c.fill();c.fillStyle="#fff8";c.beginPath();c.arc(hx-6,hy-6,3,0,7);c.fill();break}
   case"boss":{const w=pw||T*3,h=ph||T*3,k=w/120,hurt=o.inv>0&&Math.floor(t*20)%2;
@@ -601,7 +602,7 @@ function startPlay(fromLevel,full){
 function loadLevel(){
   const lv=G.levels[P.lvl];
   P.w=lv.w*T;P.h=lv.h*T;
-  P.bul=[];P.turrets=[];P.hearts=[];P.stars=[];P.power=0;P.boss=null;P.solids=[];P.doors=[];P.keys=[];P.checks=[];P.movers=[];P.coins=[];P.enemies=[];P.hazards=[];P.springs=[];P.signs=[];P.goal=null;P.got=0;P.player=null;
+  P.bul=[];P.turrets=[];P.hearts=[];P.stars=[];P.portals=[];P.pcd=0;P.power=0;P.boss=null;P.solids=[];P.doors=[];P.keys=[];P.checks=[];P.movers=[];P.coins=[];P.enemies=[];P.hazards=[];P.springs=[];P.signs=[];P.goal=null;P.got=0;P.player=null;
   for(const o of lv.o){
     const r={x:o.x*T,y:o.y*T,w:o.w*T,h:o.h*T};
     if(o.t==="block")P.solids.push(r);
@@ -611,6 +612,7 @@ function loadLevel(){
     else if(o.t==="mover"){const m={...r,bx:r.x,by:r.y,r:(o.r||4)*T,v:o.v|0,ph:0,dx:0,dy:0};P.movers.push(m)}
     else if(o.t==="coin")P.coins.push({x:r.x+T/2,y:r.y+T/2,o});
     else if(o.t==="enemy")P.enemies.push({k:"e",x:r.x+4,y:r.y+6,w:T-8,h:T-8,vx:(Math.random()<.5?-1:1)*70,vy:0,dir:1,ch:0,alive:true,sx:r.x,sy:r.y});
+    else if(o.t==="portal")P.portals.push({x:r.x,y:r.y,w:T,h:T*2,o});
     else if(o.t==="star")P.stars.push({x:r.x,y:r.y,w:T,h:T,o});
     else if(o.t==="heart")P.hearts.push({x:r.x,y:r.y,w:T,h:T,o});
     else if(o.t==="boss"&&G.mode==="plat")P.boss={x:r.x,y:r.y,w:T*3,h:T*3,hp:6,max:6,vx:90,inv:0,cd:2,bx:r.x,rng:T*5,dead:false,o:{t:"boss",inv:0}};
@@ -773,6 +775,7 @@ function stepPlay(dt){
       else if(pl.inv<=0&&B.inv<=0){die();return}
     }
   }
+  P.pcd=Math.max(0,P.pcd-dt);if(P.portals.length>1&&P.pcd<=0){for(let i=0;i<P.portals.length;i++){const q=P.portals[i];if(overlap(pl,q)){const n=P.portals[(i+1)%P.portals.length];pl.x=n.x+(T-pl.w)/2;pl.y=n.y+n.h-pl.h-2;pl.vx=0;pl.vy=0;P.pcd=0.8;SFX.coin();puff(q.x+20,q.y+40,"#9775fa",16);puff(n.x+20,n.y+40,"#74c0fc",16);break}}}
   for(let i=P.stars.length-1;i>=0;i--){const h=P.stars[i];if(overlap(pl,h)){P.stars.splice(i,1);P.power=6;SFX.coin();say("نجمة! محدش يقدر يأذيك 6 ثواني");puff(h.x+20,h.y+20,"#ffd43b",12)}}
   if(P.power>0){P.power-=dt;pl.inv=Math.max(pl.inv||0,0.2)}
   for(let i=P.hearts.length-1;i>=0;i--){const h=P.hearts[i];if(overlap(pl,h)){P.hearts.splice(i,1);P.lives=Math.min(9,P.lives+1);SFX.coin();say("قلب! +1 روح");puff(h.x+20,h.y+20,"#ff4d6d",10)}}
@@ -841,6 +844,7 @@ function renderPlay(){
   for(const h of P.hazards)drawObj(cx,{t:"spike"},h.x-6,h.y-(T-h.h),0,0,th,t);
   if(P.goal)drawObj(cx,{t:"goal"},G.mode==="top"?P.goal.x-4:P.goal.x-6,P.goal.y+P.goal.h-(G.mode==="top"?T-4:T),0,0,th,t);
   for(const c of P.coins)drawObj(cx,{t:"coin",x:c.o.x},c.x-T/2,c.y-T/2,0,0,th,t);
+  for(const h of P.portals)drawObj(cx,{t:"portal",x:h.o.x},h.x,h.y,h.w,h.h,th,t);
   for(const h of P.stars)drawObj(cx,{t:"star",x:h.o.x},h.x,h.y,0,0,th,t);
   for(const h of P.hearts)drawObj(cx,{t:"heart",x:h.o.x},h.x,h.y,0,0,th,t);
   if(P.boss&&!P.boss.dead){const B=P.boss;drawObj(cx,B.o,B.x,B.y,B.w,B.h,th,t);cx.fillStyle="#000a";cx.fillRect(B.x+10,B.y-16,B.w-20,10);cx.fillStyle="#ff4d6d";cx.fillRect(B.x+11,B.y-15,(B.w-22)*B.hp/B.max,8)}
