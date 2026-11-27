@@ -74,6 +74,7 @@ input{background:#fff;color:#111;text-align:center;width:240px;user-select:text;
  <button id="bsolo">لعب فردي ضد 29 بوت</button>
  <button id="bhost" class="sec">إنشاء غرفة أونلاين</button>
  <div class="row"><input id="jc" maxlength="5" placeholder="كود الغرفة" style="width:150px;direction:ltr;text-transform:uppercase"><button id="bjoin" class="sec" style="min-width:80px">دخول</button></div>
+ <div class="row sub"><label>الحساسية <input type="range" id="sens" min="40" max="220" value="100" style="width:110px;padding:0"></label><label>الصوت <input type="range" id="vol" min="0" max="100" value="80" style="width:110px;padding:0"></label></div>
  <label class="sub"><input type="checkbox" id="lite" style="width:auto"> وضع خفيف للموبايل الضعيف</label>
  <label class="sub"><input type="checkbox" id="fast" style="width:auto"> مباراة سريعة (المنطقة بتضيق أسرع)</label>
  <div class="sub" id="mstat"></div>
@@ -221,8 +222,8 @@ function makeAvatar(col,name){const g=new THREE.Group();const mb=new THREE.MeshL
 function colorFor(id){return new THREE.Color().setHSL((id*0.137)%1,.65,.5).getHex()}
 let AC,NB;
 function audio(){if(AC)return;try{AC=new (window.AudioContext||window.webkitAudioContext)();NB=AC.createBuffer(1,AC.sampleRate*.4,AC.sampleRate);const d=NB.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1}catch(e){}}
-function sfx(f,vol,dur){if(!AC)return;const s=AC.createBufferSource();s.buffer=NB;const fl=AC.createBiquadFilter();fl.type='lowpass';fl.frequency.value=f*3;const g=AC.createGain();g.gain.setValueAtTime(vol,AC.currentTime);g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+(dur||.18));s.connect(fl);fl.connect(g);g.connect(AC.destination);s.start()}
-function beep(f,d,v){if(!AC)return;const o=AC.createOscillator(),g=AC.createGain();o.frequency.value=f;g.gain.value=v||.1;g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+d);o.connect(g);g.connect(AC.destination);o.start();o.stop(AC.currentTime+d)}
+function sfx(f,vol,dur){if(!AC)return;const s=AC.createBufferSource();s.buffer=NB;const fl=AC.createBiquadFilter();fl.type='lowpass';fl.frequency.value=f*3;const g=AC.createGain();g.gain.setValueAtTime(vol*VOL,AC.currentTime);g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+(dur||.18));s.connect(fl);fl.connect(g);g.connect(AC.destination);s.start()}
+function beep(f,d,v){if(!AC)return;const o=AC.createOscillator(),g=AC.createGain();o.frequency.value=f;g.gain.value=(v||.1)*VOL;g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+d);o.connect(g);g.connect(AC.destination);o.start();o.stop(AC.currentTime+d)}
 const G={mode:'menu',host:false,solo:false,me:0,players:new Map(),zone:{cx:0,cz:0,r:420,tcx:0,tcz:0,tr:420,ph:-1,t:0,state:'wait',scx:0,scz:0,sr:420,dur:1},t:0,fast:false,conns:new Map(),code:'',peer:null,over:false,nextId:1,feed:[]};
 const me=()=>G.players.get(G.me);
 const L={x:0,y:150,z:0,vy:0,yaw:0,pitch:0,fireT:0,mag:[12,0,0],reloadT:0,zoom:false,para:true,wpns:[0,-1,-1],cur:0,dead:false,lastW:[0,-1,-1]};
@@ -368,10 +369,12 @@ function onMsg(from,o){
   else if(o.t==='lobby')renderLobby(o.names)
   else if(o.t==='busy'){setStat('المباراة بدأت بالفعل');toMenu()}
  }}
-const tracers=[];
+const tracers=[],fxs=[];const fxGeo=new THREE.SphereGeometry(.18,6,4);
+function impact(x,y,z,c){const m=new THREE.Mesh(fxGeo,new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:.9}));m.position.set(x,y,z);scene.add(m);fxs.push({m,t:.25})}
 const trMat=new THREE.LineBasicMaterial({color:0xffee88,transparent:true,opacity:.9});
 function handleShot(o,local){if(!G.host&&o.id===G.me&&!local)return;
- for(const e of o.e){const g=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(o.o[0],o.o[1]-.15,o.o[2]),new THREE.Vector3(e[0],e[1],e[2])]);const l=new THREE.Line(g,trMat);scene.add(l);tracers.push({l,t:.08})}
+ for(const e of o.e){const g=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(o.o[0],o.o[1]-.15,o.o[2]),new THREE.Vector3(e[0],e[1],e[2])]);const l=new THREE.Line(g,trMat);scene.add(l);tracers.push({l,t:.08});impact(e[0],e[1],e[2],0xffcc66)}
+ if(o.id===G.me)flashT=.05
  const d=Math.hypot(o.o[0]-L.x,o.o[2]-L.z);if(d<170)sfx(W[o.w].snd,Math.max(.03,.35-d/400),.2)}
 function hitMarker(h){const e=$('hit');e.style.borderColor=h?'#ff0':'#f33';e.style.opacity=1;setTimeout(()=>e.style.opacity=0,120);beep(h?1400:900,.06,.1)}
 function flash(sx,sz){if(sx!==undefined){const dx=sx-L.x,dz=sz-L.z,fx=-Math.sin(L.yaw),fz=-Math.cos(L.yaw),rx=Math.cos(L.yaw),rz=-Math.sin(L.yaw);const a=Math.atan2(dx*rx+dz*rz,dx*fx+dz*fz)*180/Math.PI;const e=$('dmg');e.style.transition='none';e.style.transform='rotate('+a+'deg)';e.style.opacity=1;requestAnimationFrame(()=>{e.style.transition='opacity .8s';e.style.opacity=0})}const e=$('flash');e.style.opacity=.9;setTimeout(()=>e.style.opacity=0,180);sfx(150,.3,.15)}
@@ -425,13 +428,15 @@ $('bjoin').onclick=()=>{audio();joinRoom()};
 $('bstart').onclick=()=>{audio();startMatch()};
 $('bleave').onclick=toMenu;$('bagain').onclick=toMenu;$('bexit').onclick=toMenu;
 $('nm').value=localStorage.getItem('brName')||'';$('nm').onchange=()=>localStorage.setItem('brName',$('nm').value);
+let SENS=+(localStorage.getItem('brSens')||100)/100,VOL=+(localStorage.getItem('brVol')||80)/100;
+$('sens').value=SENS*100;$('vol').value=VOL*100;$('sens').oninput=()=>{SENS=$('sens').value/100;localStorage.setItem('brSens',$('sens').value)};$('vol').oninput=()=>{VOL=$('vol').value/100;localStorage.setItem('brVol',$('vol').value)};
 const keys={};let mouseDown=false,fireTouch=false;
 let bigOn=false;
 addEventListener('keydown',e=>{keys[e.code]=true;if(G.mode!=='play')return;if(e.code==='KeyM')bigOn=!bigOn;if(e.code==='KeyR')reload();if(e.code==='Digit1')sw(0);if(e.code==='Digit2')sw(1);if(e.code==='Digit3')sw(2);if(e.code==='KeyQ')sw((L.cur+1)%3)});
 addEventListener('keyup',e=>keys[e.code]=false);
 function requestLock(){try{const r=canvas.requestPointerLock&&canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{})}catch(e){}}
 canvas.addEventListener('click',()=>{if(G.mode==='play'&&!TOUCH&&!document.pointerLockElement&&!L.dead)requestLock()});
-addEventListener('mousemove',e=>{if(document.pointerLockElement&&G.mode==='play'&&!L.dead){const s=.0022*(L.zoom?.4:1);L.yaw-=e.movementX*s;L.pitch=Math.max(-1.5,Math.min(1.5,L.pitch-e.movementY*s))}});
+addEventListener('mousemove',e=>{if(document.pointerLockElement&&G.mode==='play'&&!L.dead){const s=.0022*SENS*(L.zoom?.4:1);L.yaw-=e.movementX*s;L.pitch=Math.max(-1.5,Math.min(1.5,L.pitch-e.movementY*s))}});
 addEventListener('mousedown',e=>{if(e.button===0)mouseDown=true;if(e.button===2)L.zoom=true});
 addEventListener('mouseup',e=>{if(e.button===0)mouseDown=false;if(e.button===2)L.zoom=false});
 addEventListener('contextmenu',e=>e.preventDefault());
@@ -441,13 +446,14 @@ let joyId=null,lookId=null,joyV={x:0,y:0},lookLast=null;
 const joy=$('joy'),knob=$('knob');
 function joyMove(t){const r=joy.getBoundingClientRect();let dx=t.clientX-(r.left+r.width/2),dy=t.clientY-(r.top+r.height/2);const l=Math.hypot(dx,dy),m=55;if(l>m){dx=dx/l*m;dy=dy/l*m}knob.style.left=(40+dx)+'px';knob.style.top=(40+dy)+'px';joyV={x:dx/m,y:dy/m}}
 joy.addEventListener('touchstart',e=>{e.preventDefault();audio();joyId=e.changedTouches[0].identifier;joyMove(e.changedTouches[0])},{passive:false});
-addEventListener('touchmove',e=>{for(const t of e.changedTouches){if(t.identifier===joyId)joyMove(t);else if(t.identifier===lookId&&lookLast&&!L.dead){const s=.0055*(L.zoom?.4:1);L.yaw-=(t.clientX-lookLast.x)*s;L.pitch=Math.max(-1.5,Math.min(1.5,L.pitch-(t.clientY-lookLast.y)*s));lookLast={x:t.clientX,y:t.clientY}}}},{passive:false});
+addEventListener('touchmove',e=>{for(const t of e.changedTouches){if(t.identifier===joyId)joyMove(t);else if(t.identifier===lookId&&lookLast&&!L.dead){const s=.0055*SENS*(L.zoom?.4:1);L.yaw-=(t.clientX-lookLast.x)*s;L.pitch=Math.max(-1.5,Math.min(1.5,L.pitch-(t.clientY-lookLast.y)*s));lookLast={x:t.clientX,y:t.clientY}}}},{passive:false});
 addEventListener('touchend',e=>{for(const t of e.changedTouches){if(t.identifier===joyId){joyId=null;joyV={x:0,y:0};knob.style.left='40px';knob.style.top='40px'}if(t.identifier===lookId){lookId=null;lookLast=null}}});
 addEventListener('touchstart',e=>{if(G.mode!=='play')return;for(const t of e.changedTouches){if(t.target.closest&&(t.target.closest('.tb')||t.target.closest('#joy')||t.target.closest('button')))continue;if(t.clientX>innerWidth*.35&&lookId===null){lookId=t.identifier;lookLast={x:t.clientX,y:t.clientY}}}},{passive:false});
 function bind(id,dn,up){const el=$(id);el.addEventListener('touchstart',e=>{e.preventDefault();e.stopPropagation();audio();dn()},{passive:false});if(up)el.addEventListener('touchend',e=>{e.preventDefault();up()})}
 bind('bfire',()=>fireTouch=true,()=>fireTouch=false);bind('bjump',()=>L.jump=true,()=>L.jump=false);bind('brel',reload);bind('bsw',()=>{for(let i=1;i<=3;i++){const s=(L.cur+i)%3;if(L.wpns[s]>=0){sw(s);break}}});bind('bzoom',()=>L.zoom=!L.zoom);bind('bspr',()=>L.spr=!L.spr);bind('bmap',()=>bigOn=!bigOn);
+let flashT=0;const flashM=new THREE.Mesh(new THREE.SphereGeometry(.07,6,4),new THREE.MeshBasicMaterial({color:0xffdd55}));flashM.position.set(.14,-.12,-.65);flashM.visible=false;
 const clock=new THREE.Clock();let netT=0;
-const vm=new THREE.Mesh(new THREE.BoxGeometry(.03,.04,.22),new THREE.MeshLambertMaterial({color:0x333333}));vm.position.set(.14,-.14,-.4);cam.add(vm);
+const vm=new THREE.Mesh(new THREE.BoxGeometry(.03,.04,.22),new THREE.MeshLambertMaterial({color:0x333333}));vm.position.set(.14,-.14,-.4);cam.add(vm);cam.add(flashM);
 function localUpdate(dt){
  const m=me();if(!m||L.dead)return;
  let fwd=0,str=0;if(!TOUCH){fwd=(keys.KeyW||keys.ArrowUp?1:0)-(keys.KeyS||keys.ArrowDown?1:0);str=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0)}
@@ -519,6 +525,7 @@ function frame(){
   const wi=L.wpns[L.cur];const fov=(L.zoom?(wi===4?18:50):75);cam.fov+=(fov-cam.fov)*Math.min(1,dt*12);cam.updateProjectionMatrix();
   vm.visible=!L.dead&&!L.para&&wi>=0&&!(L.zoom&&wi===4);if(wi>=0)vm.material.color.setHex(W[wi].col);
   zoneMesh.position.set(G.zone.cx,100,G.zone.cz);zoneMesh.scale.set(Math.max(1,G.zone.r),1,Math.max(1,G.zone.r));
+  flashT-=dt;flashM.visible=flashT>0&&vm.visible;for(let i=fxs.length-1;i>=0;i--){const f=fxs[i];f.t-=dt;f.m.scale.setScalar(1+(.25-f.t)*8);f.m.material.opacity=Math.max(0,f.t*4);if(f.t<=0){scene.remove(f.m);f.m.material.dispose();fxs.splice(i,1)}}
   for(let i=tracers.length-1;i>=0;i--){tracers[i].t-=dt;if(tracers[i].t<=0){scene.remove(tracers[i].l);tracers[i].l.geometry.dispose();tracers.splice(i,1)}}
   updateHud();drawMini();drawBig()}
  else{G.t+=dt;vm.visible=false;cam.fov=75;cam.updateProjectionMatrix();cam.position.set(Math.sin(G.t*.1)*250,70,Math.cos(G.t*.1)*250);cam.lookAt(0,5,0)}
