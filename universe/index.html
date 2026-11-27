@@ -292,13 +292,18 @@ function openStation(){
  h+='<h3 style="margin:10px 0 2px">🚀 حظيرة السفن</h3>';S.ships=S.ships||{};
  [['fighter','مقاتل: مدفع +٢ ودرع +٥٠',1500],['hauler','شحن: سعة +٤٠',1200],['explorer','مستكشف: وقود +٨٠ وسرعة أعلى',1000],['capital','🛸 سفينة قيادة: هيكل +١٥٠ ودرع +١٠٠ وأبراج آلية (ضخمة)',6000]].forEach(x=>{h+=`<div class="row"><span>${x[1]}</span>${S.ships[x[0]]?'<small>✅ مملوكة</small>':`<button class="btn" onclick="buyShip('${x[0]}',${x[2]})">${AR(x[2])} 💰</button>`}</div>`});
  h+='<h3 style="margin:10px 0 2px">🎨 طلاء السفينة</h3><div class="row" style="gap:6px;justify-content:flex-start">'+[['#d8e2ff','فضي'],['#ff5a5a','أحمر'],['#4cc3ff','أزرق'],['#6dff9a','أخضر'],['#ffd24c','ذهبي'],['#c070ff','بنفسجي']].map(c=>`<button class="btn" style="background:${c[0]};color:#000;padding:6px 10px;font-size:12px" onclick="paint('${c[0]}')">${c[1]}</button>`).join('')+'</div>';
- h+=cityHtml(); h+=contractHtml();h+=`<div style="margin-top:10px"><button class="btn d" onclick="closeMenu()">إغلاق</button></div>`;openMenu(h)}
+ h+=wpHtml(); h+=cityHtml(); h+=contractHtml();h+=`<div style="margin-top:10px"><button class="btn d" onclick="closeMenu()">إغلاق</button></div>`;openMenu(h)}
 const CITYB=[['🏪','سوق تجاري',1500,25],['🏭','مصنع',3000,60],['🔬','معمل أبحاث',5000,110],['🎡','مدينة ملاهي',8000,200]];
 function cityKey(){return S.g+':'+curStar.x+':'+curStar.y}
 function cityCollect(){S.city=S.city||{};const c=S.city[cityKey()];if(!c)return 0;const el=Math.min((Date.now()-c.t)/60000,240);let rate=0;c.b.forEach((n,i)=>rate+=n*CITYB[i][3]);return Math.floor(el*rate/10)}
 window.cityCollect=cityCollect;window.cityKey=cityKey;window.cityBuy=i=>{S.city=S.city||{};const k=cityKey();const c=S.city[k]=S.city[k]||{t:Date.now(),b:[0,0,0,0]};const cost=CITYB[i][2]*(1+c.b[i]);if(c.b[i]>=5){toast('وصلت للحد الأقصى (٥)');return}if(S.credits<cost){toast('رصيدك مش كفاية');return}S.credits-=cost;const pend=cityCollect();S.credits+=pend;c.t=Date.now();c.b[i]++;S.stats.city=(S.stats.city||0)+1;toast('🏙️ بنيت '+CITYB[i][1]+' في محطة '+curStar.name);save();hud();openStation()};
 window.cityTake=()=>{const c=(S.city||{})[cityKey()];const v=cityCollect();if(!c||v<=0){toast('لسه مفيش أرباح');return}S.credits+=v;c.t=Date.now();toast('🏙️ حصّلت '+AR(v)+' 💰 من المدينة');save();hud();openStation()};
 function cityHtml(){S.city=S.city||{};const c=S.city[cityKey()]||{b:[0,0,0,0]};let h='<h3 style="margin:10px 0 2px">🏙️ مدينة المحطة</h3>';c.b.forEach((n,i)=>{const B=CITYB[i];h+=`<div class="row"><span>${B[0]} ${B[1]} (${AR(n)}/٥)<br><small>+${AR(B[3]*n/10)} 💰 كل دقيقة</small></span><button class="btn" onclick="cityBuy(${i})">${n>=5?'أقصى':'ابني '+AR(B[2]*(1+n))}</button></div>`});const v=cityCollect();h+=`<div class="row"><span>الأرباح المتراكمة</span><button class="btn" onclick="cityTake()">💰 تحصيل ${AR(v)}</button></div>`;return h}
+const WPN=[['🔫','ليزر عادي',0],['🔱','رشاش متشعب (٣ طلقات)',2000],['🟣','مدفع بلازما (ضرر ×٢٫٦ وبطيء)',3500]];
+window.wpBuy=i=>{S.wps=S.wps||[1,0,0];if(S.wps[i]){S.wp=i;toast('اخترت: '+WPN[i][1]);save();openStation();wpBtnUpd();return}if(S.credits<WPN[i][2]){toast('رصيدك مش كفاية');return}S.credits-=WPN[i][2];S.wps[i]=1;S.wp=i;toast('🔫 اشتريت سلاح جديد: '+WPN[i][1]);save();hud();openStation();wpBtnUpd()};
+function wpHtml(){S.wps=S.wps||[1,0,0];let h='<h3 style="margin:10px 0 2px">🔫 معرض الأسلحة</h3>';WPN.forEach((w,i)=>{h+=`<div class="row"><span>${w[0]} ${w[1]}</span><button class="btn${(S.wp||0)===i?' r':''}" onclick="wpBuy(${i})">${(S.wp||0)===i?'مُجهّز':S.wps[i]?'جهّز':AR(w[2])+' 💰'}</button></div>`});return h}
+let wpB=null;function wpBtnUpd(){if(!wpB){wpB=document.createElement('button');wpB.className='btn d';wpB.style.cssText='position:fixed;bottom:290px;right:10px;z-index:7;padding:8px 12px;font-size:13px';wpB.onclick=()=>{S.wps=S.wps||[1,0,0];let n=(S.wp||0);for(let k=0;k<3;k++){n=(n+1)%3;if(S.wps[n])break}S.wp=n;toast('سلاح: '+WPN[n][1]);wpBtnUpd();save()};document.body.appendChild(wpB)}wpB.textContent=WPN[S.wp||0][0]+' بدّل';wpB.style.display=(mode==='space'&&!menuOpen&&((S.wps||[1,0,0]).filter(x=>x).length>1))?'block':'none'}
+setInterval(()=>{try{wpBtnUpd()}catch(e){}},700);
 function offerFor(s){const r=mulberry(hash(s.g,s.x,s.y,4000+Math.floor(Date.now()/600000)));const g=GOODS[r()*4|0];const n=3+(r()*6|0);let tx,ty,tg;for(let k=0;k<30;k++){tx=s.x+Math.round((r()-.5)*8);ty=s.y+Math.round((r()-.5)*8);tg=starAt(s.g,tx,ty);if(tg&&(tx!==s.x||ty!==s.y))break;tg=null}
  if(!tg)return null;const d=Math.hypot(tx-s.x,ty-s.y);return{good:g.id,gn:g.n,n,tx,ty,g:s.g,tn:tg.name,reward:Math.round(g.b*n*(1.6+d*.35)+100)}}
 function contractHtml(){const c=S.contract;let h='<h3 style="margin:10px 0 2px">📦 عقود التوصيل</h3>';
@@ -350,7 +355,7 @@ function spaceUpdate(dt,t){lastDt=dt;
  ship.position.addScaledVector(vel,dt);
  if(boost)S.fuel=Math.max(0,S.fuel-dt*0.25);
  fl.scale.setScalar(boost?2.2:1);
- if((firing||keys.Space)&&fireCd<=0){fireCd=Math.max(.08,.28-S.gun*.03);const d=fwd.clone();for(const sx of(S.gun>=3?[-2,2]:[0])){const o=new THREE.Vector3(sx,0,-5).applyQuaternion(ship.quaternion).add(ship.position);shoot(o,d,bullets,bulMat,1100+vel.length(),'p')}beep(700,.06,'square',.03)}
+ if((firing||keys.Space)&&fireCd<=0){const wpn=S.wp||0;fireCd=Math.max(.08,.28-S.gun*.03)*(wpn===2?2.2:1);const d=fwd.clone();for(const sx of(S.gun>=3?[-2,2]:[0])){const o=new THREE.Vector3(sx,0,-5).applyQuaternion(ship.quaternion).add(ship.position);if(wpn===1){for(const sp of[-.13,0,.13]){const dd=d.clone().add(new THREE.Vector3(sp,0,0).applyQuaternion(ship.quaternion)).normalize();shoot(o,dd,bullets,bulMat,1000+vel.length(),'p');bullets[bullets.length-1].userData.dm=.6}}else if(wpn===2){shoot(o,d,bullets,bulMat,800+vel.length(),'p');const nb=bullets[bullets.length-1];nb.userData.dm=2.6;nb.scale.setScalar(2.6)}else shoot(o,d,bullets,bulMat,1100+vel.length(),'p')}beep(700,.06,'square',.03)}
  fireCd-=dt;
  if(S.sh<S.maxSh)S.sh=Math.min(S.maxSh,S.sh+dt*1.5);
  // camera
@@ -364,7 +369,7 @@ function spaceUpdate(dt,t){lastDt=dt;
  // bullets
  for(const list of[bullets,ebullets]){for(let i=list.length-1;i>=0;i--){const b=list[i];b.position.addScaledVector(b.userData.v,dt);b.userData.life-=dt;let dead=b.userData.life<=0;
   if(!dead&&list===bullets){for(const a of asteroids){if(a.visible&&a.position.distanceTo(b.position)<a.userData.r+3){dead=true;a.userData.hp-=S.gun>=2?1.2:1;if(a.userData.hp<=0){a.visible=false;const n=1+(Math.random()*2|0);const gain=Math.min(n,S.cap-cargoCount());if(gain>0){S.cargo.iron=(S.cargo.iron||0)+gain;S.stats.mined+=gain;toast('⛏️ +'+AR(gain)+' حديد')}else toast('الشحنة ممتلئة');if(Math.random()<.08){S.cargo.gem=(S.cargo.gem||0)+(cargoCount()<S.cap?1:0)}questTick();setTimeout(()=>{a.visible=true;a.userData.hp=2},30000)}break}}
-   for(const p of pirates){if(!dead&&p.m.position.distanceTo(b.position)<(p.boss?24:p.kind==='gun'?16:p.kind==='scout'?7:9)){dead=true;p.hp-=12*(1+S.gun*.4);beep(300,.08,'sawtooth',.05);if(p.hp<=0)killPirate(p)}}}
+   for(const p of pirates){if(!dead&&p.m.position.distanceTo(b.position)<(p.boss?24:p.kind==='gun'?16:p.kind==='scout'?7:9)){dead=true;p.hp-=12*(1+S.gun*.4)*((b.userData&&b.userData.dm)||1);beep(300,.08,'sawtooth',.05);if(p.hp<=0)killPirate(p)}}}
   if(!dead&&list===ebullets&&b.position.distanceTo(ship.position)<5){dead=true;damage(b.userData.dmg||(6+curStar.danger*6))}
   if(dead){space.remove(b);list.splice(i,1)}}}
  // pirates
@@ -713,4 +718,4 @@ window.__u={setNemT:v=>{nemT=v},apToggle,get apOn(){return apOn},setRamT:v=>{ram
 loop();
 </script>
 </body>
-                                                                                                                                                                                                                                                                                                        </html>
+  </html>
