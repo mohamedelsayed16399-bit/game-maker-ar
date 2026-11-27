@@ -98,7 +98,7 @@ input{background:#fff;color:#111;text-align:center;width:240px;user-select:text;
  <label class="sub"><input type="checkbox" id="lite" style="width:auto"> وضع خفيف للموبايل الضعيف</label>
  <label class="sub"><input type="checkbox" id="fast" style="width:auto"> مباراة سريعة (المنطقة بتضيق أسرع)</label>
  <div class="sub" id="mstat"></div>
- <div class="sub">كمبيوتر: WASD حركة · ماوس تصويب · كليك نار · R تعمير · G قنبلة · E كواد · X إيموجي · Tab متصدرين · V تعليم مكان للفريق · Space قفز · Shift جري · 1/2/3 أسلحة · كليك يمين تقريب<br>موبايل: عصا يسار للحركة، اسحب يمين للتصويب</div>
+ <div class="sub">كمبيوتر: WASD حركة · ماوس تصويب · كليك نار · R تعمير · G قنبلة · E كواد · X إيموجي · Tab متصدرين · V تعليم مكان للفريق · Space قفز · Shift جري · Z انحناء (وانت بتجري = سلايد 🛷) · M خريطة كبيرة · C رسايل سريعة · 1/2/3 أسلحة · كليك يمين تقريب<br>موبايل: عصا يسار للحركة، اسحب يمين للتصويب</div>
 </div>
 <div class="scr hide" id="lobby"><h2>غرفة الانتظار</h2><div class="sub">شارك الكود مع صحابك</div><div id="codebig">-----</div><div id="plist"></div>
  <div class="sub" id="lstat"></div><button id="bstart">ابدأ المباراة (الباقي بوتس)</button><button id="bleave" class="sec">خروج</button></div>
@@ -652,7 +652,7 @@ function localUpdate(dt){
  else{fwd=-joyV.y;str=joyV.x}
  if(L.para||L.quad!=null||L.dead)L.cr=0;L.crk=(L.crk||0)+((L.slT>0?1.25:(L.cr?1:0))-(L.crk||0))*Math.min(1,dt*10);const sprint=(keys.ShiftLeft||keys.ShiftRight||L.spr)&&!L.cr;
  const l=Math.hypot(fwd,str);if(l>1){fwd/=l;str/=l}
- const sy=Math.sin(L.yaw),cy=Math.cos(L.yaw);L.mdx=-sy*fwd+cy*str;L.mdz=-cy*fwd-sy*str;L.wasSpr=sprint&&(Math.abs(fwd)+Math.abs(str))>.2;
+ const sy=Math.sin(L.yaw),cy=Math.cos(L.yaw);L.mdx=-sy*fwd+cy*str;L.mdz=-cy*fwd-sy*str;L.wasSpr=sprint&&(Math.abs(fwd)+Math.abs(str))>.2;if(L.wasSpr&&!window.__slHint){window.__slHint=1;try{if(!localStorage.getItem('brSlH')){localStorage.setItem('brSlH','1');msg(TOUCH?'💡 اضغط 🧎 وانت بتجري = سلايد':'💡 اضغط Z وانت بتجري = سلايد',3500)}}catch(e){}}
  if(L.para){L.y-=(fwd>0.5&&L.pitch<-0.6?5:9)*dt;L.x+=(-sy*fwd+cy*str)*14*dt;L.z+=(-cy*fwd-sy*str)*14*dt;
   const g=groundAt(L.x,L.z);if(L.y<=g+.05){L.y=g;L.para=false;L.vy=0;msg('هبطت! دوّر على سلاح',2000)}}
  else{let sp=sprint?8.2:5.6;if(groundAt(L.x,L.z)<-.3)sp*=.5;if(L.zoom)sp*=.6;if(L.cr)sp*=.55;
