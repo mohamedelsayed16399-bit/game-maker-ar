@@ -60,6 +60,7 @@ input{background:#fff;color:#111;text-align:center;width:240px;user-select:text;
 </style></head><body>
 <canvas id="c"></canvas>
 <div id="hud">
+ <div id="specn" style="position:absolute;top:44px;left:50%;transform:translateX(-50%);background:#000a;padding:4px 14px;border-radius:14px;display:none;font-size:15px"></div>
  <div id="scope"></div><div id="flash"></div><div id="cross"></div><div id="hit"></div><div id="lowhp"></div><div id="dmg"><i></i></div>
  <div id="top"><div class="chip" id="alive">👥 30</div><div class="chip" id="kills">☠ 0</div><div class="chip" id="ztime">المنطقة</div></div>
  <canvas id="mini" width="130" height="130"></canvas>
@@ -173,7 +174,7 @@ function setAtmos(i){const a=ATM[i%ATM.length];scene.background.setHex(a.sky);sc
 function resize(){renderer.setSize(innerWidth,innerHeight,false);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix()}
 addEventListener('resize',resize);resize();
 let lootMesh,beamMesh,zoneMesh;
-const PADS=[];
+let stepT=0;const PADS=[];
 function buildPads(){const r=rng(777);let tries=0;while(PADS.length<14&&tries++<400){const a=r()*6.28,d=Math.sqrt(r())*300;const x=Math.cos(a)*d,z=Math.sin(a)*d;const h=H(x,z);if(h<2||h>11)continue;if(houses.some(q=>Math.abs(q.x-x)<q.hw+6&&Math.abs(q.z-z)<q.hd+6))continue;if(PADS.some(p=>Math.hypot(p.x-x,p.z-z)<60))continue;PADS.push({x,z,y:h})}
  const m=new THREE.MeshBasicMaterial({color:0x33ffcc,transparent:true,opacity:.75});for(const p of PADS){const c=new THREE.Mesh(new THREE.CylinderGeometry(2.2,2.4,.35,20),m);c.position.set(p.x,p.y+.18,p.z);scene.add(c);const b=new THREE.Mesh(new THREE.CylinderGeometry(.7,1.6,14,10,1,true),new THREE.MeshBasicMaterial({color:0x33ffcc,transparent:true,opacity:.18,side:THREE.DoubleSide}));b.position.set(p.x,p.y+7,p.z);scene.add(b)}}
 function buildScene(){
@@ -406,7 +407,10 @@ function beginLocal(list){
  if(!TOUCH)requestLock();
  const p=me();if(p){p.x=L.x;p.z=L.z;p.y=150}
  msg('اقفز بالباراشوت! وجّه بالحركة واهبط جنب بيت فيه سلاح',4500);G.feed=[];G.spec=null}
-function onMyDeath(ev){L.dead=true;msg('اتقتلت بواسطة '+ev.k+' · المركز '+(ev.pl||'?'),6000);$('bexit').style.display='block';if(document.pointerLockElement)document.exitPointerLock()}
+function specNext(){const al=alivePlayers().filter(p=>p.id!==G.me);if(!al.length)return;const i=al.indexOf(G.spec);G.spec=al[(i+1)%al.length]}
+addEventListener('keydown',e=>{if(L.dead&&(e.code==='ArrowRight'||e.code==='Tab')){e.preventDefault();specNext()}});
+addEventListener('touchstart',e=>{if(L.dead&&G.mode==='play'&&e.target===canvas)specNext()},{passive:true});
+function onMyDeath(ev){L.dead=true;{const k=G.players.get(ev.kid);if(k&&k.alive&&k.id!==G.me)G.spec=k}msg('اتقتلت بواسطة '+ev.k+' · المركز '+(ev.pl||'?'),6000);$('bexit').style.display='block';if(document.pointerLockElement)document.exitPointerLock()}
 function endMatch(o){G.mode='over';$('hud').classList.remove('on');$('touch').classList.remove('on');$('bexit').style.display='none';if(document.pointerLockElement)document.exitPointerLock();
  const won=o.wid===G.me;$('gtitle').textContent=won?'🏆 انت الملك! فزت!':(o.w==='-'?'انتهت المباراة':'الفائز: '+o.w);
  const m=me();
@@ -483,6 +487,7 @@ function localUpdate(dt){
  if(L.para){L.y-=(fwd>0.5&&L.pitch<-0.6?5:9)*dt;L.x+=(-sy*fwd+cy*str)*14*dt;L.z+=(-cy*fwd-sy*str)*14*dt;
   const g=groundAt(L.x,L.z);if(L.y<=g+.05){L.y=g;L.para=false;L.vy=0;msg('هبطت! دوّر على سلاح',2000)}}
  else{let sp=sprint?8.2:5.6;if(groundAt(L.x,L.z)<-.3)sp*=.5;if(L.zoom)sp*=.6;
+  stepT-=dt;if(stepT<=0&&(Math.abs(fwd)+Math.abs(str))>.2&&L.y<=groundAt(L.x,L.z)+.2){stepT=sprint?.27:.4;sfx(380,.05,.06)}
   const glide=(keys.Space||L.jump)&&L.vy<0&&L.y>groundAt(L.x,L.z)+2.5;L.gliding=glide;if(glide)sp=11;
   const nx=L.x+(-sy*fwd+cy*str)*sp*dt,nz=L.z+(-cy*fwd-sy*str)*sp*dt;
   const gn=groundAt(nx,nz);if(gn-L.y<1.1||L.y>gn){L.x=nx;L.z=nz}
@@ -543,7 +548,8 @@ function frame(){
   const m=me();let cx=L.x,cy=L.y+1.65,cz=L.z,yaw=L.yaw,pit=L.pitch;
   if(L.dead||(m&&!m.alive)){
    const al=alivePlayers().filter(p=>p.id!==G.me);if(al.length){if(!G.spec||!G.spec.alive)G.spec=al[Math.floor(Math.random()*al.length)];
-    const s=G.spec;cx=s.x+Math.sin(s.yaw)*4;cz=s.z+Math.cos(s.yaw)*4;cy=s.y+3;yaw=s.yaw;pit=-.25}}
+    const s=G.spec;cx=s.x+Math.sin(s.yaw)*4;cz=s.z+Math.cos(s.yaw)*4;cy=s.y+3;yaw=s.yaw;pit=-.25;$('specn').style.display='block';$('specn').textContent='👁 بتتفرج على: '+s.name+' · (→ أو لمسة = اللي بعده)'}}
+  else $('specn').style.display='none';
   cam.position.set(cx,cy,cz);cam.rotation.set(pit+(cam.userData.kick||0),yaw,0);cam.userData.kick=(cam.userData.kick||0)*.8;
   const wi=L.wpns[L.cur];const fov=(L.zoom?(wi===4?18:50):75);cam.fov+=(fov-cam.fov)*Math.min(1,dt*12);cam.updateProjectionMatrix();
   vm.visible=!L.dead&&!L.para&&wi>=0&&!(L.zoom&&wi===4);if(wi>=0)vm.material.color.setHex(W[wi].col);
