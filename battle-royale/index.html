@@ -767,7 +767,7 @@ function updateHud(){const m=me();if(!m)return;
  {const zz=G.zone;const out=G.mode==='play'&&!L.dead&&zz.ph>=0&&Math.hypot(L.x-zz.cx,L.z-zz.cz)>zz.r;if(out!==frame._oz){frame._oz=out;$('outz').classList.toggle('on',out);if(out){msg('⚠ انت برة الدايرة! ارجع جوه',2200)}}
   if(out){const nw=performance.now();if(nw>(frame._ozT||0)){frame._ozT=nw+1400;beep(260,.25,.12)}const dx=zz.tcx-L.x,dz=zz.tcz-L.z,fx=-Math.sin(L.yaw),fz=-Math.cos(L.yaw),rx=Math.cos(L.yaw),rz=-Math.sin(L.yaw);const a=Math.atan2(dx*rx+dz*rz,dx*fx+dz*fz);frame._arr=['⬆','↗','➡','↘','⬇','↙','⬅','↖'][((Math.round(a/(Math.PI/4))%8)+8)%8]}else frame._arr=''}
  const z=G.zone;$('ztime').textContent=(frame._arr?frame._arr+' ':'')+(z.ph<0?'المنطقة بتبدأ بعد '+Math.max(0,Math.ceil(z.t))+'ث':(z.state==='shrink'?'⚠ بتضيق '+Math.ceil(z.t)+'ث':'ضيقة بعد '+Math.ceil(z.t)+'ث'));
- const wi=L.wpns[L.cur];$('ammo').innerHTML=wi>=0?`<b style="font-size:34px">${L.reloadT>0?'..':L.mag[L.cur]}</b> / ${W[wi].mag}<br>${W[wi].n}`:'ما فيش سلاح';
+ const wi=L.wpns[L.cur];{const lw=wi>=0&&!L.dead&&!L.reloadT&&L.mag[L.cur]>0&&L.mag[L.cur]<=Math.max(2,W[wi].mag*.25)&&W[wi].mag>3;if(lw&&!frame._lw&&G.mode==='play'){beep(300,.1,.08);msg('⚠ دخيرة قليلة — R',1200)}frame._lw=lw}$('ammo').innerHTML=wi>=0?`<b style="font-size:34px;color:${(L.reloadT>0||L.mag[L.cur]>Math.max(2,W[wi].mag*.25))?'#fff':'#ff4a4a'}">${L.reloadT>0?'..':L.mag[L.cur]}</b> / ${W[wi].mag}<br>${W[wi].n}`:'ما فيش سلاح';
  $('wslots').innerHTML=L.wpns.map((w,i)=>`<div class="ws ${i===L.cur?'cur':''}">${i+1}· ${w>=0?W[w].n:'—'}</div>`).join('');
  const now=performance.now();G.feed=G.feed.filter(f=>f.e>now);$('feed').innerHTML=G.feed.map(f=>f.t).join('<br>');
  $('scope').style.display=(L.zoom&&wi===4)?'block':'none'}
