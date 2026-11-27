@@ -109,7 +109,7 @@ function show(id){document.querySelectorAll('.pane').forEach(p=>p.classList.togg
 let lastNum;let mem=LS.get('mem',{}),usage=LS.get('usage',{}),tasks=LS.get('tasks',[]),hist=LS.get('hist',[]);
 function bump(k){usage[k]=(usage[k]||0)+1;usage._h=usage._h||{};const h=new Date().getHours();usage._h[h]=(usage._h[h]||0)+1;LS.set('usage',usage)}
 function add(role,t,save=true){const d=document.createElement('div');d.className='m '+(role==='u'?'u':'b');d.textContent=t;const tm=document.createElement('small');tm.textContent=fmtT(new Date())+(role==='b'?' • اضغط للنسخ':'');d.appendChild(tm);if(role==='b')d.onclick=()=>{try{navigator.clipboard.writeText(t);tm.textContent='تم النسخ ✓'}catch(e){}};$('#msgs').appendChild(d);$('#msgs').scrollTop=1e9;if(save){hist.push([role,t]);hist=hist.slice(-60);LS.set('hist',hist)}}
-const CHIPS=['اهلا','كام الساعة','احسب 120*3.5+7','حول 5 كيلو الى باوند','بعد 45 يوم هيبقى امتى','فكرني اشتري لبن بكرا الساعة 5','اسمي محمد','انت عارف اسمي؟','نكتة','ايه اللي تعرفه عني؟','ابحث في مستنداتي عن الاجازة','عد تنازلي 5 دقايق','قسم 450 على 4','وزني 80 وطولي 175','قسط قرض 100000 بفايده 18 لمده 5 سنين','اختار بين شاي او قهوة','اقتراحات'];
+const CHIPS=['اهلا','كام الساعة','احسب 120*3.5+7','حول 5 كيلو الى باوند','بعد 45 يوم هيبقى امتى','فكرني اشتري لبن بكرا الساعة 5','اسمي محمد','انت عارف اسمي؟','نكتة','ايه اللي تعرفه عني؟','ابحث في مستنداتي عن الاجازة','عد تنازلي 5 دقايق','قسم 450 على 4','وزني 80 وطولي 175','قسط قرض 100000 بفايده 18 لمده 5 سنين','اختار بين شاي او قهوة','اقتراحات','ملخص يومي','سعر الدولار 50','100 دولار بكام'];
 CHIPS.forEach(c=>{const b=document.createElement('button');b.className='s';b.textContent=c;b.onclick=()=>{$('#inp').value=c;go()};$('#chips').appendChild(b)});
 const days=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
 const months=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
@@ -125,6 +125,7 @@ function parseWhen(t){const n=norm(t);const d=new Date();let hit=false,m;
  return hit?d:null}
 function stripWhen(t){return norm(t).replace(/فكرني|ذكرني|ضيف مهمه|ضيف|سجل مهمه|سجل|بعد بكره|بعد بكرا|بكره|بكرا|النهارده|الساعه\s*\d+(:\d+)?\s*(م|مساء|ص|الصبح|بالليل|العصر)?|بعد\s*\d+\s*\S+/g,' ').replace(/\s+/g,' ').trim().replace(/^(اني|ان)\s/,'')}
 function remember(k,v){mem[k]=v;LS.set('mem',mem)}
+let lastIntent=null;
 function brain(raw){const q=raw.trim();const n=norm(q).toLowerCase();let m;
  if(!n)return 'اكتب حاجة وأنا معاك.';
  if(/فكرني|ذكرني|ضيف مهمه|سجل مهمه/.test(n)){const w=parseWhen(q);const title=stripWhen(q)||q;addTask(title,w);bump('task');return `تمام. سجلت: "${title}"`+(w?`\nالموعد: ${fmtD(w)} ${fmtT(w)}\nهنبهك لو الصفحة مفتوحة.`:'')}
@@ -139,11 +140,11 @@ function brain(raw){const q=raw.trim();const n=norm(q).toLowerCase();let m;
  if(/(النهارده|انهارده|التاريخ|اليوم) (ايه|كام)|تاريخ (النهارده|اليوم)/.test(n))return 'النهاردة '+fmtD(new Date());
  if((m=n.match(/بعد (\d+) (يوم|ايام|اسبوع|اسابيع|شهر|شهور)/))&&/امتي|هيبقي|ايه/.test(n)){const d=new Date(),k=+m[1];if(/يوم|ايام/.test(m[2]))d.setDate(d.getDate()+k);else if(/اسبوع|اسابيع/.test(m[2]))d.setDate(d.getDate()+7*k);else d.setMonth(d.getMonth()+k);return fmtD(d)}
  if(m=n.match(/كام يوم (?:باقي )?(?:علي|على|لحد)\s*(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{4}))?/)){const t=new Date(+(m[3]||new Date().getFullYear()),+m[2]-1,+m[1]);const df=Math.ceil((t-new Date())/864e5);return `باقي ${toAr(df)} يوم (${fmtD(t)})`}
- if(m=n.match(/حول\s*([\d.]+)\s*(\S+)\s*(?:الي|الى|ل|لـ)\s*(\S+)/)){const a=UNITS[m[2]],b=UNITS[m[3]];if(a&&b&&a[0]===b[0])return `${toAr(m[1])} ${m[2]} = ${toAr(+(+m[1]*a[1]/b[1]).toFixed(4))} ${m[3]}`;return 'مش عارف أحول بين الوحدتين دول.'}
+ if(m=n.match(/حول\s*([\d.]+)\s*(\S+)\s*(?:الي|الى|ل|لـ)\s*(\S+)/)){const a=UNITS[m[2]],b=UNITS[m[3]];if(a&&b&&a[0]===b[0]){const f=m[2],t=m[3];lastIntent=mm=>{const A=UNITS[f];const B=UNITS[t];return `${toAr(mm[1])} ${f} = ${toAr(+(+mm[1]*A[1]/B[1]).toFixed(4))} ${t}`};return `${toAr(m[1])} ${m[2]} = ${toAr(+(+m[1]*a[1]/b[1]).toFixed(4))} ${m[3]}`}return 'مش عارف أحول بين الوحدتين دول.'}
  if(m=n.match(/حول\s*([\d.]+)\s*(?:درجه )?(مئويه|فهرنهايت)/)){const v=+m[1];return m[2]==='مئويه'?`${toAr(v)}°م = ${toAr((v*9/5+32).toFixed(1))}°ف`:`${toAr(v)}°ف = ${toAr(((v-32)*5/9).toFixed(1))}°م`}
  if(m=n.match(/([\d.]+)\s*%\s*من\s*([\d.]+)/)){return `${toAr(+m[1])}% من ${toAr(+m[2])} = ${toAr(+(m[1]*m[2]/100).toFixed(4))}`}
  if(/نكته|ضحكني/.test(n)){bump('joke');return jokes[Math.floor(Math.random()*jokes.length)]}
- m=n.match(/^(?:احسب|حساب|كام)?\s*([\d\s+\-*/().,^×÷]+)=?\??$/)||n.match(/احسب\s*([\d\s+\-*/().,^×÷]+)/);if(m){let ex=m[1];if(/^\s*[+*\/×÷^]|^\s*-\s/.test(ex)&&typeof lastNum==='number')ex=lastNum+' '+ex;const v=safeCalc(ex);if(v!==null){bump('calc');lastNum=v;return `${ex.trim()} = ${toAr(+v.toFixed(8))}`}}
+ m=n.match(/^(?:احسب|حساب|كام)?\s*([\d\s+\-*/().,^×÷]+)=?\??$/)||n.match(/احسب\s*([\d\s+\-*/().,^×÷]+)/);if(m){let ex=m[1];if(/^\s*[+*\/×÷^]|^\s*-\s/.test(ex)&&typeof lastNum==='number')ex=lastNum+' '+ex;const v=safeCalc(ex);if(v!==null){bump('calc');lastNum=v;lastIntent=null;return `${ex.trim()} = ${toAr(+v.toFixed(8))}`}}
  if(/مهامي|المهام|ايه اللي عليا/.test(n)){const o=tasks.filter(t=>!t.done);return o.length?'مهامك المفتوحة:\n'+o.map((t,i)=>`${toAr(i+1)}. ${t.t}${t.w?' ('+fmtD(new Date(t.w))+' '+fmtT(new Date(t.w))+')':''}`).join('\n'):'مفيش مهام مفتوحة. ✨'}
 
  if(m=n.match(/(?:عد تنازلي|مؤقت|تايمر|نبهني بعد|صحيني بعد)\s*(?:ل|لمده)?\s*(\d+)\s*(ثانيه|ثواني|دقيقه|دقايق|دقائق|ساعه|ساعات)/)){const k=+m[1];const ms=k*(/ثان/.test(m[2])?1e3:/ساع/.test(m[2])?36e5:6e4);const lab='انتهى المؤقت ('+m[1]+' '+m[2]+')';addTask(lab,new Date(Date.now()+ms));bump('timer');return `تمام. المؤقت اشتغل: ${toAr(k)} ${m[2]}. هنبهك لما يخلص (سيب الصفحة مفتوحة).`}
@@ -165,6 +166,13 @@ function brain(raw){const q=raw.trim();const n=norm(q).toLowerCase();let m;
  if(/عندي ايه (النهارده|انهارده)|برنامجي|جدولي/.test(n)){const t=tasks.filter(x=>!x.done&&x.w&&new Date(x.w).toDateString()===new Date().toDateString());return t.length?'النهاردة:\n'+t.map(x=>`• ${fmtT(new Date(x.w))} ${x.t}`).join('\n'):'مفيش مواعيد مسجلة النهاردة.'}
  if(/(امسح|احذف|خلص) (كل )?المهام المنتهيه/.test(n)){const b=tasks.length;tasks=tasks.filter(x=>!x.done);LS.set('tasks',tasks);return `مسحت ${toAr(b-tasks.length)} مهمة منتهية.`}
  if(/اقتراح|نصيحه|انصحني/.test(n))return habitTips();
+
+ if(/^(ملخص اليوم|صباح الفل|briefing|ابدا يومي|خطه اليوم)$/.test(n)||/ملخص (اليوم|يومي)/.test(n)){const t=new Date(),o=tasks.filter(x=>!x.done),td=o.filter(x=>x.w&&new Date(x.w).toDateString()===t.toDateString()),od=o.filter(x=>x.w&&x.w<Date.now());return `ملخص ${fmtD(t)}:\n• مهام مفتوحة: ${toAr(o.length)}\n• مواعيد النهاردة: ${toAr(td.length)}${td.length?'\n'+td.map(x=>'   - '+fmtT(new Date(x.w))+' '+x.t).join('\n'):''}\n• متأخرة: ${toAr(od.length)}\n• ملاحظاتك: ${toAr((LS.get('notes','')||'').split(/\n/).filter(Boolean).length)} سطر\n• حقائق محفوظة عنك: ${toAr(Object.keys(mem).length)}`}
+ if(m=n.match(/(?:دور|ابحث) في (?:ملاحظاتي|مفكرتي)\s*(?:عن)?\s*(.+)/)){const L=(LS.get('notes','')||'').split(/\n/).filter(x=>norm(x).includes(m[1].trim()));return L.length?'لقيت في ملاحظاتك:\n'+L.map(x=>'• '+x).join('\n'):'مالقيتش في ملاحظاتك.'}
+ if(/^(ضيف للملاحظات|دون|سجل ملاحظه)\s+(.+)/.test(n)){m=n.match(/^(?:ضيف للملاحظات|دون|سجل ملاحظه)\s+(.+)/);const orig=q.replace(/^\S+(\s+\S+)?\s/,'');const cur=LS.get('notes','');LS.set('notes',(cur?cur+'\n':'')+m[1]);$('#notes').value=LS.get('notes','');return 'اتضافت للملاحظات.'}
+ if(lastIntent&&(m=n.match(/^(?:و|طب و|وب)\s*(\d+(?:\.\d+)?)\s*(\S+)?$/))){return lastIntent(m)}
+ if((m=n.match(/(\d+(?:\.\d+)?)\s*(?:دولار|\$)\s*(?:بكام|كام)?\s*(?:جنيه)?/))&&/جنيه|بكام|كام/.test(n)){const r=LS.get('usd',null);if(r)lastIntent=mm=>`${toAr(mm[1])} دولار ≈ ${toAr((mm[1]*r).toFixed(2))} جنيه`;return `${toAr(m[1])} دولار ≈ ${toAr((m[1]*r).toFixed(2))} جنيه (بسعر ${toAr(r)} اللي انت سجلته)`;return 'مفيش سعر صرف محفوظ. قولي "سعر الدولار 50" وأنا هحفظه (مفيش إنترنت هنا فمش بجيب أسعار حية).'}
+ if(m=n.match(/سعر (?:ال)?دولار\s*(\d+(?:\.\d+)?)/)){LS.set('usd',+m[1]);return `تمام. سجلت سعر الدولار ${toAr(m[1])} جنيه.`}
  if(/شكرا|تسلم|ميرسي/.test(n))return 'العفو! أنا في الخدمة.';
  if(/انت مين|انت ايه|بتعمل ايه|تعمل ايه/.test(n))return 'أنا مساعد شغال بالكامل جوه متصفحك، من غير سيرفر. بحسب وأحوّل وأرتب مهامك وأفتكر حاجات عنك وأحلل النصوص. مش نموذج لغوي كبير، فمعرفتي العامة محدودة.';
  if((m=n.match(/(?:ابحث|دور|فتش)(?: في)?(?: ملفاتي| مستنداتي)?(?: عن)?\s+(.+)/))&&/ملفاتي|مستنداتي|ابحث|دور/.test(n))return docAnswer(m[1]);
