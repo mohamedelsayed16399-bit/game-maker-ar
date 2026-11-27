@@ -611,7 +611,7 @@ function bind(id,dn,up){const el=$(id);el.addEventListener('touchstart',e=>{e.pr
 bind('bfire',()=>fireTouch=true,()=>fireTouch=false);bind('bjump',()=>L.jump=true,()=>L.jump=false);bind('brel',reload);bind('bgr',throwG);bind('bq',quadToggle);bind('bp',pingAt);bind('be',emote);bind('bc',quickChat);bind('bsw',()=>{for(let i=1;i<=3;i++){const s=(L.cur+i)%3;if(L.wpns[s]>=0){sw(s);break}}});bind('bzoom',zoomTap);bind('bspr',()=>L.spr=!L.spr);bind('bmap',()=>bigOn=!bigOn);
 let flashT=0;const flashM=new THREE.Mesh(new THREE.SphereGeometry(.07,6,4),new THREE.MeshBasicMaterial({color:0xffdd55}));flashM.position.set(.14,-.12,-.65);flashM.visible=false;
 const clock=new THREE.Clock();let netT=0;
-const vm=new THREE.Mesh(new THREE.BoxGeometry(.03,.04,.22),new THREE.MeshLambertMaterial({color:0x333333}));vm.position.set(.14,-.14,-.4);cam.add(vm);cam.add(flashM);
+const vm=new THREE.Mesh(new THREE.BoxGeometry(.03,.04,.22),new THREE.MeshLambertMaterial({color:0x333333}));vm.position.set(.14,-.14,-.4);vm.add((()=>{const g=new THREE.Group();const dk=new THREE.MeshLambertMaterial({color:0x1b1b1b});const gr=new THREE.Mesh(new THREE.BoxGeometry(.028,.07,.04),dk);gr.position.set(0,-.05,.06);g.add(gr);const st=new THREE.Mesh(new THREE.BoxGeometry(.034,.05,.09),dk);st.position.set(0,-.01,.14);g.add(st);const mz=new THREE.Mesh(new THREE.BoxGeometry(.016,.016,.05),dk);mz.position.set(0,.005,-.14);g.add(mz);const ac=new THREE.Mesh(new THREE.BoxGeometry(.036,.008,.16),new THREE.MeshBasicMaterial({color:PAL[(typeof MYCOL==='number'&&MYCOL>=0)?MYCOL%8:5]}));ac.position.set(0,.024,0);g.add(ac);vm.userData.ac=ac;return g})());cam.add(vm);cam.add(flashM);
 function localUpdate(dt){
  const m=me();if(!m||L.dead)return;
  let fwd=0,str=0;if(!TOUCH){fwd=(keys.KeyW||keys.ArrowUp?1:0)-(keys.KeyS||keys.ArrowDown?1:0);str=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0)}
@@ -690,7 +690,7 @@ function frame(){
   else $('specn').style.display='none';
   cam.position.set(cx,cy,cz);cam.rotation.set(pit+(cam.userData.kick||0),yaw,0);cam.userData.kick=(cam.userData.kick||0)*.8;
   const wi=L.wpns[L.cur];const fov=(L.zoom?(wi===4?[18,10,6][L.zlv||0]:50):75);cam.fov+=(fov-cam.fov)*Math.min(1,dt*12);cam.updateProjectionMatrix();
-  vm.visible=!L.dead&&!L.para&&wi>=0&&!(L.zoom&&wi===4);if(wi>=0)vm.material.color.setHex(W[wi].col);
+  vm.visible=!L.dead&&!L.para&&wi>=0&&!(L.zoom&&wi===4);if(wi>=0)vm.material.color.setHex(W[wi].col);vm.userData.ac.material.color.setHex(PAL[MYCOL>=0?MYCOL%8:5]);
   zoneMesh.position.set(G.zone.cx,100,G.zone.cz);zoneMesh.scale.set(Math.max(1,G.zone.r),1,Math.max(1,G.zone.r));
   stepRain(dt);flashT-=dt;flashM.visible=flashT>0&&vm.visible;for(let i=fxs.length-1;i>=0;i--){const f=fxs[i];f.t-=dt;if(f.big){f.m.scale.setScalar(1+(.45-f.t)*18);f.m.material.opacity=Math.max(0,f.t*1.8)}else{f.m.scale.setScalar(1+(.25-f.t)*8);f.m.material.opacity=Math.max(0,f.t*4)}if(f.t<=0){scene.remove(f.m);f.m.material.dispose();fxs.splice(i,1)}}
   for(let i=tracers.length-1;i>=0;i--){tracers[i].t-=dt;if(tracers[i].t<=0){scene.remove(tracers[i].l);tracers[i].l.geometry.dispose();tracers.splice(i,1)}}
