@@ -171,8 +171,11 @@ const sun=new THREE.DirectionalLight(0xfff0d0,1.4);sun.position.set(150,250,100)
 function resize(){renderer.setSize(innerWidth,innerHeight,false);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix()}
 addEventListener('resize',resize);resize();
 let lootMesh,beamMesh,zoneMesh;
+const PADS=[];
+function buildPads(){const r=rng(777);let tries=0;while(PADS.length<14&&tries++<400){const a=r()*6.28,d=Math.sqrt(r())*300;const x=Math.cos(a)*d,z=Math.sin(a)*d;const h=H(x,z);if(h<2||h>11)continue;if(houses.some(q=>Math.abs(q.x-x)<q.hw+6&&Math.abs(q.z-z)<q.hd+6))continue;if(PADS.some(p=>Math.hypot(p.x-x,p.z-z)<60))continue;PADS.push({x,z,y:h})}
+ const m=new THREE.MeshBasicMaterial({color:0x33ffcc,transparent:true,opacity:.75});for(const p of PADS){const c=new THREE.Mesh(new THREE.CylinderGeometry(2.2,2.4,.35,20),m);c.position.set(p.x,p.y+.18,p.z);scene.add(c);const b=new THREE.Mesh(new THREE.CylinderGeometry(.7,1.6,14,10,1,true),new THREE.MeshBasicMaterial({color:0x33ffcc,transparent:true,opacity:.18,side:THREE.DoubleSide}));b.position.set(p.x,p.y+7,p.z);scene.add(b)}}
 function buildScene(){
- buildWorld();
+ buildWorld();buildPads();
  const SEG=220,SZ=900;const geo=new THREE.PlaneGeometry(SZ,SZ,SEG,SEG);geo.rotateX(-Math.PI/2);
  const pos=geo.attributes.position,col=new Float32Array(pos.count*3);
  for(let i=0;i<pos.count;i++){const x=pos.getX(i),z=pos.getZ(i);const h=H(x,z);pos.setY(i,h);
@@ -481,7 +484,8 @@ function localUpdate(dt){
   const gn=groundAt(nx,nz);if(gn-L.y<1.1||L.y>gn){L.x=nx;L.z=nz}
   const lim=R_ISL*1.05;const d=Math.hypot(L.x,L.z);if(d>lim){L.x*=lim/d;L.z*=lim/d}
   resolve(L,.4);
-  const g=groundAt(L.x,L.z);L.vy-=22*dt;L.y+=L.vy*dt;if(L.y<=g){L.y=g;L.vy=0;if(keys.Space||L.jump){L.vy=7.2}}}
+  const g=groundAt(L.x,L.z);L.vy-=22*dt;L.y+=L.vy*dt;if(L.y<=g){L.y=g;L.vy=0;if(keys.Space||L.jump){L.vy=7.2}}
+  if(L.y<=g+.5&&L.vy<=0)for(const p of PADS){if(Math.hypot(p.x-L.x,p.z-L.z)<2.4){L.vy=19;L.y=g+.6;beep(300,.25,.15);setTimeout(()=>beep(700,.2,.12),90);break}}}
  m.x=L.x;m.y=L.y;m.z=L.z;m.yaw=L.yaw;m.pitch=L.pitch;m.para=L.para;m.cur=L.cur;if(G.host)m.wpns=L.wpns;
  L.fireT-=dt;const wi=L.wpns[L.cur];
  if(L.reloadT>0){L.reloadT-=dt;if(L.reloadT<=0&&wi>=0)L.mag[L.cur]=W[wi].mag}
@@ -500,6 +504,7 @@ function drawMini(){const c=mini,S=130,R=S/2;c.clearRect(0,0,S,S);const sc=R/110
  c.strokeStyle='#4af';c.lineWidth=2;c.beginPath();c.arc(z.tcx*sc,z.tcz*sc,Math.max(1,z.tr)*sc,0,6.3);c.stroke();
  c.strokeStyle='#fff';c.beginPath();c.arc(z.cx*sc,z.cz*sc,Math.max(1,z.r)*sc,0,6.3);c.stroke();
  c.fillStyle='#caa';for(const h of houses)c.fillRect((h.x-3)*sc,(h.z-3)*sc,6*sc,6*sc);
+ c.fillStyle='#3fc';for(const p of PADS){c.beginPath();c.arc(p.x*sc,p.z*sc,3,0,6.3);c.fill()}
  c.fillStyle='#f44';for(const p of G.players.values()){if(p.id===G.me||!p.alive||p.para)continue;if(Math.hypot(p.x-L.x,p.z-L.z)<60){c.beginPath();c.arc(p.x*sc,p.z*sc,2.5,0,6.3);c.fill()}}
  if(G.duo){const mm=G.players.get(G.me);c.fillStyle='#3f6';for(const p of G.players.values()){if(p.id===G.me||!p.alive||!mm||p.team!==mm.team)continue;c.beginPath();c.arc(p.x*sc,p.z*sc,4,0,6.3);c.fill()}}
  c.restore();c.fillStyle='#fff';c.beginPath();c.moveTo(R,R-7);c.lineTo(R-5,R+5);c.lineTo(R+5,R+5);c.fill()}
@@ -545,5 +550,5 @@ function frame(){
  else{G.t+=dt;vm.visible=false;cam.fov=75;cam.updateProjectionMatrix();cam.position.set(Math.sin(G.t*.1)*250,70,Math.cos(G.t*.1)*250);cam.lookAt(0,5,0)}
  renderer.render(scene,cam)}
 frame();
-window.__G=G;window.__L=L;window.__dbg={fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
+window.__G=G;window.__L=L;window.__dbg={PADS,fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
 </script></body></html>
