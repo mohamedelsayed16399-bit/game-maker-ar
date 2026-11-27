@@ -722,7 +722,7 @@ function localUpdate(dt){
   const gn=groundAt(nx,nz);if(gn-L.y<1.1||L.y>gn){L.x=nx;L.z=nz}
   const lim=R_ISL*1.05;const d=Math.hypot(L.x,L.z);if(d>lim){L.x*=lim/d;L.z*=lim/d}
   resolve(L,.4);
-  const g=groundAt(L.x,L.z);const MG=$('moon')&&$('moon').checked&&!L.dead;L.vy-=(MG?7:22)*dt;if(L.gliding&&L.vy<-3.2)L.vy=-3.2;L.y+=L.vy*dt;if(L.y<=g){L.y=g;L.vy=0;if(keys.Space||L.jump){L.vy=MG?13:7.2}}
+  const g=groundAt(L.x,L.z);const MG=$('moon')&&$('moon').checked&&!L.dead;L.vy-=(MG?7:22)*dt;if(L.gliding&&L.vy<-3.2)L.vy=-3.2;L.y+=L.vy*dt;if(L.y<=g){if(L.vy<-9&&!L.dead&&!L.para&&L.quad==null&&g>-.3){const k=Math.min(1,(-L.vy-9)/14);G.landDip=.35*k+.1;sfx(120,.18+.2*k,.2);for(let q=0;q<6+Math.round(8*k);q++){const a=Math.random()*6.28,r=.3+Math.random()*1.2;impact(L.x+Math.cos(a)*r,g+.15+Math.random()*.3,L.z+Math.sin(a)*r,0xb9a98a)}}L.y=g;L.vy=0;if(keys.Space||L.jump){L.vy=MG?13:7.2}}
   if(L.y<=g+.5&&L.vy<=0)for(const p of PADS){if(Math.hypot(p.x-L.x,p.z-L.z)<2.4){L.vy=19;L.y=g+.6;msg('اضغط مسافة (أو قفز) في الهوا عشان تطير بالجلايدر',2200);beep(300,.25,.15);setTimeout(()=>beep(700,.2,.12),90);break}}}
  m.x=L.x;m.y=L.y;m.z=L.z;m.cr=L.cr?1:0;m.yaw=L.yaw;m.pitch=L.pitch;m.para=L.para;m.cur=L.cur;if(G.host)m.wpns=L.wpns;
  L.fireT-=dt;const wi=L.wpns[L.cur];
@@ -792,7 +792,7 @@ function frame(){
    const al=alivePlayers().filter(p=>p.id!==G.me);if(al.length){if(!G.spec||!G.spec.alive)G.spec=mateAlive()||al[Math.floor(Math.random()*al.length)];
     const s=G.spec;cx=s.x+Math.sin(s.yaw)*4;cz=s.z+Math.cos(s.yaw)*4;cy=s.y+3;yaw=s.yaw;pit=-.25;$('specn').style.display='block';$('specn').textContent='👁 بتتفرج على: '+s.name+' · (→ أو لمسة = اللي بعده)'}}
   else $('specn').style.display='none';
-  const grd=!L.dead&&!L.para&&L.quad==null&&L.y<=groundAt(L.x,L.z)+.3;const mvs=grd?Math.min(1,Math.hypot(L.mdx||0,L.mdz||0)):0;G.bobT=(G.bobT||0)+dt*(L.wasSpr?13:9)*mvs;const bobA=mvs*(L.wasSpr?1:.55)*(L.zoom?0:1);cam.position.set(cx,cy+Math.abs(Math.sin(G.bobT))*.05*bobA,cz);cam.rotation.set(pit+(cam.userData.kick||0),yaw,Math.sin(G.bobT)*.006*bobA);cam.userData.kick=(cam.userData.kick||0)*.8;
+  const grd=!L.dead&&!L.para&&L.quad==null&&L.y<=groundAt(L.x,L.z)+.3;const mvs=grd?Math.min(1,Math.hypot(L.mdx||0,L.mdz||0)):0;G.bobT=(G.bobT||0)+dt*(L.wasSpr?13:9)*mvs;const bobA=mvs*(L.wasSpr?1:.55)*(L.zoom?0:1);G.landDip=(G.landDip||0)*Math.max(0,1-dt*7);cam.position.set(cx,cy+Math.abs(Math.sin(G.bobT))*.05*bobA-G.landDip,cz);cam.rotation.set(pit+(cam.userData.kick||0),yaw,Math.sin(G.bobT)*.006*bobA);cam.userData.kick=(cam.userData.kick||0)*.8;
   {const wq=L.wpns[L.cur];const tg=(grd&&mvs>.2?.3:0)+(L.wasSpr&&grd?.45:0)+(L.cr?-.2:0)+(wq>=0&&L.fireT>0&&L.fireT>W[wq].r*.4?.4:0)+(grd?0:.5);G.bloom=(G.bloom||0)+(tg-(G.bloom||0))*Math.min(1,dt*10);const cx0=$('cross');if(cx0)cx0.style.transform='scale('+(1+G.bloom).toFixed(2)+')'}const wi=L.wpns[L.cur];const fov=(L.zoom?(wi===4?[18,10,6][L.zlv||0]:50):(L.wasSpr&&grd&&!L.dead?81:75));cam.fov+=(fov-cam.fov)*Math.min(1,dt*12);cam.updateProjectionMatrix();
   vm.visible=!L.dead&&!L.para&&wi>=0&&!(L.zoom&&wi===4);if(wi>=0)vm.material.color.setHex(W[wi].col);vm.userData.ac.material.color.setHex(PAL[MYCOL>=0?MYCOL%8:5]);
   zoneMesh.position.set(G.zone.cx,100,G.zone.cz);zoneMesh.scale.set(Math.max(1,G.zone.r),1,Math.max(1,G.zone.r));
