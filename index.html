@@ -175,7 +175,7 @@ const COLS=["#ffb020","#ff4d6d","#38d27a","#49a6ff","#b06cff","#f5f5f5"];
 const PAL=[
  {t:"player",n:"اللاعب",w:1,h:1},{t:"block",n:"منصة",w:3,h:1},{t:"mover",n:"منصة متحركة",w:3,h:1},
  {t:"coin",n:"عملة",w:1,h:1},{t:"enemy",n:"عدو",w:1,h:1},{t:"flyer",n:"طائر",w:1,h:1},
- {t:"spike",n:"شوك",w:1,h:1},{t:"spring",n:"نابض",w:1,h:1},{t:"goal",n:"العلم",w:1,h:1},{t:"sign",n:"لافتة",w:1,h:1},{t:"chaser",n:"عدو مطارد",w:1,h:1},{t:"turret",n:"مدفع",w:1,h:1},{t:"boss",n:"زعيم",w:3,h:3},{t:"heart",n:"قلب",w:1,h:1},{t:"star",n:"نجمة قوة",w:1,h:1},{t:"portal",n:"بوابة سحرية",w:1,h:2},{t:"saw",n:"منشار متحرك",w:1,h:1},{t:"key",n:"مفتاح",w:1,h:1},{t:"door",n:"باب",w:1,h:3},{t:"check",n:"نقطة حفظ",w:1,h:1}
+ {t:"spike",n:"شوك",w:1,h:1},{t:"spring",n:"نابض",w:1,h:1},{t:"goal",n:"العلم",w:1,h:1},{t:"sign",n:"لافتة",w:1,h:1},{t:"chaser",n:"عدو مطارد",w:1,h:1},{t:"turret",n:"مدفع",w:1,h:1},{t:"boss",n:"زعيم",w:3,h:3},{t:"heart",n:"قلب",w:1,h:1},{t:"star",n:"نجمة قوة",w:1,h:1},{t:"portal",n:"بوابة سحرية",w:1,h:2},{t:"saw",n:"منشار متحرك",w:1,h:1},{t:"ice",n:"جليد زلق",w:2,h:1},{t:"belt",n:"سير متحرك",w:3,h:1},{t:"key",n:"مفتاح",w:1,h:1},{t:"door",n:"باب",w:1,h:3},{t:"check",n:"نقطة حفظ",w:1,h:1}
 ];
 const PINFO={}; PAL.forEach(p=>PINFO[p.t]=p);
 const RESIZE={block:1,mover:1,door:1};
@@ -276,6 +276,8 @@ function drawObj(c,o,px,py,pw,ph,th,t){
   case"coin":{
     const k=Math.abs(Math.cos(t*3+o.x));c.fillStyle="#ffcc00";c.beginPath();c.ellipse(px+s/2,py+s/2,s*0.28*(0.35+0.65*k),s*0.3,0,0,7);c.fill();
     c.strokeStyle="#b8860b";c.lineWidth=2;c.stroke();break}
+  case"ice":{c.fillStyle="#a5d8ff";c.fillRect(px,py,pw,ph);c.fillStyle="#d0ebff";c.fillRect(px,py,pw,6);c.strokeStyle="#ffffffaa";c.lineWidth=2;for(let xx=0;xx<pw;xx+=T){c.beginPath();c.moveTo(px+xx+8,py+ph-8);c.lineTo(px+xx+22,py+10);c.stroke()}c.strokeStyle="#4dabf7";c.strokeRect(px+1,py+1,pw-2,ph-2);break}
+  case"belt":{c.fillStyle="#495057";c.fillRect(px,py,pw,ph);c.fillStyle="#ffd43b";const off=(t*40)%T;for(let xx=-T;xx<pw;xx+=T){const x0=px+xx+off;if(x0<px-4||x0>px+pw-14)continue;c.beginPath();c.moveTo(x0,py+10);c.lineTo(x0+14,py+ph/2);c.lineTo(x0,py+ph-10);c.lineTo(x0+5,py+ph/2);c.fill()}c.strokeStyle="#212529";c.lineWidth=3;c.strokeRect(px+1.5,py+1.5,pw-3,ph-3);break}
   case"saw":{const hx=px+s/2,hy=py+s/2,R=17;c.save();c.translate(hx,hy);c.rotate(t*9+o.x);c.fillStyle="#ced4da";c.beginPath();for(let i=0;i<16;i++){const a=i*Math.PI/8,r=i%2?R*0.75:R;c.lineTo(Math.cos(a)*r,Math.sin(a)*r)}c.closePath();c.fill();c.strokeStyle="#495057";c.lineWidth=2;c.stroke();c.fillStyle="#e03131";c.beginPath();c.arc(0,0,5,0,7);c.fill();c.restore();break}
   case"portal":{const hx=px+s/2,hy=py+ph/2,rr0=Math.min(pw,ph)/2+6;for(let k=0;k<4;k++){c.strokeStyle=["#9775fa","#74c0fc","#da77f2","#fff"][k];c.lineWidth=3;c.beginPath();c.ellipse(hx,hy,(rr0-k*4)*0.62,(ph/2-2-k*5),t*(k%2?-2:2),0,Math.PI*1.5);c.stroke()}c.fillStyle="#9775fa44";c.beginPath();c.ellipse(hx,hy,rr0*0.6,ph/2-3,0,0,7);c.fill();break}
   case"star":{const b=Math.sin(t*5+o.x)*3,hx=px+s/2,hy=py+s/2+b;c.fillStyle="#ffd43b";c.beginPath();for(let i=0;i<10;i++){const r=i%2?8:19,a=-Math.PI/2+i*Math.PI/5;c.lineTo(hx+Math.cos(a)*r,hy+Math.sin(a)*r)}c.closePath();c.fill();c.strokeStyle="#f08c00";c.lineWidth=2;c.stroke();break}
@@ -604,10 +606,12 @@ function startPlay(fromLevel,full){
 function loadLevel(){
   const lv=G.levels[P.lvl];
   P.w=lv.w*T;P.h=lv.h*T;
-  P.bul=[];P.turrets=[];P.hearts=[];P.stars=[];P.portals=[];P.saws=[];P.pcd=0;P.power=0;P.boss=null;P.solids=[];P.doors=[];P.keys=[];P.checks=[];P.movers=[];P.coins=[];P.enemies=[];P.hazards=[];P.springs=[];P.signs=[];P.goal=null;P.got=0;P.player=null;
+  P.bul=[];P.turrets=[];P.hearts=[];P.stars=[];P.portals=[];P.saws=[];P.icez=[];P.belts=[];P.pcd=0;P.power=0;P.boss=null;P.solids=[];P.doors=[];P.keys=[];P.checks=[];P.movers=[];P.coins=[];P.enemies=[];P.hazards=[];P.springs=[];P.signs=[];P.goal=null;P.got=0;P.player=null;
   for(const o of lv.o){
     const r={x:o.x*T,y:o.y*T,w:o.w*T,h:o.h*T};
-    if(o.t==="block")P.solids.push(r);
+    if(o.t==="ice"){r.k="ice";P.solids.push(r);P.icez.push(r)}
+    else if(o.t==="belt"){r.k="belt";P.solids.push(r);P.belts.push(Object.assign(r,{o}))}
+    else if(o.t==="block")P.solids.push(r);
     else if(o.t==="door")P.doors.push({...r,open:false});
     else if(o.t==="key")P.keys.push({x:r.x,y:r.y,w:T,h:T,o});
     else if(o.t==="check")P.checks.push({x:r.x,y:r.y,w:T,h:T,on:false});
@@ -700,10 +704,11 @@ function stepPlay(dt){
   // player input
   const mx=ax();
   if(plat){
-    const PH=PHYS[G.ph|0]||PHYS[0];const sp=PH.sp,acc=pl.on?2600:1700;
+    const PH=PHYS[G.ph|0]||PHYS[0];const sp=PH.sp;const feet={x:pl.x,y:pl.y+pl.h,w:pl.w,h:5};const onIce=pl.on&&P.icez.some(r=>overlap(feet,r));const belt=pl.on?P.belts.find(r=>overlap(feet,r)):null;const acc=pl.on?(onIce?260:2600):1700;
     const tv=mx*sp;
     if(pl.vx<tv)pl.vx=Math.min(tv,pl.vx+acc*dt);else if(pl.vx>tv)pl.vx=Math.max(tv,pl.vx-acc*dt);
-    if(mx===0&&pl.on)pl.vx*=0.7;
+    if(mx===0&&pl.on)pl.vx*=onIce?0.985:0.7;
+    if(belt)pl.x+=(belt.o&&belt.o.v?-1:1)*140*dt;
     if(mx)pl.face=mx;
     pl.coy-=dt;pl.buf-=dt;
     const jk=jumpK();
@@ -841,7 +846,7 @@ function renderPlay(){
   cx.translate(-P.cam.x+sh,-P.cam.y+sh);
   const vx0=P.cam.x-T,vx1=P.cam.x+CW/sc+T,vy0=P.cam.y-T,vy1=P.cam.y+CH/sc+T;
   const vis=r=>r.x+r.w>vx0&&r.x<vx1&&r.y+r.h>vy0&&r.y<vy1;
-  for(const s of P.solids)if(vis(s))drawObj(cx,{t:"block"},s.x,s.y,s.w,s.h,th,t);
+  for(const s of P.solids)if(vis(s))drawObj(cx,{t:s.k||"block"},s.x,s.y,s.w,s.h,th,t);
   for(const m of P.movers)if(vis(m))drawObj(cx,{t:"mover"},m.x,m.y,m.w,m.h,th,t);
   for(const d of P.doors)if(!d.open&&vis(d))drawObj(cx,{t:"door"},d.x,d.y,d.w,d.h,th,t);
   for(const k of P.keys)drawObj(cx,{t:"key",x:k.o.x},k.x,k.y,0,0,th,t);
