@@ -748,6 +748,7 @@ function drawMini(){const c=mini,S=130,R=S/2;c.clearRect(0,0,S,S);const sc=R/110
  if(POND.r){c.fillStyle='#3a8fd0';c.beginPath();c.arc(POND.x*sc,POND.z*sc,POND.r*.7*sc,0,6.3);c.fill()}c.fillStyle='#ff8a1f';for(const k of CAMPS){c.beginPath();c.arc(k.x*sc,k.z*sc,2.2,0,6.3);c.fill()}c.fillStyle='#caa';for(const h of houses)c.fillRect((h.x-3)*sc,(h.z-3)*sc,6*sc,6*sc);if(FORT.x!==undefined){c.fillStyle='#ff9a3c';c.fillRect(FORT.x*sc-4,FORT.z*sc-4,8,8)}if(MILL.piv){c.fillStyle='#e9d9b0';c.fillRect(MILL.x*sc-3,MILL.z*sc-3,6,6)}if(BCN.piv){c.fillStyle='#ffe066';c.beginPath();c.arc(BCN.x*sc,BCN.z*sc,4,0,6.3);c.fill()}
  {const mm=me();if(G.duo&&mm)for(const p of G.players.values()){if(!p.alive&&p.rvT!==undefined&&p.id!==G.me&&p.team===mm.team&&G.t-p.rvT<45){c.fillStyle='#3f6';c.fillRect(p.x*sc-5,p.z*sc-1.5,10,3);c.fillRect(p.x*sc-1.5,p.z*sc-5,3,10)}}}
  for(const q of STRIKES){c.fillStyle='rgba(255,30,30,.45)';c.beginPath();c.arc(q.x*sc,q.z*sc,14*sc+2,0,6.3);c.fill()}
+ for(const i of DEATHS){if(taken.has(i))continue;const l=LOOT[i];c.fillStyle='#'+LT[l.t].c.toString(16).padStart(6,'0');c.beginPath();c.arc(l.x*sc,l.z*sc,2.6,0,6.3);c.fill();c.strokeStyle='#000';c.lineWidth=1;c.stroke()}
  c.strokeStyle='#ffe44a';c.lineWidth=2;for(const q of PINGS){c.beginPath();c.arc(q.x*sc,q.z*sc,5,0,6.3);c.stroke()}
  c.fillStyle='#3fc';for(const p of PADS){c.beginPath();c.arc(p.x*sc,p.z*sc,3,0,6.3);c.fill()}
  c.fillStyle='#f44';for(const p of G.players.values()){if(p.id===G.me||!p.alive||p.para)continue;if(Math.hypot(p.x-L.x,p.z-L.z)<60){c.beginPath();c.arc(p.x*sc,p.z*sc,2.5,0,6.3);c.fill()}}
@@ -758,7 +759,7 @@ function drawBig(){const cv=$('big');cv.style.display=bigOn?'block':'none';if(!b
  c.fillStyle='#4a7a3a';c.beginPath();c.arc(0,0,R_ISL*.85*sc,0,6.3);c.fill();c.fillStyle='#35602a';for(const t of trees)c.fillRect(t.x*sc,t.z*sc,1.5,1.5);
  c.fillStyle='#e8d8b0';for(const h of houses)c.fillRect((h.x-5)*sc,(h.z-5)*sc,10*sc,10*sc);
  const z=G.zone;c.lineWidth=2;c.strokeStyle='#4af';c.beginPath();c.arc(z.tcx*sc,z.tcz*sc,Math.max(1,z.tr)*sc,0,6.3);c.stroke();c.strokeStyle='#fff';c.beginPath();c.arc(z.cx*sc,z.cz*sc,Math.max(1,z.r)*sc,0,6.3);c.stroke();
- c.font='22px sans-serif';for(const i of DROPS){if(LOOT[i].on&&!taken.has(i))c.fillText('📦',LOOT[i].x*sc-11,LOOT[i].z*sc+8)}
+ c.font='22px sans-serif';for(const i of DROPS){if(LOOT[i].on&&!taken.has(i))c.fillText('📦',LOOT[i].x*sc-11,LOOT[i].z*sc+8)}for(const i of DEATHS){if(taken.has(i))continue;const l=LOOT[i];c.fillStyle='#'+LT[l.t].c.toString(16).padStart(6,'0');c.beginPath();c.arc(l.x*sc,l.z*sc,5,0,6.3);c.fill()}
  c.fillStyle='#fff';c.save();c.translate(L.x*sc,L.z*sc);c.rotate(-L.yaw);c.beginPath();c.moveTo(0,-9);c.lineTo(-6,6);c.lineTo(6,6);c.fill();c.restore();
  c.fillStyle='#fff';c.font='14px sans-serif';c.fillText('M اقفل',-S/2+10,-S/2+20);c.restore()}
 function updateHud(){const m=me();if(!m)return;
