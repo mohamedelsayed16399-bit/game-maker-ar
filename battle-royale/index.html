@@ -84,6 +84,7 @@ input{background:#fff;color:#111;text-align:center;width:240px;user-select:text;
  <h1>👑 ملك الجزيرة</h1><div class="sub">باتل رويال ثلاثي الأبعاد · 30 لاعب · نزول بالباراشوت · منطقة بتضيق</div>
  <div class="sub" id="stats" style="color:#ffd54a"></div>
  <input id="nm" maxlength="14" placeholder="اسمك">
+ <div id="cols" style="display:flex;gap:7px;justify-content:center;margin:6px 0"></div>
  <button id="bsolo">لعب فردي ضد 29 بوت</button>
  <button id="bhost" class="sec">إنشاء غرفة أونلاين</button>
  <div class="row"><input id="jc" maxlength="5" placeholder="كود الغرفة" style="width:150px;direction:ltr;text-transform:uppercase"><button id="bjoin" class="sec" style="min-width:80px">دخول</button></div>
@@ -280,7 +281,11 @@ function makeAvatar(col,name){const g=new THREE.Group();const mb=new THREE.MeshL
  const chute=new THREE.Mesh(new THREE.SphereGeometry(1.6,10,6,0,6.3,0,1.2),new THREE.MeshLambertMaterial({color:col,side:THREE.DoubleSide}));chute.position.y=3.6;
  const hel=new THREE.Mesh(new THREE.SphereGeometry(.26,10,6,0,6.3,0,1.5),new THREE.MeshLambertMaterial({color:col}));hel.position.y=1.86;const bp=new THREE.Mesh(new THREE.BoxGeometry(.4,.5,.2),new THREE.MeshLambertMaterial({color:0x333a44}));bp.position.set(0,1.25,.27);const tag=nameTag(name||'?');
  g.add(l1,l2,tor,head,gun,arm,chute,hel,bp,tag);g.userData={l1,l2,gun,chute,tag};scene.add(g);return g}
-function colorFor(id){return new THREE.Color().setHSL((id*0.137)%1,.65,.5).getHex()}
+const PAL=[0xe53935,0xfb8c00,0xfdd835,0x43a047,0x00acc1,0x1e88e5,0x8e24aa,0xec407a];
+let MYCOL=-1;try{MYCOL=+(localStorage.getItem('brCol')||-1)}catch(e){}
+function renderCols(){const d=$('cols');if(!d)return;d.innerHTML='';[-1,...PAL.keys()].forEach(i=>{const b=document.createElement('div');b.style.cssText='width:26px;height:26px;border-radius:50%;cursor:pointer;border:3px solid '+(i===MYCOL?'#fff':'#0000')+';background:'+(i<0?'conic-gradient(red,yellow,lime,cyan,blue,magenta,red)':'#'+PAL[i].toString(16).padStart(6,'0'));b.onclick=()=>{MYCOL=i;try{localStorage.setItem('brCol',i)}catch(e){}renderCols()};d.appendChild(b)})}
+setTimeout(renderCols,0);
+function colorFor(id){const p=G.players&&G.players.get(id);if(p&&p.col!=null&&p.col>=0&&PAL[p.col]!=null)return PAL[p.col];return new THREE.Color().setHSL((id*0.137)%1,.65,.5).getHex()}
 let AC,NB;
 function audio(){if(AC)return;try{AC=new (window.AudioContext||window.webkitAudioContext)();NB=AC.createBuffer(1,AC.sampleRate*.4,AC.sampleRate);const d=NB.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1}catch(e){}}
 function sfx(f,vol,dur){if(!AC)return;const s=AC.createBufferSource();s.buffer=NB;const fl=AC.createBiquadFilter();fl.type='lowpass';fl.frequency.value=f*3;const g=AC.createGain();g.gain.setValueAtTime(vol*VOL,AC.currentTime);g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+(dur||.18));s.connect(fl);fl.connect(g);g.connect(AC.destination);s.start()}
@@ -367,14 +372,14 @@ function pickupFor(p,l){const it=LT[l.t];let ok=false;
 function startMatch(){
  G.over=false;G.players.clear();resetLoot();G.t=0;
  const spawnR=rng(Date.now()&0xffff);
- G.tsize=$('squad').checked?4:($('duo').checked?2:1);G.duo=G.tsize>1;const hum=[{id:0,name:G.myName||'أنا'}];for(const [id,c] of G.conns)hum.push({id,name:c.pname||('لاعب'+id)});
+ G.tsize=$('squad').checked?4:($('duo').checked?2:1);G.duo=G.tsize>1;const hum=[{id:0,name:G.myName||'أنا',col:MYCOL}];for(const [id,c] of G.conns)hum.push({id,name:c.pname||('لاعب'+id),col:c.pcol});
  let id=100;const total=30;const names=NAMES.slice().sort(()=>Math.random()-.5);
  const mkPos=()=>{for(let i=0;i<50;i++){const a=spawnR()*6.28,r=Math.sqrt(spawnR())*280;const x=Math.cos(a)*r,z=Math.sin(a)*r;if(H(x,z)>1)return[x,z]}return[0,0]};
- for(const h of hum){const p=newPlayer(h.id,h.name,true);const [x,z]=mkPos();p.x=x;p.z=z;p.y=150;G.players.set(p.id,p)}
+ for(const h of hum){const p=newPlayer(h.id,h.name,true);p.col=h.col==null?-1:h.col;const [x,z]=mkPos();p.x=x;p.z=z;p.y=150;G.players.set(p.id,p)}
  let bi=0;while(G.players.size<total){const pr=Math.random(),pers=pr<.22?'r':pr<.42?'c':'n';const p=newPlayer(id++,(pers==='r'?'🔥':pers==='c'?'🏕':'')+names[bi++%names.length]+' '+(10+Math.floor(Math.random()*89)),false);const [x,z]=mkPos();p.x=x;p.z=z;p.y=150;const [tx,tz]=mkPos();p.ai={tx,tz,wt:0,react:0,vis:0,tgt:null,stuck:0,lx:x,lz:z,sT:0,sd:1,skill:Math.min(.95,.4+Math.random()*.5+(pers==='c'?.12:0)),pers};G.players.set(p.id,p)}
  {let i=0;for(const p of G.players.values()){p.team=Math.floor(i/(G.tsize||1));i++}}
  const f=G.fast?.45:1;G.zone={cx:0,cz:0,r:420,tcx:0,tcz:0,tr:420,ph:-1,t:(25+20)*f,state:'wait',scx:0,scz:0,sr:420,dur:1};
- const list=[...G.players.values()].map(p=>({id:p.id,n:p.name,h:p.human,x:p.x,z:p.z,tm:p.team}));
+ const list=[...G.players.values()].map(p=>({id:p.id,n:p.name,h:p.human,x:p.x,z:p.z,tm:p.team,c:p.col}));
  for(const [cid] of G.conns)sendTo(cid,{t:'start',list,fast:G.fast,me:cid,duo:G.duo});
  beginLocal(list)}
 function spawnDrop(z){const id=DROPS.find(i=>taken.has(i)&&!LOOT[i].on);if(id===undefined)return;for(let k=0;k<40;k++){const a=Math.random()*6.28,r=Math.sqrt(Math.random())*z.tr*.7;const x=z.tcx+Math.cos(a)*r,zz=z.tcz+Math.sin(a)*r;if(H(x,zz)>1.5&&!houseAt(x,zz)){const o={t:'ad',i:id,x:+x.toFixed(1),z:+zz.toFixed(1)};doDrop(o);broadcast(o);return}}}
@@ -453,7 +458,7 @@ function applySnap(o){
 function onMsg(from,o){
  if(G.host){
   const p=G.players.get(from);
-  if(o.t==='hello'){const c=G.conns.get(from);if(c){c.pname=String(o.n||'لاعب').slice(0,14)}lobbyBroadcast()}
+  if(o.t==='hello'){const c=G.conns.get(from);if(c){c.pname=String(o.n||'لاعب').slice(0,14);c.pcol=(Number.isInteger(o.c)&&o.c>=0&&o.c<8)?o.c:-1}lobbyBroadcast()}
   else if(o.t==='st'&&p&&p.alive&&isFinite(o.x+o.y+o.z)){p.x=o.x;p.y=o.y;p.z=o.z;p.yaw=o.yaw;p.pitch=o.p;p.para=!!o.pa;p.cur=o.c|0}
   else if(o.t==='throw'&&p&&p.alive&&!p.para&&(p.gren||0)>0&&Array.isArray(o.o)&&Array.isArray(o.v)&&isFinite(o.o[0]+o.o[1]+o.o[2]+o.v[0]+o.v[1]+o.v[2])&&Math.hypot(o.o[0]-p.x,o.o[2]-p.z)<8&&Math.hypot(o.v[0],o.v[1],o.v[2])<28){p.gren--;hostThrow(p,o.o,o.v)}
   else if(o.t==='emo'&&p&&p.alive&&EMO[o.e]&&G.t-(p.lastE||-9)>1){p.lastE=G.t;hostEmo(p,o.e)}
@@ -495,7 +500,7 @@ function beginLocal(list){
  try{if(!localStorage.getItem('brTut'))$('tut').style.display='flex'}catch(e){}
  {const a0=list[0]||{x:0,z:0};const nm=setAtmos(Math.floor(Math.abs(a0.x*7+a0.z*13))%ATM.length);setTimeout(()=>msg('الجو: '+nm,2500),400)}
  for(const a of avatars.values())scene.remove(a);avatars.clear();
- if(!G.host){G.players.clear();for(const a of list){const p=newPlayer(a.id,a.n,a.h);p.team=a.tm;G.players.set(a.id,p)}}
+ if(!G.host){G.players.clear();for(const a of list){const p=newPlayer(a.id,a.n,a.h);p.team=a.tm;p.col=a.c==null?-1:a.c;G.players.set(a.id,p)}}
  const my=list.find(a=>a.id===G.me);L.x=my.x;L.z=my.z;L.y=150;L.vy=0;L.para=true;L.wpns=[0,-1,-1];L.cur=0;L.mag=[12,0,0];L.lastW=[0,-1,-1];L.reloadT=0;L.yaw=Math.random()*6.28;L.pitch=-.3;L.dead=false;L.zoom=false;
  ['menu','lobby','go'].forEach(i=>$(i).classList.add('hide'));$('hud').classList.add('on');$('bexit').style.display='none';if(TOUCH)$('touch').classList.add('on');
  if(!TOUCH)requestLock();
@@ -540,7 +545,7 @@ function joinRoom(){
  setStat('بنوصل للغرفة...');const peer=new Peer();G.peer=peer;
  const to=setTimeout(()=>{setStat('الغرفة مش لاقيها أو الاتصال فشل')},12000);
  peer.on('open',()=>{const c=peer.connect('brzk26-'+code,{reliable:true});G.hostConn=c;
-  c.on('open',()=>{clearTimeout(to);c.send({t:'hello',n:G.myName});$('menu').classList.add('hide');$('lobby').classList.remove('hide');$('codebig').textContent=code;$('bstart').style.display='none';$('plist').textContent='...'});
+  c.on('open',()=>{clearTimeout(to);c.send({t:'hello',n:G.myName,c:MYCOL});$('menu').classList.add('hide');$('lobby').classList.remove('hide');$('codebig').textContent=code;$('bstart').style.display='none';$('plist').textContent='...'});
   c.on('data',o=>onMsg(0,o));c.on('close',()=>{if(G.mode!=='over'&&G.mode!=='menu'){toMenu();setStat('الهوست فصل')}})});
  peer.on('error',e=>setStat('خطأ: '+e.type))}
 function toMenu(){G.t0=0;showStats();G.mode='menu';G.over=false;['lobby','go'].forEach(i=>$(i).classList.add('hide'));$('menu').classList.remove('hide');$('hud').classList.remove('on');$('touch').classList.remove('on');$('bexit').style.display='none';
