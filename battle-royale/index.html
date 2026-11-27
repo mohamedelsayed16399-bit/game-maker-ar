@@ -301,7 +301,7 @@ function buildScene(){
 buildScene();
 const LOOT=[];
 const LT=[{n:'مسدس',w:0,c:0xcccccc},{n:'رشاش',w:1,c:0x4aa3ff},{n:'بندقية',w:2,c:0x66dd66},{n:'شوتجن',w:3,c:0xff8844},{n:'قناص',w:4,c:0xcc66ff},{n:'علاج',c:0xff4466,hp:55},{n:'درع',c:0x33ccff,sh:50},{n:'إمداد',c:0xffd700,drop:1},{n:'ريفولفر',w:5,c:0xffd54a},{n:'رشاش ثقيل',w:6,c:0xff4a4a},{n:'نصف آلي',w:7,c:0x40e0d0},{n:'قاذف صاروخ',w:8,c:0xff5522}];
-const DROPS=[];
+const DROPS=[],DEATHS=[];
 function genLoot(){const r=rng(555);const pick=()=>{const v=r();return v<.12?0:v<.27?1:v<.4?2:v<.5?3:v<.56?4:v<.6?8:v<.64?9:v<.69?10:v<.84?5:6};
  const add=(x,z)=>{LOOT.push({id:LOOT.length,t:pick(),x,z,y:groundAt(x,z)+.5})};
  for(const h of houses){const k=h.big?7:4;for(let i=0;i<k;i++)add(h.x+(r()-.5)*(h.hw*2-2),h.z+(r()-.5)*(h.hd*2-2))}
@@ -309,7 +309,7 @@ function genLoot(){const r=rng(555);const pick=()=>{const v=r();return v<.12?0:v
  if(BCN.piv){const ts=[11,10,2,9,4,6,5,6];ts.forEach((t,i)=>{const an=i/ts.length*6.283,x=BCN.x+Math.cos(an)*5.4,z=BCN.z+Math.sin(an)*5.4;LOOT.push({id:LOOT.length,t,x,z,y:groundAt(x,z)+.5})})}
  if(MILL.piv){const ts=[2,6,5,9,6,1];ts.forEach((t,i)=>{const an=i/ts.length*6.283+.7,x=MILL.x+Math.cos(an)*5,z=MILL.z+Math.sin(an)*5;LOOT.push({id:LOOT.length,t,x,z,y:groundAt(x,z)+.5})})}
  if(FORT.x!==undefined){const ts=[4,10,9,6,5,1,6,7];ts.forEach((t,i)=>{const an=i/ts.length*6.283+.4,rr=i%2?5:8.5,x=FORT.x+Math.cos(an)*rr,z=FORT.z+Math.sin(an)*rr;LOOT.push({id:LOOT.length,t:t===7?2:t,x,z,y:groundAt(x,z)+.5})})}
- for(let k=0;k<4;k++){DROPS.push(LOOT.length);LOOT.push({id:LOOT.length,t:7,x:0,z:0,y:0})}
+ for(let k=0;k<4;k++){DROPS.push(LOOT.length);LOOT.push({id:LOOT.length,t:7,x:0,z:0,y:0})}for(let k=0;k<16;k++){DEATHS.push(LOOT.length);LOOT.push({id:LOOT.length,t:0,x:0,z:0,y:0})}
  lootMesh=new THREE.InstancedMesh(new THREE.BoxGeometry(.7,.45,.7),new THREE.MeshLambertMaterial({color:0xffffff}),LOOT.length);
  beamMesh=new THREE.InstancedMesh(new THREE.CylinderGeometry(.12,.12,7,5),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.4}),LOOT.length);
  const m4=new THREE.Matrix4(),c=new THREE.Color();
@@ -317,9 +317,9 @@ function genLoot(){const r=rng(555);const pick=()=>{const v=r();return v<.12?0:v
  scene.add(lootMesh,beamMesh)}
 const taken=new Set();
 genLoot();
-function setTaken(i,on){if(on)taken.add(i);else taken.delete(i);const m4=new THREE.Matrix4();const l=LOOT[i];if(on)m4.makeScale(0,0,0);else m4.makeTranslation(l.x,l.y,l.z);lootMesh.setMatrixAt(i,m4);if(on)m4.makeScale(0,0,0);else m4.makeTranslation(l.x,l.y+3.5,l.z);beamMesh.setMatrixAt(i,m4);lootMesh.instanceMatrix.needsUpdate=true;beamMesh.instanceMatrix.needsUpdate=true}
-function resetLoot(){DROPS.forEach(i=>LOOT[i].on=false);for(const i of [...taken])setTaken(i,false);DROPS.forEach(i=>setTaken(i,true))}
-DROPS.forEach(i=>setTaken(i,true));
+function setTaken(i,on){if(on){taken.add(i);LOOT[i].dead=false}else taken.delete(i);const m4=new THREE.Matrix4();const l=LOOT[i];if(on)m4.makeScale(0,0,0);else m4.makeTranslation(l.x,l.y,l.z);lootMesh.setMatrixAt(i,m4);if(on)m4.makeScale(0,0,0);else m4.makeTranslation(l.x,l.y+3.5,l.z);beamMesh.setMatrixAt(i,m4);lootMesh.instanceMatrix.needsUpdate=true;beamMesh.instanceMatrix.needsUpdate=true}
+function resetLoot(){DROPS.forEach(i=>LOOT[i].on=false);for(const i of [...taken])setTaken(i,false);DROPS.forEach(i=>setTaken(i,true));DEATHS.forEach(i=>setTaken(i,true))}
+DROPS.forEach(i=>setTaken(i,true));DEATHS.forEach(i=>setTaken(i,true));
 const avatars=new Map();
 function nameTag(n){const c=document.createElement('canvas');c.width=256;c.height=64;const x=c.getContext('2d');x.fillStyle='#0008';x.fillRect(0,0,256,64);x.fillStyle='#fff';x.font='bold 34px Tahoma,Arial';x.textAlign='center';x.fillText(n,128,44);const t=new THREE.CanvasTexture(c);const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:t,depthTest:true,transparent:true}));sp.scale.set(1.6,.4,1);sp.position.y=2.35;return sp}
 function makeAvatar(col,name){const g=new THREE.Group();const mb=new THREE.MeshLambertMaterial({color:col}),ms=new THREE.MeshLambertMaterial({color:0xf0c8a0});
@@ -418,7 +418,9 @@ function damage(t,amt,by,head,wi){
  if(t.id===G.me)flash(by?by.x:undefined,by?by.z:undefined);else if(t.human)sendTo(t.id,by?{t:'hurt',x:+by.x.toFixed(1),z:+by.z.toFixed(1)}:{t:'hurt'});
  if(by&&by.human&&by.id!==G.me)sendTo(by.id,{t:'hm',h:head,d:Math.round(amt*(head?1.8:1))});
  if(t.hp<=0)die(t,by,wi)}
-function die(t,by,wi){t.alive=false;t.hp=0;t.rvT=G.t;t.rvP=0;t.place=alivePlayers().length+1;if(by&&by!==t)by.kills++;if(by&&by!==t&&(by.kills===3||by.kills===5)){const r3=by.kills===3;if(r3)by.sh=Math.min(100,(by.sh||0)+50);else{by.hp=100;by.sh=100;by.gren=(by.gren||0)+2;if(by.human&&by.id!==G.me)sendTo(by.id,{t:'gadd',n:2});if(by.id===G.me)L.gren=(L.gren||0)+2}if(by.id===G.me)setTimeout(()=>msg(r3?'🎁 مكافأة ٣ قتلات: +٥٠ درع':'🎁 مكافأة ٥ قتلات: دم+درع كاملين +٢ قنبلة',2600),900);else if(by.human)sendTo(by.id,{t:'rew',k:by.kills})}if(t.boss){if(by&&by.id===G.me)unlock('boss');addFeed('👑 سقط الملك! '+(by?by.name:''));if(by&&by!==t){by.hp=100;by.sh=100;if(by.id===G.me)setTimeout(()=>msg('👑 قتلت الملك! دم وحماية كاملين',3000),1500);else if(by.human)sendTo(by.id,{t:'boss'})}}
+function applyDeath(o){const l=LOOT[o.i];if(!l)return;l.t=o.lt;l.x=o.x;l.z=o.z;l.y=groundAt(o.x,o.z)+.5;const c=new THREE.Color(LT[o.lt].c);lootMesh.setColorAt(o.i,c);beamMesh.setColorAt(o.i,c);lootMesh.instanceColor.needsUpdate=true;beamMesh.instanceColor.needsUpdate=true;setTaken(o.i,false);l.dead=true}
+function dropDeathLoot(t){if(!G.host||!t.wpns)return;const wi=t.wpns[t.cur]>=0?t.wpns[t.cur]:t.wpns.find(w=>w>=0);if(wi===undefined||wi<0)return;const lt=LT.findIndex(x=>x.w===wi);if(lt<0)return;const id=DEATHS.find(i=>taken.has(i)&&!LOOT[i].dead);if(id===undefined)return;const o={t:'dl',i:id,lt,x:+t.x.toFixed(1),z:+t.z.toFixed(1)};applyDeath(o);broadcast(o);const mid=G.mid;setTimeout(()=>{if(G.mid!==mid||taken.has(id))return;setTaken(id,true);broadcast({t:'tk',i:id})},70000)}
+function die(t,by,wi){if(!t.para)dropDeathLoot(t);t.alive=false;t.hp=0;t.rvT=G.t;t.rvP=0;t.place=alivePlayers().length+1;if(by&&by!==t)by.kills++;if(by&&by!==t&&(by.kills===3||by.kills===5)){const r3=by.kills===3;if(r3)by.sh=Math.min(100,(by.sh||0)+50);else{by.hp=100;by.sh=100;by.gren=(by.gren||0)+2;if(by.human&&by.id!==G.me)sendTo(by.id,{t:'gadd',n:2});if(by.id===G.me)L.gren=(L.gren||0)+2}if(by.id===G.me)setTimeout(()=>msg(r3?'🎁 مكافأة ٣ قتلات: +٥٠ درع':'🎁 مكافأة ٥ قتلات: دم+درع كاملين +٢ قنبلة',2600),900);else if(by.human)sendTo(by.id,{t:'rew',k:by.kills})}if(t.boss){if(by&&by.id===G.me)unlock('boss');addFeed('👑 سقط الملك! '+(by?by.name:''));if(by&&by!==t){by.hp=100;by.sh=100;if(by.id===G.me)setTimeout(()=>msg('👑 قتلت الملك! دم وحماية كاملين',3000),1500);else if(by.human)sendTo(by.id,{t:'boss'})}}
  const ev={t:'kill',kid:by?by.id:-1,k:by?by.name:(STRIKES.some(q=>Math.hypot(t.x-q.x,t.z-q.z)<18)?'الغارة الجوية 💥':'المنطقة'),v:t.name,w:wi==null?-1:wi,id:t.id,pl:t.place,kh:by&&by!==t?Math.round(by.hp):-1};
  handleKillEv(ev);broadcast(ev);checkEnd()}
 const STREAK=['','قتلة أولى! 🔥','قتلتين! 🔥🔥','٣ قتلات! سلسلة!','٤ قتلات! وحش!','٥ قتلات! أسطورة!'];
@@ -530,14 +532,14 @@ function hostTick(dt){
  G.snapT=(G.snapT||0)+dt;if(G.snapT>=.066&&G.conns.size){G.snapT=0;G.sn=(G.sn||0)+1;
   const ps=[];for(const p of G.players.values())ps.push([p.id,+p.x.toFixed(2),+p.y.toFixed(2),+p.z.toFixed(2),+p.yaw.toFixed(2),+p.pitch.toFixed(2),Math.round(p.hp),Math.round(p.sh),p.wpns[p.cur],p.alive?1:0,p.kills,p.para?1:0,p.cr?1:0]);
   const z=G.zone;const o={t:'snap',ps,z:[+z.cx.toFixed(1),+z.cz.toFixed(1),+z.r.toFixed(1),+z.tcx.toFixed(1),+z.tcz.toFixed(1),+z.tr.toFixed(1),z.ph,+z.t.toFixed(1),z.state==='shrink'?1:0],tm:+G.t.toFixed(1)};
-  if(G.sn%20===0)o.tk=[...taken];broadcast(o)}}
+  if(G.sn%20===0){o.tk=[...taken];o.dl=DEATHS.filter(i=>!taken.has(i)).map(i=>({i,lt:LOOT[i].t,x:LOOT[i].x,z:LOOT[i].z}))}broadcast(o)}}
 function applySnap(o){
  for(const a of o.ps){let p=G.players.get(a[0]);if(!p){p=newPlayer(a[0],'?',false);G.players.set(p.id,p)}
   if(a[0]===G.me){p.hp=a[6];p.sh=a[7];if(p.alive&&!a[9])p.rvT=G.t;p.alive=!!a[9];p.kills=a[10];continue}
   p.tx=a[1];p.ty=a[2];p.tz=a[3];p.tyaw=a[4];p.pitch=a[5];p.hp=a[6];p.sh=a[7];p.wcur=a[8];if(p.alive&&!a[9])p.rvT=G.t;if(a[9])p.rvT=undefined;p.alive=!!a[9];p.kills=a[10];p.para=!!a[11];p.cr=a[12]?1:0;
   if(p.x===0&&p.z===0){p.x=p.tx;p.y=p.ty;p.z=p.tz;p.yaw=p.tyaw}}
  const z=G.zone,q=o.z;z.cx=q[0];z.cz=q[1];z.r=q[2];z.tcx=q[3];z.tcz=q[4];z.tr=q[5];z.ph=q[6];z.t=q[7];z.state=q[8]?'shrink':'wait';G.t=o.tm;
- if(o.tk){for(const i of o.tk)if(!taken.has(i))setTaken(i,true);for(const i of [...taken])if(!o.tk.includes(i))setTaken(i,false)}}
+ if(o.tk){for(const i of o.tk)if(!taken.has(i))setTaken(i,true);for(const i of [...taken])if(!o.tk.includes(i))setTaken(i,false)}if(o.dl)for(const d of o.dl)if(taken.has(d.i)||!LOOT[d.i].dead)applyDeath(d)}
 function onMsg(from,o){
  if(G.host){
   const p=G.players.get(from);
@@ -553,7 +555,7 @@ function onMsg(from,o){
  }else{
   if(o.t==='snap')applySnap(o);
   else if(o.t==='start'){G.me=o.me;G.fast=o.fast;G.duo=!!o.duo;beginLocal(o.list)}
-  else if(o.t==='tk')setTaken(o.i,true);
+  else if(o.t==='tk')setTaken(o.i,true);else if(o.t==='dl')applyDeath(o);
   else if(o.t==='gth'){if(!G.host)addGren(o)}
   else if(o.t==='qct'){if(!G.host)showQc(o.id,o.e)}
   else if(o.t==='emt'){if(!G.host)showEmo(o.id,o.e)}
@@ -797,5 +799,5 @@ function frame(){
  else{G.t+=dt;vm.visible=false;cam.fov=75;cam.updateProjectionMatrix();cam.position.set(Math.sin(G.t*.1)*250,70,Math.cos(G.t*.1)*250);cam.lookAt(0,5,0)}
  renderer.render(scene,cam)}
 frame();
-window.__G=G;window.__L=L;showStats();try{const o=JSON.parse(localStorage.getItem('brOpt')||'{}');for(const id of ['lite','voice','diff']){const el=$(id);if(!el)continue;if(id in o){if(el.type==='checkbox')el.checked=!!o[id];else el.value=o[id]}el.addEventListener('change',()=>{try{const q=JSON.parse(localStorage.getItem('brOpt')||'{}');q[id]=el.type==='checkbox'?el.checked:el.value;localStorage.setItem('brOpt',JSON.stringify(q))}catch(e){}})}}catch(e){}$('tutok').onclick=()=>{$('tut').style.display='none';try{localStorage.setItem('brTut','1')}catch(e){}};window.__dbg={endM:endMatch,handleKillEv,BOAT,MILL,achList,dailyKill,dailyDef,dailyGet,nightVis,nvOn:()=>nvOn,PRS,unlock,ACH,setAtmos,SNW,say,die,reviveTick,startStrike,STRIKES,avatars,crouch,sun,ST,stepLightning,thunder,endMatch,stepSky,SMK,boom,stepFoot,BIRDS,CAMPS,campHeal,drawCmp,rainSndOn:()=>!!rainSnd,specStep,LAMPG,bossOf:()=>[...__G.players.values()].find(p=>p.boss),vmk:()=>vm.userData.k,POND,H,stepRain,RL,rankTitle,quickChat,QC,ENG,zoneRef:()=>__G.zone,fireworks,FORT,sbToggle,emote,showEmo,avatars,BCN,FL,setAtmos0:0,openPz,doDrop,DFX,PINGS,pingAt,QUADS,quadToggle,GR,throwG,showStats,setAtmos,PADS,fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
+window.__G=G;window.__L=L;showStats();try{const o=JSON.parse(localStorage.getItem('brOpt')||'{}');for(const id of ['lite','voice','diff']){const el=$(id);if(!el)continue;if(id in o){if(el.type==='checkbox')el.checked=!!o[id];else el.value=o[id]}el.addEventListener('change',()=>{try{const q=JSON.parse(localStorage.getItem('brOpt')||'{}');q[id]=el.type==='checkbox'?el.checked:el.value;localStorage.setItem('brOpt',JSON.stringify(q))}catch(e){}})}}catch(e){}$('tutok').onclick=()=>{$('tut').style.display='none';try{localStorage.setItem('brTut','1')}catch(e){}};window.__dbg={DEATHS,applyDeath,dropDeathLoot,taken,endM:endMatch,handleKillEv,BOAT,MILL,achList,dailyKill,dailyDef,dailyGet,nightVis,nvOn:()=>nvOn,PRS,unlock,ACH,setAtmos,SNW,say,die,reviveTick,startStrike,STRIKES,avatars,crouch,sun,ST,stepLightning,thunder,endMatch,stepSky,SMK,boom,stepFoot,BIRDS,CAMPS,campHeal,drawCmp,rainSndOn:()=>!!rainSnd,specStep,LAMPG,bossOf:()=>[...__G.players.values()].find(p=>p.boss),vmk:()=>vm.userData.k,POND,H,stepRain,RL,rankTitle,quickChat,QC,ENG,zoneRef:()=>__G.zone,fireworks,FORT,sbToggle,emote,showEmo,avatars,BCN,FL,setAtmos0:0,openPz,doDrop,DFX,PINGS,pingAt,QUADS,quadToggle,GR,throwG,showStats,setAtmos,PADS,fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
 </script></body></html>
