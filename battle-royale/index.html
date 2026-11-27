@@ -239,6 +239,7 @@ function genLoot(){const r=rng(555);const pick=()=>{const v=r();return v<.12?0:v
  const add=(x,z)=>{LOOT.push({id:LOOT.length,t:pick(),x,z,y:groundAt(x,z)+.5})};
  for(const h of houses){const k=h.big?7:4;for(let i=0;i<k;i++)add(h.x+(r()-.5)*(h.hw*2-2),h.z+(r()-.5)*(h.hd*2-2))}
  let n=0,tr=0;while(n<110&&tr<2000){tr++;const x=(r()-.5)*700,z=(r()-.5)*700;if(H(x,z)<1.2||Math.hypot(x,z)>350)continue;add(x,z);n++}
+ if(BCN.piv){const ts=[4,9,2,9,4,6,5,6];ts.forEach((t,i)=>{const an=i/ts.length*6.283,x=BCN.x+Math.cos(an)*5.4,z=BCN.z+Math.sin(an)*5.4;LOOT.push({id:LOOT.length,t,x,z,y:groundAt(x,z)+.5})})}
  for(let k=0;k<4;k++){DROPS.push(LOOT.length);LOOT.push({id:LOOT.length,t:7,x:0,z:0,y:0})}
  lootMesh=new THREE.InstancedMesh(new THREE.BoxGeometry(.7,.45,.7),new THREE.MeshLambertMaterial({color:0xffffff}),LOOT.length);
  beamMesh=new THREE.InstancedMesh(new THREE.CylinderGeometry(.12,.12,7,5),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.4}),LOOT.length);
