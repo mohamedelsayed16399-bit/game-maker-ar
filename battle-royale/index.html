@@ -500,7 +500,7 @@ function impact(x,y,z,c){const m=new THREE.Mesh(fxGeo,new THREE.MeshBasicMateria
 const trMat=new THREE.LineBasicMaterial({color:0xffee88,transparent:true,opacity:.9});
 function handleShot(o,local){if(!G.host&&o.id===G.me&&!local)return;
  for(const e of o.e){const g=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(o.o[0],o.o[1]-.15,o.o[2]),new THREE.Vector3(e[0],e[1],e[2])]);const l=new THREE.Line(g,trMat);scene.add(l);tracers.push({l,t:.08});impact(e[0],e[1],e[2],0xffcc66)}
- if(o.id===G.me)flashT=.05
+ if(o.id===G.me)flashT=.05;vm.userData.k=1
  const d=Math.hypot(o.o[0]-L.x,o.o[2]-L.z);if(d<170)sfx(W[o.w].snd,Math.max(.03,.35-d/400),.2)}
 let dnI=0;
 function dmgNum(d,h){const e=document.createElement('div');e.className='dn'+(h?' hd':'');e.textContent=d;e.style.left=(50+(Math.random()-.5)*10)+'%';e.style.top=(40+(dnI++%3)*3)+'%';$('hud').appendChild(e);setTimeout(()=>e.remove(),800)}
@@ -692,11 +692,11 @@ function frame(){
   const wi=L.wpns[L.cur];const fov=(L.zoom?(wi===4?[18,10,6][L.zlv||0]:50):75);cam.fov+=(fov-cam.fov)*Math.min(1,dt*12);cam.updateProjectionMatrix();
   vm.visible=!L.dead&&!L.para&&wi>=0&&!(L.zoom&&wi===4);if(wi>=0)vm.material.color.setHex(W[wi].col);vm.userData.ac.material.color.setHex(PAL[MYCOL>=0?MYCOL%8:5]);
   zoneMesh.position.set(G.zone.cx,100,G.zone.cz);zoneMesh.scale.set(Math.max(1,G.zone.r),1,Math.max(1,G.zone.r));
-  stepRain(dt);flashT-=dt;flashM.visible=flashT>0&&vm.visible;for(let i=fxs.length-1;i>=0;i--){const f=fxs[i];f.t-=dt;if(f.big){f.m.scale.setScalar(1+(.45-f.t)*18);f.m.material.opacity=Math.max(0,f.t*1.8)}else{f.m.scale.setScalar(1+(.25-f.t)*8);f.m.material.opacity=Math.max(0,f.t*4)}if(f.t<=0){scene.remove(f.m);f.m.material.dispose();fxs.splice(i,1)}}
+  stepRain(dt);{const k=vm.userData.k||0;vm.userData.k=Math.max(0,k-dt*9);vm.position.z=-.4+.05*k;vm.rotation.x=.14*k}flashT-=dt;flashM.visible=flashT>0&&vm.visible;for(let i=fxs.length-1;i>=0;i--){const f=fxs[i];f.t-=dt;if(f.big){f.m.scale.setScalar(1+(.45-f.t)*18);f.m.material.opacity=Math.max(0,f.t*1.8)}else{f.m.scale.setScalar(1+(.25-f.t)*8);f.m.material.opacity=Math.max(0,f.t*4)}if(f.t<=0){scene.remove(f.m);f.m.material.dispose();fxs.splice(i,1)}}
   for(let i=tracers.length-1;i>=0;i--){tracers[i].t-=dt;if(tracers[i].t<=0){scene.remove(tracers[i].l);tracers[i].l.geometry.dispose();tracers.splice(i,1)}}
   updateHud();drawMini();drawBig()}
  else{G.t+=dt;vm.visible=false;cam.fov=75;cam.updateProjectionMatrix();cam.position.set(Math.sin(G.t*.1)*250,70,Math.cos(G.t*.1)*250);cam.lookAt(0,5,0)}
  renderer.render(scene,cam)}
 frame();
-window.__G=G;window.__L=L;showStats();$('tutok').onclick=()=>{$('tut').style.display='none';try{localStorage.setItem('brTut','1')}catch(e){}};window.__dbg={POND,H,stepRain,RL,rankTitle,quickChat,QC,ENG,zoneRef:()=>__G.zone,fireworks,FORT,sbToggle,emote,showEmo,avatars,BCN,FL,setAtmos0:0,openPz,doDrop,DFX,PINGS,pingAt,QUADS,quadToggle,GR,throwG,showStats,setAtmos,PADS,fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
+window.__G=G;window.__L=L;showStats();$('tutok').onclick=()=>{$('tut').style.display='none';try{localStorage.setItem('brTut','1')}catch(e){}};window.__dbg={vmk:()=>vm.userData.k,POND,H,stepRain,RL,rankTitle,quickChat,QC,ENG,zoneRef:()=>__G.zone,fireworks,FORT,sbToggle,emote,showEmo,avatars,BCN,FL,setAtmos0:0,openPz,doDrop,DFX,PINGS,pingAt,QUADS,quadToggle,GR,throwG,showStats,setAtmos,PADS,fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
 </script></body></html>
