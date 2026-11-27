@@ -185,6 +185,16 @@ let lootMesh,beamMesh,zoneMesh;
 let stepT=0;const PADS=[];
 function buildPads(){const r=rng(777);let tries=0;while(PADS.length<14&&tries++<400){const a=r()*6.28,d=Math.sqrt(r())*300;const x=Math.cos(a)*d,z=Math.sin(a)*d;const h=H(x,z);if(h<2||h>11)continue;if(houses.some(q=>Math.abs(q.x-x)<q.hw+6&&Math.abs(q.z-z)<q.hd+6))continue;if(PADS.some(p=>Math.hypot(p.x-x,p.z-z)<60))continue;PADS.push({x,z,y:h})}
  const m=new THREE.MeshBasicMaterial({color:0x33ffcc,transparent:true,opacity:.75});for(const p of PADS){const c=new THREE.Mesh(new THREE.CylinderGeometry(2.2,2.4,.35,20),m);c.position.set(p.x,p.y+.18,p.z);scene.add(c);const b=new THREE.Mesh(new THREE.CylinderGeometry(.7,1.6,14,10,1,true),new THREE.MeshBasicMaterial({color:0x33ffcc,transparent:true,opacity:.18,side:THREE.DoubleSide}));b.position.set(p.x,p.y+7,p.z);scene.add(b)}}
+const BCN={};
+function buildBeacon(){const r=rng(4242);let x=0,z=0,h=0,ok=false;for(let t=0;t<800&&!ok;t++){const a=r()*6.28,d=Math.sqrt(r())*150;x=Math.cos(a)*d;z=Math.sin(a)*d;h=H(x,z);if(h<3||h>14)continue;if(houses.some(q=>Math.abs(q.x-x)<q.hw+8&&Math.abs(q.z-z)<q.hd+8))continue;ok=true}
+ if(!ok){x=0;z=0;h=Math.max(3,H(0,0))}
+ const g=new THREE.Group();const tw=new THREE.Mesh(new THREE.CylinderGeometry(1.6,2.6,34,12),new THREE.MeshLambertMaterial({color:0xf2f2f2}));tw.position.y=17;g.add(tw);
+ for(let i=0;i<4;i++){const st=new THREE.Mesh(new THREE.CylinderGeometry(1.64+.0,2.6-i*.0,3.2,12),new THREE.MeshLambertMaterial({color:0xd33}));st.scale.set(1-i*.0,1,1);st.position.y=5+i*8.5;g.add(st)}
+ const top=new THREE.Mesh(new THREE.CylinderGeometry(2.2,2.2,2,12),new THREE.MeshLambertMaterial({color:0x333}));top.position.y=35;g.add(top);
+ const lamp=new THREE.Mesh(new THREE.SphereGeometry(1.3,10,8),new THREE.MeshBasicMaterial({color:0xfff2a0}));lamp.position.y=37;g.add(lamp);
+ const beam=new THREE.Mesh(new THREE.CylinderGeometry(.3,5,60,10,1,true),new THREE.MeshBasicMaterial({color:0xfff2a0,transparent:true,opacity:.28,side:THREE.DoubleSide,depthWrite:false}));beam.geometry.translate(0,30,0);beam.rotation.z=Math.PI/2-.05;
+ const piv=new THREE.Group();piv.position.y=37;piv.add(beam);g.add(piv);
+ g.position.set(x,h,z);scene.add(g);addCircle(x,z,2.8,h-1,h+40);BCN.x=x;BCN.z=z;BCN.piv=piv;BCN.lamp=lamp}
 const QUADS=[];
 function buildQuads(){const r=rng(888);let tries=0;const mat=new THREE.MeshLambertMaterial({color:0xd8402a}),dk=new THREE.MeshLambertMaterial({color:0x222222});
  while(QUADS.length<9&&tries++<500){const a=r()*6.28,d=Math.sqrt(r())*290;const x=Math.cos(a)*d,z=Math.sin(a)*d;const h=H(x,z);if(h<2||h>10)continue;if(houses.some(q=>Math.abs(q.x-x)<q.hw+5&&Math.abs(q.z-z)<q.hd+5))continue;if(QUADS.some(p=>Math.hypot(p.x-x,p.z-z)<50))continue;
@@ -197,7 +207,7 @@ function quadToggle(){if(G.mode!=='play'||L.dead||L.para)return;
 function quadStep(){if(L.dead||L.para)L.quad=null;if(L.quad!=null){const q=QUADS[L.quad];q.x=L.x;q.z=L.z;q.y=L.y;q.g.position.set(L.x,L.y,L.z);q.g.rotation.y=L.yaw+Math.PI}
  else if(G.mode==='play'&&!L.dead&&!L.para&&performance.now()>(quadStep.h||0)){for(const q of QUADS)if(Math.hypot(q.x-L.x,q.z-L.z)<4.5){msg('🏍 اضغط E (أو زرار الكواد) عشان تركب',1800);quadStep.h=performance.now()+6000;break}}}
 function buildScene(){
- buildWorld();buildPads();buildQuads();
+ buildWorld();buildPads();buildQuads();buildBeacon();
  const SEG=220,SZ=900;const geo=new THREE.PlaneGeometry(SZ,SZ,SEG,SEG);geo.rotateX(-Math.PI/2);
  const pos=geo.attributes.position,col=new Float32Array(pos.count*3);
  for(let i=0;i<pos.count;i++){const x=pos.getX(i),z=pos.getZ(i);const h=H(x,z);pos.setY(i,h);
@@ -350,7 +360,7 @@ function dropFx(x,z){const g=new THREE.Group();const m1=new THREE.MeshLambertMat
  const body=new THREE.Mesh(new THREE.BoxGeometry(7,2.4,2.6),m1);const tail=new THREE.Mesh(new THREE.BoxGeometry(6,.6,.6),m1);tail.position.x=-6;const rot=new THREE.Mesh(new THREE.BoxGeometry(11,.12,.6),m2);rot.position.y=1.7;g.add(body,tail,rot);g.scale.setScalar(2.6);scene.add(g);
  const cr=new THREE.Group();const box=new THREE.Mesh(new THREE.BoxGeometry(1.4,1.1,1.4),new THREE.MeshLambertMaterial({color:0xffd700}));const ch=new THREE.Mesh(new THREE.SphereGeometry(2.4,10,6,0,6.3,0,1.3),new THREE.MeshLambertMaterial({color:0xff5555,side:THREE.DoubleSide}));ch.position.y=2.6;cr.add(box,ch);cr.scale.setScalar(1.8);cr.visible=false;scene.add(cr);
  DFX.push({g,rot,cr,x,z,t:0,t0:performance.now(),gy:groundAt(x,z)+.6,mid:G.mid});sfx(90,Math.min(.5,.5),2.4)}
-function stepDrops(dt){for(let i=DFX.length-1;i>=0;i--){const d=DFX[i];d.t=(performance.now()-d.t0)/1000;d.rot.rotation.y+=dt*30;d.g.position.set(d.x-120+d.t*80,100,d.z);
+function stepDrops(dt){if(BCN.piv){BCN.piv.rotation.y+=dt*.9;BCN.lamp.scale.setScalar(1+.15*Math.sin(performance.now()/200))}for(let i=DFX.length-1;i>=0;i--){const d=DFX[i];d.t=(performance.now()-d.t0)/1000;d.rot.rotation.y+=dt*30;d.g.position.set(d.x-120+d.t*80,100,d.z);
   if(d.t>=1.5){d.cr.visible=true;const k=Math.min(1,(d.t-1.5)/5);d.cr.position.set(d.x,98+(d.gy-98)*k,d.z)}
   if(d.t>4)d.g.visible=false;if(d.t>6.6||d.mid!==G.mid){scene.remove(d.g);scene.remove(d.cr);DFX.splice(i,1)}}}
 function doDrop(o){const l=LOOT[o.i];l.x=o.x;l.z=o.z;l.y=groundAt(o.x,o.z)+.5;addFeed('📦 طيارة الإمداد عدّت! صندوق نازل بالباراشوت');msg('🚁 طيارة إمداد! الصندوق نازل',3000);beep(400,.3,.12);
@@ -570,7 +580,7 @@ function drawMini(){const c=mini,S=130,R=S/2;c.clearRect(0,0,S,S);const sc=R/110
  c.fillStyle='#4a7a3a';c.beginPath();c.arc(0,0,R_ISL*.85*sc,0,6.3);c.fill();
  c.strokeStyle='#4af';c.lineWidth=2;c.beginPath();c.arc(z.tcx*sc,z.tcz*sc,Math.max(1,z.tr)*sc,0,6.3);c.stroke();
  c.strokeStyle='#fff';c.beginPath();c.arc(z.cx*sc,z.cz*sc,Math.max(1,z.r)*sc,0,6.3);c.stroke();
- c.fillStyle='#caa';for(const h of houses)c.fillRect((h.x-3)*sc,(h.z-3)*sc,6*sc,6*sc);
+ c.fillStyle='#caa';for(const h of houses)c.fillRect((h.x-3)*sc,(h.z-3)*sc,6*sc,6*sc);if(BCN.piv){c.fillStyle='#ffe066';c.beginPath();c.arc(BCN.x*sc,BCN.z*sc,4,0,6.3);c.fill()}
  c.strokeStyle='#ffe44a';c.lineWidth=2;for(const q of PINGS){c.beginPath();c.arc(q.x*sc,q.z*sc,5,0,6.3);c.stroke()}
  c.fillStyle='#3fc';for(const p of PADS){c.beginPath();c.arc(p.x*sc,p.z*sc,3,0,6.3);c.fill()}
  c.fillStyle='#f44';for(const p of G.players.values()){if(p.id===G.me||!p.alive||p.para)continue;if(Math.hypot(p.x-L.x,p.z-L.z)<60){c.beginPath();c.arc(p.x*sc,p.z*sc,2.5,0,6.3);c.fill()}}
@@ -619,5 +629,5 @@ function frame(){
  else{G.t+=dt;vm.visible=false;cam.fov=75;cam.updateProjectionMatrix();cam.position.set(Math.sin(G.t*.1)*250,70,Math.cos(G.t*.1)*250);cam.lookAt(0,5,0)}
  renderer.render(scene,cam)}
 frame();
-window.__G=G;window.__L=L;showStats();$('tutok').onclick=()=>{$('tut').style.display='none';try{localStorage.setItem('brTut','1')}catch(e){}};window.__dbg={openPz,doDrop,DFX,PINGS,pingAt,QUADS,quadToggle,GR,throwG,showStats,setAtmos,PADS,fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
+window.__G=G;window.__L=L;showStats();$('tutok').onclick=()=>{$('tut').style.display='none';try{localStorage.setItem('brTut','1')}catch(e){}};window.__dbg={BCN,openPz,doDrop,DFX,PINGS,pingAt,QUADS,quadToggle,GR,throwG,showStats,setAtmos,PADS,fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
 </script></body></html>
