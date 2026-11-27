@@ -62,7 +62,7 @@ input{background:#fff;color:#111;text-align:center;width:240px;user-select:text;
 <div id="hud">
  <div id="specn" style="position:absolute;top:44px;left:50%;transform:translateX(-50%);background:#000a;padding:4px 14px;border-radius:14px;display:none;font-size:15px"></div>
  <div id="tut" style="position:absolute;inset:0;background:#000c;display:none;z-index:9999;align-items:center;justify-content:center;pointer-events:auto"><div style="max-width:420px;padding:22px;text-align:center;line-height:1.9;font-size:17px">👑 <b>إزاي تكسب</b><br>• انزل بالباراشوت جنب بيت وخد سلاح<br>• خد علاج ودرع، وخليك جوه الدايرة البيضا<br>• الدواسات الفيروزي بتطيّرك، اضغط قفز في الهوا للجلايدر<br>• آخر واحد (أو فريق) يفضل يكسب<br><button id="tutok" style="margin-top:12px;padding:10px 26px;font-size:18px">ماشي، يلا!</button></div></div>
- <div id="gren" style="position:absolute;right:14px;bottom:128px;font-size:20px;text-shadow:0 0 4px #000"></div>
+ <div id="gren" style="position:absolute;right:14px;bottom:168px;font-size:20px;text-shadow:0 0 4px #000"></div>
  <div id="scope"></div><div id="flash"></div><div id="cross"></div><div id="hit"></div><div id="lowhp"></div><div id="dmg"><i></i></div>
  <div id="top"><div class="chip" id="alive">👥 30</div><div class="chip" id="kills">☠ 0</div><div class="chip" id="ztime">المنطقة</div></div>
  <canvas id="mini" width="130" height="130"></canvas>
@@ -72,7 +72,7 @@ input{background:#fff;color:#111;text-align:center;width:240px;user-select:text;
 </div>
 <button id="bexit" class="sec">خروج للقائمة</button>
 <div id="touch"><div id="joy"><div id="knob"></div></div>
- <div class="tb" id="bgr" style="right:20px;bottom:285px">💣</div><div class="tb" id="bfire">🔫 نار</div><div class="tb" id="bjump">قفز</div><div class="tb" id="brel">تعمير</div><div class="tb" id="bsw">سلاح</div><div class="tb" id="bzoom">تقريب</div><div class="tb" id="bspr">جري</div><div class="tb" id="bmap" style="left:170px;bottom:170px">خريطة</div></div>
+ <div class="tb" id="bq" style="right:100px;bottom:285px">🏍</div><div class="tb" id="bgr" style="right:20px;bottom:285px">💣</div><div class="tb" id="bfire">🔫 نار</div><div class="tb" id="bjump">قفز</div><div class="tb" id="brel">تعمير</div><div class="tb" id="bsw">سلاح</div><div class="tb" id="bzoom">تقريب</div><div class="tb" id="bspr">جري</div><div class="tb" id="bmap" style="left:170px;bottom:170px">خريطة</div></div>
 
 <div class="scr" id="menu">
  <h1>👑 ملك الجزيرة</h1><div class="sub">باتل رويال ثلاثي الأبعاد · 30 لاعب · نزول بالباراشوت · منطقة بتضيق</div>
@@ -182,8 +182,19 @@ let lootMesh,beamMesh,zoneMesh;
 let stepT=0;const PADS=[];
 function buildPads(){const r=rng(777);let tries=0;while(PADS.length<14&&tries++<400){const a=r()*6.28,d=Math.sqrt(r())*300;const x=Math.cos(a)*d,z=Math.sin(a)*d;const h=H(x,z);if(h<2||h>11)continue;if(houses.some(q=>Math.abs(q.x-x)<q.hw+6&&Math.abs(q.z-z)<q.hd+6))continue;if(PADS.some(p=>Math.hypot(p.x-x,p.z-z)<60))continue;PADS.push({x,z,y:h})}
  const m=new THREE.MeshBasicMaterial({color:0x33ffcc,transparent:true,opacity:.75});for(const p of PADS){const c=new THREE.Mesh(new THREE.CylinderGeometry(2.2,2.4,.35,20),m);c.position.set(p.x,p.y+.18,p.z);scene.add(c);const b=new THREE.Mesh(new THREE.CylinderGeometry(.7,1.6,14,10,1,true),new THREE.MeshBasicMaterial({color:0x33ffcc,transparent:true,opacity:.18,side:THREE.DoubleSide}));b.position.set(p.x,p.y+7,p.z);scene.add(b)}}
+const QUADS=[];
+function buildQuads(){const r=rng(888);let tries=0;const mat=new THREE.MeshLambertMaterial({color:0xd8402a}),dk=new THREE.MeshLambertMaterial({color:0x222222});
+ while(QUADS.length<9&&tries++<500){const a=r()*6.28,d=Math.sqrt(r())*290;const x=Math.cos(a)*d,z=Math.sin(a)*d;const h=H(x,z);if(h<2||h>10)continue;if(houses.some(q=>Math.abs(q.x-x)<q.hw+5&&Math.abs(q.z-z)<q.hd+5))continue;if(QUADS.some(p=>Math.hypot(p.x-x,p.z-z)<50))continue;
+  const g=new THREE.Group();const body=new THREE.Mesh(new THREE.BoxGeometry(1.1,.5,2),mat);body.position.y=.65;g.add(body);const seat=new THREE.Mesh(new THREE.BoxGeometry(.7,.2,.8),dk);seat.position.set(0,1,.2);g.add(seat);
+  for(const [wx,wz] of [[-.7,-.7],[.7,-.7],[-.7,.7],[.7,.7]]){const w=new THREE.Mesh(new THREE.CylinderGeometry(.4,.4,.35,10),dk);w.rotation.z=Math.PI/2;w.position.set(wx,.4,wz);g.add(w)}
+  g.position.set(x,h,z);g.rotation.y=r()*6.28;scene.add(g);QUADS.push({x,z,y:h,g})}}
+function quadToggle(){if(G.mode!=='play'||L.dead||L.para)return;
+ if(L.quad!=null){const q=QUADS[L.quad];q.x=L.x;q.z=L.z;q.y=groundAt(L.x,L.z);q.g.position.set(q.x,q.y,q.z);L.quad=null;msg('نزلت من الكواد',1200);return}
+ let bi=-1,bd=4.5;QUADS.forEach((q,i)=>{const d=Math.hypot(q.x-L.x,q.z-L.z);if(d<bd){bd=d;bi=i}});if(bi>=0){L.quad=bi;msg('🏍 ركبت الكواد · E للنزول · مفيش تصويب وانت راكب',2200);beep(180,.3,.12)}}
+function quadStep(){if(L.dead||L.para)L.quad=null;if(L.quad!=null){const q=QUADS[L.quad];q.x=L.x;q.z=L.z;q.y=L.y;q.g.position.set(L.x,L.y,L.z);q.g.rotation.y=L.yaw+Math.PI}
+ else if(G.mode==='play'&&!L.dead&&!L.para&&performance.now()>(quadStep.h||0)){for(const q of QUADS)if(Math.hypot(q.x-L.x,q.z-L.z)<4.5){msg('🏍 اضغط E (أو زرار الكواد) عشان تركب',1800);quadStep.h=performance.now()+6000;break}}}
 function buildScene(){
- buildWorld();buildPads();
+ buildWorld();buildPads();buildQuads();
  const SEG=220,SZ=900;const geo=new THREE.PlaneGeometry(SZ,SZ,SEG,SEG);geo.rotateX(-Math.PI/2);
  const pos=geo.attributes.position,col=new Float32Array(pos.count*3);
  for(let i=0;i<pos.count;i++){const x=pos.getX(i),z=pos.getZ(i);const h=H(x,z);pos.setY(i,h);
@@ -418,7 +429,7 @@ function hitMarker(h){const e=$('hit');e.style.borderColor=h?'#ff0':'#f33';e.sty
 function flash(sx,sz){if(sx!==undefined){const dx=sx-L.x,dz=sz-L.z,fx=-Math.sin(L.yaw),fz=-Math.cos(L.yaw),rx=Math.cos(L.yaw),rz=-Math.sin(L.yaw);const a=Math.atan2(dx*rx+dz*rz,dx*fx+dz*fz)*180/Math.PI;const e=$('dmg');e.style.transition='none';e.style.transform='rotate('+a+'deg)';e.style.opacity=1;requestAnimationFrame(()=>{e.style.transition='opacity .8s';e.style.opacity=0})}const e=$('flash');e.style.opacity=.9;setTimeout(()=>e.style.opacity=0,180);sfx(150,.3,.15)}
 function beginLocal(list){
  G.mode='play';G.over=false;G.t=0;resetLoot();
- L.gren=2;for(const g of GR)scene.remove(g.m);GR.length=0;
+ L.gren=2;L.quad=null;for(const g of GR)scene.remove(g.m);GR.length=0;
  try{if(!localStorage.getItem('brTut'))$('tut').style.display='flex'}catch(e){}
  {const a0=list[0]||{x:0,z:0};const nm=setAtmos(Math.floor(Math.abs(a0.x*7+a0.z*13))%ATM.length);setTimeout(()=>msg('الجو: '+nm,2500),400)}
  for(const a of avatars.values())scene.remove(a);avatars.clear();
@@ -477,7 +488,7 @@ let SENS=+(localStorage.getItem('brSens')||100)/100,VOL=+(localStorage.getItem('
 $('sens').value=SENS*100;$('vol').value=VOL*100;$('sens').oninput=()=>{SENS=$('sens').value/100;localStorage.setItem('brSens',$('sens').value)};$('vol').oninput=()=>{VOL=$('vol').value/100;localStorage.setItem('brVol',$('vol').value)};
 const keys={};let mouseDown=false,fireTouch=false;
 let bigOn=false;
-addEventListener('keydown',e=>{keys[e.code]=true;if(G.mode!=='play')return;if(e.code==='KeyM')bigOn=!bigOn;if(e.code==='KeyR')reload();if(e.code==='KeyG')throwG();if(e.code==='Digit1')sw(0);if(e.code==='Digit2')sw(1);if(e.code==='Digit3')sw(2);if(e.code==='KeyQ')sw((L.cur+1)%3)});
+addEventListener('keydown',e=>{keys[e.code]=true;if(G.mode!=='play')return;if(e.code==='KeyM')bigOn=!bigOn;if(e.code==='KeyR')reload();if(e.code==='KeyG')throwG();if(e.code==='KeyE')quadToggle();if(e.code==='Digit1')sw(0);if(e.code==='Digit2')sw(1);if(e.code==='Digit3')sw(2);if(e.code==='KeyQ')sw((L.cur+1)%3)});
 addEventListener('keyup',e=>keys[e.code]=false);
 function requestLock(){try{const r=canvas.requestPointerLock&&canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{})}catch(e){}}
 canvas.addEventListener('click',()=>{if(G.mode==='play'&&!TOUCH&&!document.pointerLockElement&&!L.dead)requestLock()});
@@ -495,7 +506,7 @@ addEventListener('touchmove',e=>{for(const t of e.changedTouches){if(t.identifie
 addEventListener('touchend',e=>{for(const t of e.changedTouches){if(t.identifier===joyId){joyId=null;joyV={x:0,y:0};knob.style.left='40px';knob.style.top='40px'}if(t.identifier===lookId){lookId=null;lookLast=null}}});
 addEventListener('touchstart',e=>{if(G.mode!=='play')return;for(const t of e.changedTouches){if(t.target.closest&&(t.target.closest('.tb')||t.target.closest('#joy')||t.target.closest('button')))continue;if(t.clientX>innerWidth*.35&&lookId===null){lookId=t.identifier;lookLast={x:t.clientX,y:t.clientY}}}},{passive:false});
 function bind(id,dn,up){const el=$(id);el.addEventListener('touchstart',e=>{e.preventDefault();e.stopPropagation();audio();dn()},{passive:false});if(up)el.addEventListener('touchend',e=>{e.preventDefault();up()})}
-bind('bfire',()=>fireTouch=true,()=>fireTouch=false);bind('bjump',()=>L.jump=true,()=>L.jump=false);bind('brel',reload);bind('bgr',throwG);bind('bsw',()=>{for(let i=1;i<=3;i++){const s=(L.cur+i)%3;if(L.wpns[s]>=0){sw(s);break}}});bind('bzoom',()=>L.zoom=!L.zoom);bind('bspr',()=>L.spr=!L.spr);bind('bmap',()=>bigOn=!bigOn);
+bind('bfire',()=>fireTouch=true,()=>fireTouch=false);bind('bjump',()=>L.jump=true,()=>L.jump=false);bind('brel',reload);bind('bgr',throwG);bind('bq',quadToggle);bind('bsw',()=>{for(let i=1;i<=3;i++){const s=(L.cur+i)%3;if(L.wpns[s]>=0){sw(s);break}}});bind('bzoom',()=>L.zoom=!L.zoom);bind('bspr',()=>L.spr=!L.spr);bind('bmap',()=>bigOn=!bigOn);
 let flashT=0;const flashM=new THREE.Mesh(new THREE.SphereGeometry(.07,6,4),new THREE.MeshBasicMaterial({color:0xffdd55}));flashM.position.set(.14,-.12,-.65);flashM.visible=false;
 const clock=new THREE.Clock();let netT=0;
 const vm=new THREE.Mesh(new THREE.BoxGeometry(.03,.04,.22),new THREE.MeshLambertMaterial({color:0x333333}));vm.position.set(.14,-.14,-.4);cam.add(vm);cam.add(flashM);
@@ -510,7 +521,7 @@ function localUpdate(dt){
   const g=groundAt(L.x,L.z);if(L.y<=g+.05){L.y=g;L.para=false;L.vy=0;msg('هبطت! دوّر على سلاح',2000)}}
  else{let sp=sprint?8.2:5.6;if(groundAt(L.x,L.z)<-.3)sp*=.5;if(L.zoom)sp*=.6;
   stepT-=dt;if(stepT<=0&&(Math.abs(fwd)+Math.abs(str))>.2&&L.y<=groundAt(L.x,L.z)+.2){stepT=sprint?.27:.4;sfx(380,.05,.06)}
-  const glide=(keys.Space||L.jump)&&L.vy<0&&L.y>groundAt(L.x,L.z)+2.5;L.gliding=glide;if(glide)sp=11;
+  const glide=(keys.Space||L.jump)&&L.vy<0&&L.y>groundAt(L.x,L.z)+2.5;L.gliding=glide;if(glide)sp=11;if(L.quad!=null)sp=sprint?20:14;
   const nx=L.x+(-sy*fwd+cy*str)*sp*dt,nz=L.z+(-cy*fwd-sy*str)*sp*dt;
   const gn=groundAt(nx,nz);if(gn-L.y<1.1||L.y>gn){L.x=nx;L.z=nz}
   const lim=R_ISL*1.05;const d=Math.hypot(L.x,L.z);if(d>lim){L.x*=lim/d;L.z*=lim/d}
@@ -520,7 +531,7 @@ function localUpdate(dt){
  m.x=L.x;m.y=L.y;m.z=L.z;m.yaw=L.yaw;m.pitch=L.pitch;m.para=L.para;m.cur=L.cur;if(G.host)m.wpns=L.wpns;
  L.fireT-=dt;const wi=L.wpns[L.cur];
  if(L.reloadT>0){L.reloadT-=dt;if(L.reloadT<=0&&wi>=0)L.mag[L.cur]=W[wi].mag}
- if((mouseDown||fireTouch)&&!L.para&&wi>=0&&L.reloadT<=0&&L.fireT<=0&&(document.pointerLockElement||TOUCH||window.__autofire)){
+ if((mouseDown||fireTouch)&&!L.para&&L.quad==null&&wi>=0&&L.reloadT<=0&&L.fireT<=0&&(document.pointerLockElement||TOUCH||window.__autofire)){
   if(L.mag[L.cur]<=0){reload();L.fireT=.3}else{L.mag[L.cur]--;L.fireT=W[wi].r;
    const d=dirFrom(L.yaw,L.pitch);const o={x:L.x,y:L.y+1.65,z:L.z};
    if(G.host){fireFrom(m,o,d,wi)}else{G.hostConn.send({t:'fire',d:[d.x,d.y,d.z]});const e=[o.x+d.x*60,o.y+d.y*60,o.z+d.z*60];handleShot({id:G.me,o:[o.x,o.y,o.z],e:[e],w:wi},true)}
@@ -555,7 +566,7 @@ function updateHud(){const m=me();if(!m)return;
  const now=performance.now();G.feed=G.feed.filter(f=>f.e>now);$('feed').innerHTML=G.feed.map(f=>f.t).join('<br>');
  $('scope').style.display=(L.zoom&&wi===4)?'block':'none'}
 function frame(){
- requestAnimationFrame(frame);const dt=Math.min(.05,clock.getDelta());if(G.mode==='play'){adaptRes(dt);stepGren(dt);$('gren').textContent='💣 '+(L.gren||0)+(TOUCH?'':' (G)')}{const mm=G.players&&G.players.get(G.me);const lo=!!(mm&&G.mode==='play'&&!L.dead&&mm.hp<=30);if(lo!==frame._lo){frame._lo=lo;$('lowhp').classList.toggle('on',lo)}}
+ requestAnimationFrame(frame);const dt=Math.min(.05,clock.getDelta());if(G.mode==='play'){adaptRes(dt);stepGren(dt);quadStep();$('gren').textContent='💣 '+(L.gren||0)+(TOUCH?'':' (G)')}{const mm=G.players&&G.players.get(G.me);const lo=!!(mm&&G.mode==='play'&&!L.dead&&mm.hp<=30);if(lo!==frame._lo){frame._lo=lo;$('lowhp').classList.toggle('on',lo)}}
  if(G.mode==='play'){
   if(G.host)hostTick(dt);else G.t+=dt;
   localUpdate(dt);
@@ -582,5 +593,5 @@ function frame(){
  else{G.t+=dt;vm.visible=false;cam.fov=75;cam.updateProjectionMatrix();cam.position.set(Math.sin(G.t*.1)*250,70,Math.cos(G.t*.1)*250);cam.lookAt(0,5,0)}
  renderer.render(scene,cam)}
 frame();
-window.__G=G;window.__L=L;showStats();$('tutok').onclick=()=>{$('tut').style.display='none';try{localStorage.setItem('brTut','1')}catch(e){}};window.__dbg={GR,throwG,showStats,setAtmos,PADS,fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
+window.__G=G;window.__L=L;showStats();$('tutok').onclick=()=>{$('tut').style.display='none';try{localStorage.setItem('brTut','1')}catch(e){}};window.__dbg={QUADS,quadToggle,GR,throwG,showStats,setAtmos,PADS,fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
 </script></body></html>
