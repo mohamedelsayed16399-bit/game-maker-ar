@@ -47,7 +47,7 @@ input{background:#fff;color:#111;text-align:center;width:240px;user-select:text;
 #msg{position:absolute;top:30%;left:0;right:0;text-align:center;font-size:24px;text-shadow:0 2px 8px #000;font-weight:bold;padding:0 10px}
 #scope{position:absolute;inset:0;display:none;background:radial-gradient(circle at 50% 50%,transparent 22%,#000 23%)}
 #bexit{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);display:none;pointer-events:auto;z-index:30}
-#touch{position:fixed;inset:0;z-index:6;display:none;pointer-events:none}
+#touch{position:fixed;inset:0;z-index:4;display:none;pointer-events:none}
 #touch.on{display:block}
 #touch>*{pointer-events:auto}
 #joy{position:absolute;left:22px;bottom:70px;width:130px;height:130px;border-radius:50%;background:#fff2;border:2px solid #fff4}
@@ -61,6 +61,7 @@ input{background:#fff;color:#111;text-align:center;width:240px;user-select:text;
 <canvas id="c"></canvas>
 <div id="hud">
  <div id="specn" style="position:absolute;top:44px;left:50%;transform:translateX(-50%);background:#000a;padding:4px 14px;border-radius:14px;display:none;font-size:15px"></div>
+ <div id="tut" style="position:absolute;inset:0;background:#000c;display:none;z-index:9999;align-items:center;justify-content:center;pointer-events:auto"><div style="max-width:420px;padding:22px;text-align:center;line-height:1.9;font-size:17px">👑 <b>إزاي تكسب</b><br>• انزل بالباراشوت جنب بيت وخد سلاح<br>• خد علاج ودرع، وخليك جوه الدايرة البيضا<br>• الدواسات الفيروزي بتطيّرك، اضغط قفز في الهوا للجلايدر<br>• آخر واحد (أو فريق) يفضل يكسب<br><button id="tutok" style="margin-top:12px;padding:10px 26px;font-size:18px">ماشي، يلا!</button></div></div>
  <div id="scope"></div><div id="flash"></div><div id="cross"></div><div id="hit"></div><div id="lowhp"></div><div id="dmg"><i></i></div>
  <div id="top"><div class="chip" id="alive">👥 30</div><div class="chip" id="kills">☠ 0</div><div class="chip" id="ztime">المنطقة</div></div>
  <canvas id="mini" width="130" height="130"></canvas>
@@ -166,7 +167,8 @@ const ZPH=[{r:330,w:55,s:40,d:1},{r:210,w:40,s:30,d:2},{r:120,w:35,s:25,d:4},{r:
 const canvas=$('c');
 let renderer;
 try{renderer=new THREE.WebGLRenderer({canvas,antialias:!TOUCH,powerPreference:'high-performance'})}catch(e){document.body.innerHTML='<h2 style="padding:30px">المتصفح مش بيدعم WebGL</h2>';throw e}
-renderer.setPixelRatio(Math.min(devicePixelRatio,TOUCH?1.5:2));
+const PR0=Math.min(devicePixelRatio,TOUCH?1.5:2);let PR=PR0,fAcc=0,fN=0;renderer.setPixelRatio(PR);
+function adaptRes(dt){fAcc+=dt;fN++;if(fAcc>=2){const fps=fN/fAcc;fAcc=0;fN=0;let np=PR;if(fps<28)np=Math.max(.5,PR-.2);else if(fps>56)np=Math.min(PR0,PR+.1);if(np!==PR){PR=np;renderer.setPixelRatio(PR);resize();window.__fps=Math.round(fps)}}}
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x9fd0f5);scene.fog=new THREE.Fog(0x9fd0f5,120,520);
 const cam=new THREE.PerspectiveCamera(75,1,.1,900);cam.rotation.order='YXZ';scene.add(cam);
 const hemi=new THREE.HemisphereLight(0xdff0ff,0x4a5a3a,1.0);scene.add(hemi);
@@ -401,6 +403,7 @@ function hitMarker(h){const e=$('hit');e.style.borderColor=h?'#ff0':'#f33';e.sty
 function flash(sx,sz){if(sx!==undefined){const dx=sx-L.x,dz=sz-L.z,fx=-Math.sin(L.yaw),fz=-Math.cos(L.yaw),rx=Math.cos(L.yaw),rz=-Math.sin(L.yaw);const a=Math.atan2(dx*rx+dz*rz,dx*fx+dz*fz)*180/Math.PI;const e=$('dmg');e.style.transition='none';e.style.transform='rotate('+a+'deg)';e.style.opacity=1;requestAnimationFrame(()=>{e.style.transition='opacity .8s';e.style.opacity=0})}const e=$('flash');e.style.opacity=.9;setTimeout(()=>e.style.opacity=0,180);sfx(150,.3,.15)}
 function beginLocal(list){
  G.mode='play';G.over=false;G.t=0;resetLoot();
+ try{if(!localStorage.getItem('brTut'))$('tut').style.display='flex'}catch(e){}
  {const a0=list[0]||{x:0,z:0};const nm=setAtmos(Math.floor(Math.abs(a0.x*7+a0.z*13))%ATM.length);setTimeout(()=>msg('الجو: '+nm,2500),400)}
  for(const a of avatars.values())scene.remove(a);avatars.clear();
  if(!G.host){G.players.clear();for(const a of list){const p=newPlayer(a.id,a.n,a.h);p.team=a.tm;G.players.set(a.id,p)}}
@@ -536,7 +539,7 @@ function updateHud(){const m=me();if(!m)return;
  const now=performance.now();G.feed=G.feed.filter(f=>f.e>now);$('feed').innerHTML=G.feed.map(f=>f.t).join('<br>');
  $('scope').style.display=(L.zoom&&wi===4)?'block':'none'}
 function frame(){
- requestAnimationFrame(frame);const dt=Math.min(.05,clock.getDelta());{const mm=G.players&&G.players.get(G.me);const lo=!!(mm&&G.mode==='play'&&!L.dead&&mm.hp<=30);if(lo!==frame._lo){frame._lo=lo;$('lowhp').classList.toggle('on',lo)}}
+ requestAnimationFrame(frame);const dt=Math.min(.05,clock.getDelta());if(G.mode==='play')adaptRes(dt);{const mm=G.players&&G.players.get(G.me);const lo=!!(mm&&G.mode==='play'&&!L.dead&&mm.hp<=30);if(lo!==frame._lo){frame._lo=lo;$('lowhp').classList.toggle('on',lo)}}
  if(G.mode==='play'){
   if(G.host)hostTick(dt);else G.t+=dt;
   localUpdate(dt);
@@ -563,5 +566,5 @@ function frame(){
  else{G.t+=dt;vm.visible=false;cam.fov=75;cam.updateProjectionMatrix();cam.position.set(Math.sin(G.t*.1)*250,70,Math.cos(G.t*.1)*250);cam.lookAt(0,5,0)}
  renderer.render(scene,cam)}
 frame();
-window.__G=G;window.__L=L;showStats();window.__dbg={showStats,setAtmos,PADS,fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
+window.__G=G;window.__L=L;showStats();$('tutok').onclick=()=>{$('tut').style.display='none';try{localStorage.setItem('brTut','1')}catch(e){}};window.__dbg={showStats,setAtmos,PADS,fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
 </script></body></html>
