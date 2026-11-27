@@ -522,6 +522,7 @@ function beginLocal(list){
  if(!TOUCH)requestLock();
  const p=me();if(p){p.x=L.x;p.z=L.z;p.y=150}
  msg('اقفز بالباراشوت! وجّه بالحركة واهبط جنب بيت فيه سلاح',4500);G.feed=[];G.spec=null}
+function specStep(d){const al=alivePlayers().filter(p=>p.id!==G.me);if(!al.length)return;const i=al.indexOf(G.spec);G.spec=al[((i<0?0:i+d)+al.length)%al.length]}
 function specNext(){const al=alivePlayers().filter(p=>p.id!==G.me);if(!al.length)return;const i=al.indexOf(G.spec);G.spec=al[(i+1)%al.length]}
 addEventListener('keydown',e=>{if(L.dead&&(e.code==='ArrowRight'||e.code==='Tab')){e.preventDefault();specNext()}});
 addEventListener('touchstart',e=>{if(L.dead&&G.mode==='play'&&e.target===canvas)specNext()},{passive:true});
@@ -583,12 +584,12 @@ document.addEventListener('pointerlockchange',()=>{if(!document.pointerLockEleme
 $('sens').value=SENS*100;$('vol').value=VOL*100;$('sens').oninput=()=>{SENS=$('sens').value/100;localStorage.setItem('brSens',$('sens').value)};$('vol').oninput=()=>{VOL=$('vol').value/100;localStorage.setItem('brVol',$('vol').value)};
 const keys={};let mouseDown=false,fireTouch=false;
 let bigOn=false;
-addEventListener('keydown',e=>{keys[e.code]=true;if(G.mode!=='play')return;if(e.code==='KeyM')bigOn=!bigOn;if(e.code==='KeyR')reload();if(e.code==='KeyG')throwG();if(e.code==='KeyE')quadToggle();if(e.code==='KeyV')pingAt();if(e.code==='KeyX')emote();if(e.code==='KeyC')quickChat();if(e.code==='Tab'){e.preventDefault();sbToggle(true)}if(e.code==='Digit1')sw(0);if(e.code==='Digit2')sw(1);if(e.code==='Digit3')sw(2);if(e.code==='KeyQ')sw((L.cur+1)%3)});
+addEventListener('keydown',e=>{keys[e.code]=true;if(G.mode!=='play')return;if(L.dead&&(e.code==='ArrowRight'||e.code==='ArrowLeft'||e.code==='KeyA'||e.code==='KeyD')){specStep((e.code==='ArrowRight'||e.code==='KeyD')?1:-1);return}if(e.code==='KeyM')bigOn=!bigOn;if(e.code==='KeyR')reload();if(e.code==='KeyG')throwG();if(e.code==='KeyE')quadToggle();if(e.code==='KeyV')pingAt();if(e.code==='KeyX')emote();if(e.code==='KeyC')quickChat();if(e.code==='Tab'){e.preventDefault();sbToggle(true)}if(e.code==='Digit1')sw(0);if(e.code==='Digit2')sw(1);if(e.code==='Digit3')sw(2);if(e.code==='KeyQ')sw((L.cur+1)%3)});
 addEventListener('keyup',e=>{keys[e.code]=false;if(e.code==='Tab')sbToggle(false)});$('alive').style.pointerEvents='auto';$('alive').onclick=()=>sbToggle();$('alive').addEventListener('touchstart',e=>{e.stopPropagation()},{passive:true});
 function requestLock(){try{const r=canvas.requestPointerLock&&canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{})}catch(e){}}
 canvas.addEventListener('click',()=>{if(G.mode==='play'&&!TOUCH&&!document.pointerLockElement&&!L.dead)requestLock()});
 addEventListener('mousemove',e=>{if(document.pointerLockElement&&G.mode==='play'&&!L.dead){const s=.0022*SENS*(L.zoom?(L.wpns[L.cur]===4?[.4,.22,.12][L.zlv||0]:.4):1);L.yaw-=e.movementX*s;L.pitch=Math.max(-1.5,Math.min(1.5,L.pitch-e.movementY*s))}});
-addEventListener('mousedown',e=>{if(e.button===0)mouseDown=true;if(e.button===2){L.zoom=true;L.zlv=0}});
+addEventListener('mousedown',e=>{if(e.button===0&&L.dead&&G.mode==='play'&&e.target===canvas)specNext();if(e.button===0)mouseDown=true;if(e.button===2){L.zoom=true;L.zlv=0}});
 addEventListener('mouseup',e=>{if(e.button===0)mouseDown=false;if(e.button===2)L.zoom=false});
 addEventListener('contextmenu',e=>e.preventDefault());
 function zoomTap(){if(L.wpns[L.cur]===4&&L.zoom){L.zlv=(L.zlv||0)+1;if(L.zlv>2){L.zlv=0;L.zoom=false}}else{L.zoom=!L.zoom;L.zlv=0}}
@@ -703,5 +704,5 @@ function frame(){
  else{G.t+=dt;vm.visible=false;cam.fov=75;cam.updateProjectionMatrix();cam.position.set(Math.sin(G.t*.1)*250,70,Math.cos(G.t*.1)*250);cam.lookAt(0,5,0)}
  renderer.render(scene,cam)}
 frame();
-window.__G=G;window.__L=L;showStats();$('tutok').onclick=()=>{$('tut').style.display='none';try{localStorage.setItem('brTut','1')}catch(e){}};window.__dbg={LAMPG,bossOf:()=>[...__G.players.values()].find(p=>p.boss),vmk:()=>vm.userData.k,POND,H,stepRain,RL,rankTitle,quickChat,QC,ENG,zoneRef:()=>__G.zone,fireworks,FORT,sbToggle,emote,showEmo,avatars,BCN,FL,setAtmos0:0,openPz,doDrop,DFX,PINGS,pingAt,QUADS,quadToggle,GR,throwG,showStats,setAtmos,PADS,fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
+window.__G=G;window.__L=L;showStats();$('tutok').onclick=()=>{$('tut').style.display='none';try{localStorage.setItem('brTut','1')}catch(e){}};window.__dbg={specStep,LAMPG,bossOf:()=>[...__G.players.values()].find(p=>p.boss),vmk:()=>vm.userData.k,POND,H,stepRain,RL,rankTitle,quickChat,QC,ENG,zoneRef:()=>__G.zone,fireworks,FORT,sbToggle,emote,showEmo,avatars,BCN,FL,setAtmos0:0,openPz,doDrop,DFX,PINGS,pingAt,QUADS,quadToggle,GR,throwG,showStats,setAtmos,PADS,fireFrom,setMouse:v=>{mouseDown=v},botStep,scene,zoneMesh,cam,hostTick,startMatch,endMatch,H,groundAt,houses,LOOT,hitscan,W,pickupFor,damage,die,keys};
 </script></body></html>
