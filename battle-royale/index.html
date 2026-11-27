@@ -29,6 +29,7 @@ input{background:#fff;color:#111;text-align:center;width:240px;user-select:text;
 #lowhp{position:absolute;inset:0;pointer-events:none;opacity:0;box-shadow:inset 0 0 90px 30px #c00;transition:opacity .4s}
 #heal{position:absolute;inset:0;pointer-events:none;opacity:0;box-shadow:inset 0 0 110px 40px #2e7;transition:opacity .9s}#heal.on{opacity:.8;transition:none}#hpop{position:absolute;left:50%;top:38%;transform:translateX(-50%);font-size:34px;font-weight:bold;color:#7f9;text-shadow:0 2px 6px #000;pointer-events:none;opacity:0}#hpop.on{animation:hp 1.2s ease-out}@keyframes hp{0%{opacity:1;top:42%}100%{opacity:0;top:30%}}
 #lowhp.on{animation:lh 1s infinite}@keyframes lh{0%,100%{opacity:.25}50%{opacity:.7}}
+#hud .dn{position:absolute;color:#fff;font-size:22px;font-weight:bold;text-shadow:0 2px 4px #000;pointer-events:none;animation:dn .8s ease-out forwards}#hud .dn.hd{color:#ff0;font-size:30px}@keyframes dn{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-50px)}}
 #dmg{position:absolute;left:50%;top:50%;width:0;height:0;opacity:0;transition:opacity .6s}
 #dmg i{position:absolute;left:-30px;top:-150px;width:60px;height:28px;background:radial-gradient(ellipse at 50% 100%,#f22,#f220 70%)}
 #flash{position:absolute;inset:0;background:radial-gradient(transparent 40%,#e00a);opacity:0;transition:opacity .3s}
@@ -310,9 +311,9 @@ function damage(t,amt,by,head,wi){
  if(!t.alive||t.invT>0)return;if(t.para&&G.t<25)return;if(G.duo&&by&&by!==t&&by.team===t.team)return;
  let a=amt;if(head)a*=1.8;
  if(t.sh>0){const s=Math.min(t.sh,a);t.sh-=s;a-=s}t.hp-=a;
- if(by&&by.id===G.me&&by!==t)hitMarker(head);
+ if(by&&by.id===G.me&&by!==t)hitMarker(head,Math.round(amt*(head?1.8:1)));
  if(t.id===G.me)flash(by?by.x:undefined,by?by.z:undefined);else if(t.human)sendTo(t.id,by?{t:'hurt',x:+by.x.toFixed(1),z:+by.z.toFixed(1)}:{t:'hurt'});
- if(by&&by.human&&by.id!==G.me)sendTo(by.id,{t:'hm',h:head});
+ if(by&&by.human&&by.id!==G.me)sendTo(by.id,{t:'hm',h:head,d:Math.round(amt*(head?1.8:1))});
  if(t.hp<=0)die(t,by,wi)}
 function die(t,by,wi){t.alive=false;t.hp=0;t.place=alivePlayers().length+1;if(by&&by!==t)by.kills++;
  const ev={t:'kill',kid:by?by.id:-1,k:by?by.name:'المنطقة',v:t.name,w:wi==null?-1:wi,id:t.id,pl:t.place};
@@ -445,7 +446,7 @@ function onMsg(from,o){
   else if(o.t==='shot')handleShot(o);
   else if(o.t==='kill')handleKillEv(o);
   else if(o.t==='hurt')flash(o.x,o.z);
-  else if(o.t==='hm')hitMarker(o.h);
+  else if(o.t==='hm')hitMarker(o.h,o.d);
   else if(o.t==='over'){G.over=true;setTimeout(()=>endMatch(o),1500)}
   else if(o.t==='lobby')renderLobby(o.names)
   else if(o.t==='busy'){setStat('المباراة بدأت بالفعل');toMenu()}
@@ -457,7 +458,9 @@ function handleShot(o,local){if(!G.host&&o.id===G.me&&!local)return;
  for(const e of o.e){const g=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(o.o[0],o.o[1]-.15,o.o[2]),new THREE.Vector3(e[0],e[1],e[2])]);const l=new THREE.Line(g,trMat);scene.add(l);tracers.push({l,t:.08});impact(e[0],e[1],e[2],0xffcc66)}
  if(o.id===G.me)flashT=.05
  const d=Math.hypot(o.o[0]-L.x,o.o[2]-L.z);if(d<170)sfx(W[o.w].snd,Math.max(.03,.35-d/400),.2)}
-function hitMarker(h){const e=$('hit');e.style.borderColor=h?'#ff0':'#f33';e.style.opacity=1;setTimeout(()=>e.style.opacity=0,120);beep(h?1400:900,.06,.1)}
+let dnI=0;
+function dmgNum(d,h){const e=document.createElement('div');e.className='dn'+(h?' hd':'');e.textContent=d;e.style.left=(50+(Math.random()-.5)*10)+'%';e.style.top=(40+(dnI++%3)*3)+'%';$('hud').appendChild(e);setTimeout(()=>e.remove(),800)}
+function hitMarker(h,d){if(d>0)dmgNum(d,h);const e=$('hit');e.style.borderColor=h?'#ff0':'#f33';e.style.opacity=1;setTimeout(()=>e.style.opacity=0,120);beep(h?1400:900,.06,.1)}
 function flash(sx,sz){if(sx!==undefined){const dx=sx-L.x,dz=sz-L.z,fx=-Math.sin(L.yaw),fz=-Math.cos(L.yaw),rx=Math.cos(L.yaw),rz=-Math.sin(L.yaw);const a=Math.atan2(dx*rx+dz*rz,dx*fx+dz*fz)*180/Math.PI;const e=$('dmg');e.style.transition='none';e.style.transform='rotate('+a+'deg)';e.style.opacity=1;requestAnimationFrame(()=>{e.style.transition='opacity .8s';e.style.opacity=0})}const e=$('flash');e.style.opacity=.9;setTimeout(()=>e.style.opacity=0,180);sfx(150,.3,.15)}
 function beginLocal(list){
  G.mode='play';G.over=false;G.t=0;resetLoot();
