@@ -25,6 +25,8 @@ input{background:#fff;color:#111;text-align:center;width:240px;user-select:text;
 #cross:before,#cross:after{content:"";position:absolute;background:#fff;box-shadow:0 0 3px #000}
 #cross:before{left:10px;top:0;width:2px;height:22px}#cross:after{top:10px;left:0;height:2px;width:22px}
 #hit{position:absolute;left:50%;top:50%;width:34px;height:34px;margin:-17px;border:3px solid #f33;border-radius:50%;opacity:0;transition:opacity .25s}
+#dmg{position:absolute;left:50%;top:50%;width:0;height:0;opacity:0;transition:opacity .6s}
+#dmg i{position:absolute;left:-30px;top:-150px;width:60px;height:28px;background:radial-gradient(ellipse at 50% 100%,#f22,#f220 70%)}
 #flash{position:absolute;inset:0;background:radial-gradient(transparent 40%,#e00a);opacity:0;transition:opacity .3s}
 #bars{position:absolute;left:10px;bottom:14px;width:min(260px,42vw)}
 .bar{height:16px;background:#0008;border-radius:8px;overflow:hidden;margin-top:5px;border:1px solid #fff4}
@@ -55,7 +57,7 @@ input{background:#fff;color:#111;text-align:center;width:240px;user-select:text;
 </style></head><body>
 <canvas id="c"></canvas>
 <div id="hud">
- <div id="scope"></div><div id="flash"></div><div id="cross"></div><div id="hit"></div>
+ <div id="scope"></div><div id="flash"></div><div id="cross"></div><div id="hit"></div><div id="dmg"><i></i></div>
  <div id="top"><div class="chip" id="alive">👥 30</div><div class="chip" id="kills">☠ 0</div><div class="chip" id="ztime">المنطقة</div></div>
  <canvas id="mini" width="130" height="130"></canvas>
  <canvas id="big" width="600" height="600"></canvas><div id="feed"></div><div id="msg"></div>
@@ -72,6 +74,7 @@ input{background:#fff;color:#111;text-align:center;width:240px;user-select:text;
  <button id="bsolo">لعب فردي ضد 29 بوت</button>
  <button id="bhost" class="sec">إنشاء غرفة أونلاين</button>
  <div class="row"><input id="jc" maxlength="5" placeholder="كود الغرفة" style="width:150px;direction:ltr;text-transform:uppercase"><button id="bjoin" class="sec" style="min-width:80px">دخول</button></div>
+ <label class="sub"><input type="checkbox" id="lite" style="width:auto"> وضع خفيف للموبايل الضعيف</label>
  <label class="sub"><input type="checkbox" id="fast" style="width:auto"> مباراة سريعة (المنطقة بتضيق أسرع)</label>
  <div class="sub" id="mstat"></div>
  <div class="sub">كمبيوتر: WASD حركة · ماوس تصويب · كليك نار · R تعمير · Space قفز · Shift جري · 1/2/3 أسلحة · كليك يمين تقريب<br>موبايل: عصا يسار للحركة، اسحب يمين للتصويب</div>
@@ -205,14 +208,16 @@ function setTaken(i,on){if(on)taken.add(i);else taken.delete(i);const m4=new THR
 function resetLoot(){DROPS.forEach(i=>LOOT[i].on=false);for(const i of [...taken])setTaken(i,false);DROPS.forEach(i=>setTaken(i,true))}
 DROPS.forEach(i=>setTaken(i,true));
 const avatars=new Map();
-function makeAvatar(col){const g=new THREE.Group();const mb=new THREE.MeshLambertMaterial({color:col}),ms=new THREE.MeshLambertMaterial({color:0xf0c8a0});
+function nameTag(n){const c=document.createElement('canvas');c.width=256;c.height=64;const x=c.getContext('2d');x.fillStyle='#0008';x.fillRect(0,0,256,64);x.fillStyle='#fff';x.font='bold 34px Tahoma,Arial';x.textAlign='center';x.fillText(n,128,44);const t=new THREE.CanvasTexture(c);const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:t,depthTest:true,transparent:true}));sp.scale.set(1.6,.4,1);sp.position.y=2.35;return sp}
+function makeAvatar(col,name){const g=new THREE.Group();const mb=new THREE.MeshLambertMaterial({color:col}),ms=new THREE.MeshLambertMaterial({color:0xf0c8a0});
  const leg=new THREE.BoxGeometry(.22,.8,.26);const l1=new THREE.Mesh(leg,mb.clone());l1.material.color.multiplyScalar(.6);l1.position.set(-.14,.4,0);const l2=l1.clone();l2.position.x=.14;
  const tor=new THREE.Mesh(new THREE.BoxGeometry(.6,.75,.35),mb);tor.position.y=1.2;
  const head=new THREE.Mesh(new THREE.SphereGeometry(.22,10,8),ms);head.position.y=1.82;
  const gun=new THREE.Mesh(new THREE.BoxGeometry(.1,.14,.7),new THREE.MeshLambertMaterial({color:0x222222}));gun.position.set(.28,1.3,-.4);
  const arm=new THREE.Mesh(new THREE.BoxGeometry(.14,.14,.5),ms);arm.position.set(.28,1.32,-.2);
  const chute=new THREE.Mesh(new THREE.SphereGeometry(1.6,10,6,0,6.3,0,1.2),new THREE.MeshLambertMaterial({color:col,side:THREE.DoubleSide}));chute.position.y=3.6;
- g.add(l1,l2,tor,head,gun,arm,chute);g.userData={l1,l2,gun,chute};scene.add(g);return g}
+ const hel=new THREE.Mesh(new THREE.SphereGeometry(.26,10,6,0,6.3,0,1.5),new THREE.MeshLambertMaterial({color:col}));hel.position.y=1.86;const bp=new THREE.Mesh(new THREE.BoxGeometry(.4,.5,.2),new THREE.MeshLambertMaterial({color:0x333a44}));bp.position.set(0,1.25,.27);const tag=nameTag(name||'?');
+ g.add(l1,l2,tor,head,gun,arm,chute,hel,bp,tag);g.userData={l1,l2,gun,chute,tag};scene.add(g);return g}
 function colorFor(id){return new THREE.Color().setHSL((id*0.137)%1,.65,.5).getHex()}
 let AC,NB;
 function audio(){if(AC)return;try{AC=new (window.AudioContext||window.webkitAudioContext)();NB=AC.createBuffer(1,AC.sampleRate*.4,AC.sampleRate);const d=NB.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1}catch(e){}}
@@ -245,13 +250,14 @@ function damage(t,amt,by,head,wi){
  let a=amt;if(head)a*=1.8;
  if(t.sh>0){const s=Math.min(t.sh,a);t.sh-=s;a-=s}t.hp-=a;
  if(by&&by.id===G.me&&by!==t)hitMarker(head);
- if(t.id===G.me)flash();else if(t.human)sendTo(t.id,{t:'hurt'});
+ if(t.id===G.me)flash(by?by.x:undefined,by?by.z:undefined);else if(t.human)sendTo(t.id,by?{t:'hurt',x:+by.x.toFixed(1),z:+by.z.toFixed(1)}:{t:'hurt'});
  if(by&&by.human&&by.id!==G.me)sendTo(by.id,{t:'hm',h:head});
  if(t.hp<=0)die(t,by,wi)}
 function die(t,by,wi){t.alive=false;t.hp=0;t.place=alivePlayers().length+1;if(by&&by!==t)by.kills++;
- const ev={t:'kill',k:by?by.name:'المنطقة',v:t.name,w:wi==null?-1:wi,id:t.id,pl:t.place};
+ const ev={t:'kill',kid:by?by.id:-1,k:by?by.name:'المنطقة',v:t.name,w:wi==null?-1:wi,id:t.id,pl:t.place};
  handleKillEv(ev);broadcast(ev);checkEnd()}
-function handleKillEv(ev){addFeed((ev.w>=0?'🔫 ':'☠ ')+ev.k+' ← '+ev.v);const p=G.players.get(ev.id);if(p)p.place=ev.pl;if(ev.id===G.me)onMyDeath(ev)}
+const STREAK=['','قتلة أولى! 🔥','قتلتين! 🔥🔥','٣ قتلات! سلسلة!','٤ قتلات! وحش!','٥ قتلات! أسطورة!'];
+function handleKillEv(ev){if(ev.kid===G.me&&ev.id!==G.me){const m=me();const k=(m?m.kills:0)+(G.host?0:1);msg(STREAK[Math.min(5,Math.max(1,k))]||'مستمر!',2200);beep(1100,.15,.12)}addFeed((ev.w>=0?'🔫 ':'☠ ')+ev.k+' ← '+ev.v);const p=G.players.get(ev.id);if(p)p.place=ev.pl;if(ev.id===G.me)onMyDeath(ev)}
 function checkEnd(){if(G.over)return;const al=alivePlayers();const humansAlive=al.filter(p=>p.human).length;
  if(al.length<=1||humansAlive===0){
   G.over=true;const w=al.length===1?al[0]:null;if(w)w.place=1;
@@ -356,7 +362,7 @@ function onMsg(from,o){
   else if(o.t==='inv'){L.wpns=o.w.slice();L.cur=o.c;for(let s=0;s<3;s++)if(L.wpns[s]>=0&&L.lastW[s]!==L.wpns[s])L.mag[s]=W[L.wpns[s]].mag;L.lastW=L.wpns.slice();beep(880,.12,.12)}
   else if(o.t==='shot')handleShot(o);
   else if(o.t==='kill')handleKillEv(o);
-  else if(o.t==='hurt')flash();
+  else if(o.t==='hurt')flash(o.x,o.z);
   else if(o.t==='hm')hitMarker(o.h);
   else if(o.t==='over'){G.over=true;setTimeout(()=>endMatch(o),1500)}
   else if(o.t==='lobby')renderLobby(o.names)
@@ -368,7 +374,7 @@ function handleShot(o,local){if(!G.host&&o.id===G.me&&!local)return;
  for(const e of o.e){const g=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(o.o[0],o.o[1]-.15,o.o[2]),new THREE.Vector3(e[0],e[1],e[2])]);const l=new THREE.Line(g,trMat);scene.add(l);tracers.push({l,t:.08})}
  const d=Math.hypot(o.o[0]-L.x,o.o[2]-L.z);if(d<170)sfx(W[o.w].snd,Math.max(.03,.35-d/400),.2)}
 function hitMarker(h){const e=$('hit');e.style.borderColor=h?'#ff0':'#f33';e.style.opacity=1;setTimeout(()=>e.style.opacity=0,120);beep(h?1400:900,.06,.1)}
-function flash(){const e=$('flash');e.style.opacity=.9;setTimeout(()=>e.style.opacity=0,180);sfx(150,.3,.15)}
+function flash(sx,sz){if(sx!==undefined){const dx=sx-L.x,dz=sz-L.z,fx=-Math.sin(L.yaw),fz=-Math.cos(L.yaw),rx=Math.cos(L.yaw),rz=-Math.sin(L.yaw);const a=Math.atan2(dx*rx+dz*rz,dx*fx+dz*fz)*180/Math.PI;const e=$('dmg');e.style.transition='none';e.style.transform='rotate('+a+'deg)';e.style.opacity=1;requestAnimationFrame(()=>{e.style.transition='opacity .8s';e.style.opacity=0})}const e=$('flash');e.style.opacity=.9;setTimeout(()=>e.style.opacity=0,180);sfx(150,.3,.15)}
 function beginLocal(list){
  G.mode='play';G.over=false;G.t=0;resetLoot();
  for(const a of avatars.values())scene.remove(a);avatars.clear();
@@ -411,7 +417,9 @@ function joinRoom(){
  peer.on('error',e=>setStat('خطأ: '+e.type))}
 function toMenu(){G.mode='menu';G.over=false;['lobby','go'].forEach(i=>$(i).classList.add('hide'));$('menu').classList.remove('hide');$('hud').classList.remove('on');$('touch').classList.remove('on');$('bexit').style.display='none';
  try{G.peer&&G.peer.destroy()}catch(e){}G.peer=null;G.conns.clear();G.host=false;G.solo=false;if(document.pointerLockElement)document.exitPointerLock()}
-$('bsolo').onclick=()=>{audio();G.host=true;G.solo=true;G.me=0;G.myName=$('nm').value.trim()||'ملك';G.fast=$('fast').checked;G.conns.clear();startMatch()};
+function applyLite(){const l=$('lite').checked;renderer.setPixelRatio(l?.7:Math.min(devicePixelRatio,TOUCH?1.5:2));scene.fog.far=l?260:520;scene.fog.near=l?60:120;cam.far=l?300:900;cam.updateProjectionMatrix();resize()}
+$('lite').onchange=applyLite;
+$('bsolo').onclick=()=>{audio();applyLite();G.host=true;G.solo=true;G.me=0;G.myName=$('nm').value.trim()||'ملك';G.fast=$('fast').checked;G.conns.clear();startMatch()};
 $('bhost').onclick=()=>{audio();hostRoom()};
 $('bjoin').onclick=()=>{audio();joinRoom()};
 $('bstart').onclick=()=>{audio();startMatch()};
@@ -439,7 +447,7 @@ addEventListener('touchstart',e=>{if(G.mode!=='play')return;for(const t of e.cha
 function bind(id,dn,up){const el=$(id);el.addEventListener('touchstart',e=>{e.preventDefault();e.stopPropagation();audio();dn()},{passive:false});if(up)el.addEventListener('touchend',e=>{e.preventDefault();up()})}
 bind('bfire',()=>fireTouch=true,()=>fireTouch=false);bind('bjump',()=>L.jump=true,()=>L.jump=false);bind('brel',reload);bind('bsw',()=>{for(let i=1;i<=3;i++){const s=(L.cur+i)%3;if(L.wpns[s]>=0){sw(s);break}}});bind('bzoom',()=>L.zoom=!L.zoom);bind('bspr',()=>L.spr=!L.spr);bind('bmap',()=>bigOn=!bigOn);
 const clock=new THREE.Clock();let netT=0;
-const vm=new THREE.Mesh(new THREE.BoxGeometry(.04,.06,.3),new THREE.MeshLambertMaterial({color:0x333333}));vm.position.set(.16,-.16,-.45);cam.add(vm);
+const vm=new THREE.Mesh(new THREE.BoxGeometry(.03,.04,.22),new THREE.MeshLambertMaterial({color:0x333333}));vm.position.set(.14,-.14,-.4);cam.add(vm);
 function localUpdate(dt){
  const m=me();if(!m||L.dead)return;
  let fwd=0,str=0;if(!TOUCH){fwd=(keys.KeyW||keys.ArrowUp?1:0)-(keys.KeyS||keys.ArrowDown?1:0);str=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0)}
@@ -499,9 +507,9 @@ function frame(){
    if(!G.host&&p.tx!==undefined){const k=1-Math.pow(.0001,dt);p.x+=(p.tx-p.x)*k;p.y+=(p.ty-p.y)*k;p.z+=(p.tz-p.z)*k;let dy=p.tyaw-p.yaw;while(dy>3.14)dy-=6.283;while(dy<-3.14)dy+=6.283;p.yaw+=dy*k}}
   for(const p of G.players.values()){let a=avatars.get(p.id);if(p.id===G.me){if(a)a.visible=false;continue}
    if(!p.alive){if(a&&!p.deadT){p.deadT=1;a.rotation.set(0,p.yaw,0);a.rotation.x=-1.45;a.position.set(p.x,groundAt(p.x,p.z)+.3,p.z);a.userData.chute.visible=false}continue}
-   if(!a){a=makeAvatar(colorFor(p.id));avatars.set(p.id,a)}
+   if(!a){a=makeAvatar(colorFor(p.id),p.name);avatars.set(p.id,a)}
    a.visible=true;a.position.set(p.x,p.y,p.z);a.rotation.set(0,p.yaw,0);const sw=p.para?0:Math.sin(G.t*9+p.id)*.5;a.userData.l1.rotation.x=sw;a.userData.l2.rotation.x=-sw;
-   a.userData.chute.visible=!!p.para;
+   a.userData.chute.visible=!!p.para;a.userData.tag.visible=Math.hypot(p.x-L.x,p.z-L.z)<70;
    const wi=G.host?p.wpns[p.cur]:p.wcur;if(wi>=0)a.userData.gun.material.color.setHex(W[wi].col)}
   const m=me();let cx=L.x,cy=L.y+1.65,cz=L.z,yaw=L.yaw,pit=L.pitch;
   if(L.dead||(m&&!m.alive)){
