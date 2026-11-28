@@ -856,7 +856,7 @@ function levelDone(){
 }
 function endGame(win){
   P.state="over";
-  if(P.testing)return;musicOff();
+  if(P.testing)return;musicOff();if(win){/*R24jingle*/[523,659,784,1047].forEach((f,i)=>setTimeout(()=>snd(f,0.25,"triangle",0.08),i*140))}
   let best=0;try{const k="gm_best_"+(G.title||"")+"_"+G.levels.length;best=+localStorage.getItem(k)||0;if(win&&P.score>best){best=P.score;localStorage.setItem(k,best)}}catch(e){}
   P.best=best;
   $("overT").textContent=win?"كسبت! 🎉":"خسرت";
