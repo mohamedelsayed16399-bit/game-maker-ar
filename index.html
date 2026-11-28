@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#14122b">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="صانع الألعاب">
 <title>صانع الألعاب - اصنع لعبتك بالسحب والإفلات</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
@@ -62,7 +63,7 @@ textarea{width:100%;min-height:70px;direction:ltr;font-size:12px}
 .tpl small{display:block;font-weight:400;opacity:.7;margin-top:3px;font-size:11px}
 #toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#fff;color:#111;padding:10px 16px;border-radius:24px;font-weight:700;z-index:200;opacity:0;pointer-events:none;transition:opacity .3s;max-width:90%;text-align:center}
 #toast.show{opacity:1}
-#story{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;background:#000c;z-index:8;text-align:center;padding:24px}#story.show{display:flex}#story .st{font-size:22px;line-height:1.7;max-width:520px;white-space:pre-wrap}#over{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;background:#000a;z-index:7;text-align:center}
+#story{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;background:#000c;z-index:8;text-align:center;padding:24px}#story.show{display:flex}#story .st{font-size:22px;line-height:1.7;max-width:520px;white-space:pre-wrap}#over{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;background:#0006;z-index:7;text-align:center}
 #over.show{display:flex}
 #over h1{margin:0;font-size:34px}
 </style>
@@ -514,6 +515,7 @@ function buildTabs(){
   const t=$("tabs");t.innerHTML="";
   G.levels.forEach((l,i)=>{const b=document.createElement("button");b.className="tab"+(i===cur?" on":"");b.textContent="مرحلة "+(i+1);b.onclick=()=>{cur=i;sel=null;cam.x=cam.y=0;refreshAll()};t.appendChild(b)});
   const tt=document.createElement("button");tt.className="tab";tt.textContent="✎ عنوان المرحلة";tt.onclick=()=>{const v=prompt("اكتب عنوان أو جملة قصيرة تظهر في أول المرحلة",L().title||"");if(v!==null){snap();L().title=v.slice(0,50);dirty()}};t.appendChild(tt);
+  const dk=document.createElement("button");dk.className="tab";dk.textContent=L().dark?"🌑 مظلمة ✓":"🌑 مظلمة";dk.onclick=()=>{snap();L().dark=L().dark?0:1;dirty();buildTabs();toast(L().dark?"المرحلة بقت مظلمة: اللاعب بس هو اللي منور":"المرحلة رجعت عادية")};t.appendChild(dk);
   const a=document.createElement("button");a.className="tab";a.textContent="+ مرحلة";a.onclick=()=>{if(G.levels.length>=12){toast("أقصى عدد ١٢ مرحلة");return}snap();G.levels.push(blankLevel(L().w,L().h));cur=G.levels.length-1;sel=null;cam.x=cam.y=0;dirty();refreshAll()};t.appendChild(a);
   if(G.levels.length>1){const d=document.createElement("button");d.className="tab";d.textContent="− احذف دي";d.onclick=()=>{if(!confirm("تمسح مرحلة "+(cur+1)+"؟"))return;snap();G.levels.splice(cur,1);cur=Math.max(0,cur-1);sel=null;dirty();refreshAll()};t.appendChild(d)}
 }
@@ -858,6 +860,7 @@ function endGame(win){
   let best=0;try{const k="gm_best_"+(G.title||"")+"_"+G.levels.length;best=+localStorage.getItem(k)||0;if(win&&P.score>best){best=P.score;localStorage.setItem(k,best)}}catch(e){}
   P.best=best;
   $("overT").textContent=win?"كسبت! 🎉":"خسرت";
+  if(win){P.conf=[];const cols=["#ff6b6b","#ffd43b","#51cf66","#4dabf7","#da77f2","#ff922b"];for(let i=0;i<140;i++)P.conf.push({x:Math.random()*CW,y:-Math.random()*CH,vx:(Math.random()-.5)*60,vy:90+Math.random()*160,w:6+Math.random()*6,h:4+Math.random()*5,r:Math.random()*6,vr:(Math.random()-.5)*10,c:cols[i%6]});P.confT=0}
   $("overS").textContent=(P.starMax?"النجوم: "+P.starTot+"/"+P.starMax+" ★ · ":"")+"النقاط: "+P.score+" · الوقت: "+Math.round(P.time)+" ثانية"+(P.best?" · أفضل نتيجة: "+P.best:"");
   const ls=$("lvlSel");ls.innerHTML="";
   if(G.levels.length>1){G.levels.forEach((_,i)=>{let st=0;try{st=+localStorage.getItem("gm_st_"+(G.title||"")+"_"+G.levels.length+"_"+i)||0}catch(e){}const bt=document.createElement("button");bt.className="btn";bt.style.cssText="min-width:74px;line-height:1.3";bt.innerHTML="مرحلة "+(i+1)+"<br><span style='color:#ffd43b'>"+"★".repeat(st)+"<span style='color:#888'>"+"★".repeat(3-st)+"</span></span>";bt.onclick=()=>startPlay(i);ls.appendChild(bt)})}
@@ -907,6 +910,8 @@ function renderPlay(){
   if(P.pops){cx.save();cx.font="bold 20px system-ui";cx.direction="ltr";cx.textAlign="center";cx.lineWidth=4;cx.strokeStyle="#000a";for(const q of P.pops){cx.globalAlpha=Math.min(1,q.l*1.5);cx.strokeText(q.txt,q.x,q.y);cx.fillStyle=q.col;cx.fillText(q.txt,q.x,q.y)}cx.restore()}
   for(const q of P.particles){cx.globalAlpha=Math.max(0,q.l);cx.fillStyle=q.c;cx.fillRect(q.x-3,q.y-3,6,6)}cx.globalAlpha=1;
   cx.restore();
+  if(G.levels[P.lvl].dark&&P.state!=="story"){const pl2=P.player,px2=(pl2.x+pl2.w/2-P.cam.x)*sc,py2=(pl2.y+pl2.h/2-P.cam.y)*sc,R0=T*sc*(P.power>0?7:4.2);const gr=cx.createRadialGradient(px2,py2,R0*0.35,px2,py2,R0);gr.addColorStop(0,"rgba(5,5,20,0)");gr.addColorStop(1,"rgba(5,5,20,0.96)");cx.fillStyle=gr;cx.fillRect(0,0,CW,CH)}
+  if(P.conf&&P.state==="over"){const dt2=1/60;cx.save();for(const q of P.conf){q.x+=q.vx*dt2+Math.sin(q.y*0.02)*0.6;q.y+=q.vy*dt2;q.r+=q.vr*dt2;if(q.y>CH+20){q.y=-20}cx.translate(q.x,q.y);cx.rotate(q.r);cx.fillStyle=q.c;cx.fillRect(-q.w/2,-q.h/2,q.w,q.h);cx.setTransform(DPR,0,0,DPR,0,0)}cx.restore()}
   // HUD
   cx.font="bold 16px system-ui";cx.textBaseline="middle";
   const hudY=CH>500?64:58;
@@ -955,12 +960,12 @@ async function dec(code){
 // compact: objects as arrays
 function pack(g){
   return {v:1,ip:g.imgP||"",ie:g.imgE||"",ib:g.imgB||"",sy:g.story||"",tl:g.tl|0,it:g.imgT||"",ph:g.ph|0,n:g.title,m:g.mode,th:g.theme,c:g.char,k:g.col,l:g.lives,q:g.req?1:0,
-    L:g.levels.map(l=>({t:l.title||"",w:l.w,h:l.h,o:l.o.map(o=>{const a=[o.t,o.x,o.y,o.w,o.h];if(o.t==="mover"||o.t==="saw"||o.t==="belt")a.push(o.r||4,o.v|0);if(o.t==="sign")a.push(o.s||"");return a})}))};
+    L:g.levels.map(l=>({d:l.dark?1:0,t:l.title||"",w:l.w,h:l.h,o:l.o.map(o=>{const a=[o.t,o.x,o.y,o.w,o.h];if(o.t==="mover"||o.t==="saw"||o.t==="belt")a.push(o.r||4,o.v|0);if(o.t==="sign")a.push(o.s||"");return a})}))};
 }
 function unpack(p){
   const g=newGame(p.n);g.mode=p.m==="top"?"top":"plat";g.theme=THEMES[p.th]?p.th:"day";g.char=CHARS[p.c]?p.c:"cat";g.col=/^#[0-9a-f]{3,8}$/i.test(p.k)?p.k:COLS[0];g.lives=Math.max(1,Math.min(9,p.l|0||3));g.imgP=/^data:image\/(webp|jpeg|png);base64,[A-Za-z0-9+\/=]{20,20000}$/.test(p.ip||"")?p.ip:"";g.imgE=/^data:image\/(webp|jpeg|png);base64,[A-Za-z0-9+\/=]{20,20000}$/.test(p.ie||"")?p.ie:"";g.imgB=/^data:image\/(webp|jpeg|png);base64,[A-Za-z0-9+\/=]{20,20000}$/.test(p.ib||"")?p.ib:"";g.imgT=/^data:image\/(webp|jpeg|png);base64,[A-Za-z0-9+\/=]{20,20000}$/.test(p.it||"")?p.it:"";g.tl=Math.max(0,Math.min(999,p.tl|0));g.story=String(p.sy||"").slice(0,400);g.req=!!p.q;g.ph=PHYS[p.ph|0]?p.ph|0:0;
   g.title=String(p.n||"لعبة").slice(0,40);
-  g.levels=p.L.slice(0,12).map(l=>({title:String(l.t||"").slice(0,50),w:Math.max(8,Math.min(200,l.w|0)),h:Math.max(8,Math.min(60,l.h|0)),o:l.o.slice(0,3000).filter(a=>PINFO[a[0]]).map(a=>{const o={t:a[0],x:a[1]|0,y:a[2]|0,w:Math.max(1,a[3]|0),h:Math.max(1,a[4]|0)};if(o.t==="mover"||o.t==="saw"||o.t==="belt"){o.r=a[5]||4;o.v=a[6]|0}if(o.t==="sign")o.s=String(a[5]||"").slice(0,60);return o})}));
+  g.levels=p.L.slice(0,12).map(l=>({dark:l.d?1:0,title:String(l.t||"").slice(0,50),w:Math.max(8,Math.min(200,l.w|0)),h:Math.max(8,Math.min(60,l.h|0)),o:l.o.slice(0,3000).filter(a=>PINFO[a[0]]).map(a=>{const o={t:a[0],x:a[1]|0,y:a[2]|0,w:Math.max(1,a[3]|0),h:Math.max(1,a[4]|0)};if(o.t==="mover"||o.t==="saw"||o.t==="belt"){o.r=a[5]||4;o.v=a[6]|0}if(o.t==="sign")o.s=String(a[5]||"").slice(0,60);return o})}));
   return g;
 }
 async function makeLink(){
